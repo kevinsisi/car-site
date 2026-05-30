@@ -352,18 +352,19 @@ img { display: block; max-width: 100%; }
   .promise-grid,
   .contact-card-grid { grid-template-columns: 1fr; padding-bottom: 3rem; }
   .contact-strip { display: grid; margin-bottom: 3rem; }
-  .mobile-contact-bar { position: fixed; right: max(0.7rem, env(safe-area-inset-right)); bottom: max(5.25rem, calc(env(safe-area-inset-bottom) + 4.75rem)); z-index: 30; display: grid; gap: 0.42rem; width: 3rem; opacity: 0; pointer-events: none; transform: translateY(0.7rem); transition: opacity 180ms ease, transform 180ms ease; }
+  .mobile-contact-bar { position: fixed; right: max(0.7rem, env(safe-area-inset-right)); bottom: max(5.25rem, calc(env(safe-area-inset-bottom) + 4.75rem)); z-index: 30; display: grid; gap: 0.42rem; width: 2.6rem; opacity: 0; pointer-events: none; transform: translateY(0.7rem); transition: opacity 180ms ease, transform 180ms ease; }
   .mobile-contact-bar.is-visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
   .mobile-action,
-  .back-to-top { width: 3rem; height: 3rem; box-shadow: 0 0.75rem 1.6rem rgba(20, 35, 60, 0.14); }
+  .back-to-top { width: 2.6rem; height: 2.6rem; box-shadow: 0 0.65rem 1.45rem rgba(20, 35, 60, 0.14); }
   .mobile-action { display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--line) 72%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--surface) 86%, transparent); color: var(--accent-strong); backdrop-filter: blur(18px); }
   .mobile-action { font-size: 0; line-height: 0; }
   .mobile-action--line { background: var(--accent); color: var(--surface); border-color: var(--accent); }
   .mobile-action--line .social-cutout { fill: var(--accent); }
   .mobile-action svg,
-  .back-to-top svg { width: 1.22rem; height: 1.22rem; fill: none; stroke: currentColor; stroke-width: 1.95; stroke-linecap: round; stroke-linejoin: round; }
-  .mobile-action svg.brand-glyph { width: 1.42rem; height: 1.42rem; fill: currentColor; stroke: none; }
-  .detail-share-button { display: none; }
+  .back-to-top svg { width: 1.08rem; height: 1.08rem; fill: none; stroke: currentColor; stroke-width: 1.95; stroke-linecap: round; stroke-linejoin: round; }
+  .mobile-action svg.brand-glyph { width: 1.28rem; height: 1.28rem; fill: currentColor; stroke: none; }
+  .detail-share-button { width: 3.35rem; height: 3.35rem; min-height: 3.35rem; }
+  .detail-share-button svg { width: 1.45rem; height: 1.45rem; }
   .mobile-action:hover { transform: translateY(-2px); box-shadow: 0 1rem 2.4rem rgba(0, 0, 0, 0.2); }
   .mobile-action:active { transform: translateY(0) scale(0.96); }
   .back-to-top { right: max(0.85rem, env(safe-area-inset-right)); bottom: calc(max(5.25rem, env(safe-area-inset-bottom) + 4.75rem) + 9.5rem); }
