@@ -22,7 +22,9 @@ const knownSpecs: Record<string, Record<string, string>> = {
   B180: { warranty: '頂級性能車源', spec: 'Purosangue', body: 'Ferrari 4-door GT', fuel: '汽油', doorsSeats: '4門 / 4座', cylinders: 'V12', horsepower: '725 hp' },
 };
 const known = knownSpecs[vehicle.slug] || {};
-const advisorDescription = vehicle.description.replace(/carsmeet/gi, '既有庫存').replace(/此車由既有庫存 現有庫存匯入，?\s*/g, '');
+const advisorDescription = vehicle.description
+  .replace(/此車由\s*(?:carsmeet|既有庫存)\s*現有庫存匯入，?\s*/gi, '此車已完成實拍照片整理，')
+  .replace(/carsmeet/gi, '既有庫存');
 const specRows = [
   ['年份', vehicle.year],
   ['里程', vehicle.mileage],
@@ -79,7 +81,7 @@ const specRows = [
       <p>{advisorDescription}</p>
     </section>
     <section class="gallery reveal-section">
-      {vehicle.images.map((image) => <img src={image.url} alt={image.alt || vehicle.title} loading="lazy" decoding="async" />)}
+      {vehicle.images.map((image) => <img src={image.url} alt={image.alt || vehicle.title} loading="eager" decoding="async" />)}
     </section>
   </article>
 </PublicLayout>

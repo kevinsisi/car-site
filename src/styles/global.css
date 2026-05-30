@@ -372,6 +372,8 @@ img { display: block; max-width: 100%; }
   .footer-meta { justify-items: start; }
   .social-icons { justify-content: start; }
   .site-footer p { text-align: left; }
+  .reveal-section,
+  .reveal-card { animation: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
