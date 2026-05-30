@@ -1,5 +1,6 @@
 ---
 import type { VehicleView } from '@/lib/vehicles';
+import ShareButton from './ShareButton.astro';
 
 interface Props {
   vehicle: VehicleView;
@@ -53,4 +54,5 @@ const specs = [
       </div>
     </div>
   </a>
+  <ShareButton class="vehicle-share" title={vehicle.title} url={`/cars/${vehicle.slug}`} text={`${vehicle.title}｜${vehicle.year || vehicle.brandDisplayName}，價格請洽。`} />
 </article>

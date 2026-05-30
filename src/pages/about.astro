@@ -1,0 +1,36 @@
+---
+import PublicLayout from '@/layouts/PublicLayout.astro';
+import { getSettings } from '@/lib/settings';
+
+const settings = await getSettings();
+const promises = [
+  ['車況先行', '交付前以外觀、內裝、儀表與基本機件狀態為核心，先確認風險，再安排賞車。'],
+  ['精準媒合', '不追求大量刊登，只協助客戶縮短篩選時間，找到值得親自看的車。'],
+  ['交易陪同', '從初談、預約賞車到後續交付，以顧問式流程降低資訊落差。'],
+  ['保修銜接', '可協助安排後續保養、檢查與交車前整備建議，讓高級車使用更安心。'],
+];
+---
+
+<PublicLayout title={`關於｜${settings.siteName}`} description="私人高級車顧問服務介紹。">
+  <section class="page-hero compact luxury-enter">
+    <p class="eyebrow">About</p>
+    <h1>不是車海平台，是為成熟買家整理的私人車庫。</h1>
+    <p>我們重視車況、來源、配置與時間效率。每一次推薦，都以是否值得親自介紹作為標準。</p>
+  </section>
+  <section class="promise-grid reveal-section">
+    {promises.map(([title, body]) => (
+      <article>
+        <span class="promise-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3.5 19 7v5.1c0 4.3-2.8 7.5-7 8.4-4.2-.9-7-4.1-7-8.4V7l7-3.5Z" /><path d="m8.7 12.1 2.1 2.1 4.7-5" /></svg></span>
+        <h2>{title}</h2>
+        <p>{body}</p>
+      </article>
+    ))}
+  </section>
+  <section class="contact-strip reveal-section">
+    <div>
+      <p class="eyebrow">Private Appointment</p>
+      <h2>預約賞車前，先用 LINE 說明需求。</h2>
+    </div>
+    <a class="button button--primary" href={settings.lineUrl}>LINE 洽詢</a>
+  </section>
+</PublicLayout>

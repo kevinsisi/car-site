@@ -1,5 +1,6 @@
 ---
 import PublicLayout from '@/layouts/PublicLayout.astro';
+import ShareButton from '@/components/ShareButton.astro';
 import { getSettings } from '@/lib/settings';
 import { getVehicleBySlug } from '@/lib/vehicles';
 
@@ -8,6 +9,20 @@ if (!vehicle || !['published', 'sold'].includes(vehicle.status)) {
   return new Response('Not found', { status: 404 });
 }
 const settings = await getSettings();
+const specRows = [
+  ['年份', vehicle.year || '請洽詢'],
+  ['里程', vehicle.mileage || '請洽詢'],
+  ['保固', '請洽詢'],
+  ['規格', vehicle.headline || '請洽詢'],
+  ['車型', [vehicle.model, vehicle.subModel].filter(Boolean).join(' ') || '請洽詢'],
+  ['燃料', '請洽詢'],
+  ['外觀顏色', vehicle.exteriorColor || '請洽詢'],
+  ['內裝顏色', vehicle.interiorColor || '請洽詢'],
+  ['車門 / 座位', '請洽詢'],
+  ['缸數', '請洽詢'],
+  ['馬力', '請洽詢'],
+  ['價格', '價格請洽'],
+];
 ---
 
 <PublicLayout title={`${vehicle.title}｜${settings.siteName}`} description={vehicle.headline || vehicle.description}>
@@ -20,19 +35,21 @@ const settings = await getSettings();
         <div class="detail-actions">
           <a class="button button--primary" href={settings.lineUrl}>LINE 洽詢此車</a>
           <a class="button button--ghost" href={`tel:${settings.phoneNumber}`}>電話聯絡</a>
+          <ShareButton title={vehicle.title} url={`/cars/${vehicle.slug}`} text={`${vehicle.title}｜${vehicle.year || vehicle.brandDisplayName}，價格請洽。`} />
         </div>
       </div>
       <div class="detail-cover">
         {vehicle.coverImage && <img src={vehicle.coverImage.url} alt={vehicle.coverImage.alt || vehicle.title} fetchpriority="high" decoding="async" />}
       </div>
     </section>
-    <section class="spec-panel reveal-section">
-      <div><span>年份</span><strong>{vehicle.year || '請洽詢'}</strong></div>
-      <div><span>里程</span><strong>{vehicle.mileage || '請洽詢'}</strong></div>
-      <div><span>外觀</span><strong>{vehicle.exteriorColor || '請洽詢'}</strong></div>
-      <div><span>內裝</span><strong>{vehicle.interiorColor || '請洽詢'}</strong></div>
-      <div><span>車況</span><strong>{vehicle.condition}</strong></div>
-      <div><span>價格</span><strong>價格請洽</strong></div>
+    <section class="detail-section reveal-section">
+      <div class="section-kicker">
+        <p class="eyebrow">Vehicle Information</p>
+        <h2>完整規格</h2>
+      </div>
+      <div class="spec-panel spec-panel--detail">
+        {specRows.map(([label, value]) => <div><span>{label}</span><strong>{value}</strong></div>)}
+      </div>
     </section>
     <section class="story-grid reveal-section">
       <div>
