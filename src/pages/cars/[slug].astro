@@ -81,7 +81,7 @@ const specRows = [
       <p>{advisorDescription}</p>
     </section>
     <section class="gallery reveal-section">
-      {vehicle.images.map((image) => <img src={image.url} alt={image.alt || vehicle.title} loading="eager" decoding="async" />)}
+      {vehicle.images.map((image) => <img src={image.url} alt={image.alt || vehicle.title} loading="lazy" decoding="async" />)}
     </section>
   </article>
 </PublicLayout>
