@@ -1,0 +1,1 @@
+ALTER TABLE vehicles ADD COLUMN monthly_recommended INTEGER NOT NULL DEFAULT 0;

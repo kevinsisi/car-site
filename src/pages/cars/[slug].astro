@@ -1,0 +1,51 @@
+---
+import PublicLayout from '@/layouts/PublicLayout.astro';
+import { getSettings } from '@/lib/settings';
+import { getVehicleBySlug } from '@/lib/vehicles';
+
+const vehicle = await getVehicleBySlug(Astro.params.slug || '');
+if (!vehicle || !['published', 'sold'].includes(vehicle.status)) {
+  return new Response('Not found', { status: 404 });
+}
+const settings = await getSettings();
+---
+
+<PublicLayout title={`${vehicle.title}｜${settings.siteName}`} description={vehicle.headline || vehicle.description}>
+  <article class="detail-page luxury-enter">
+    <section class="detail-hero">
+      <div class="detail-copy">
+        <p class="eyebrow">{vehicle.brandDisplayName}</p>
+        <h1>{vehicle.title}</h1>
+        <p class="detail-headline">{vehicle.headline || vehicle.condition}</p>
+        <div class="detail-actions">
+          <a class="button button--primary" href={settings.lineUrl}>LINE 洽詢此車</a>
+          <a class="button button--ghost" href={`tel:${settings.phoneNumber}`}>電話聯絡</a>
+        </div>
+      </div>
+      <div class="detail-cover">
+        {vehicle.coverImage && <img src={vehicle.coverImage.url} alt={vehicle.coverImage.alt || vehicle.title} fetchpriority="high" decoding="async" />}
+      </div>
+    </section>
+    <section class="spec-panel reveal-section">
+      <div><span>年份</span><strong>{vehicle.year || '請洽詢'}</strong></div>
+      <div><span>里程</span><strong>{vehicle.mileage || '請洽詢'}</strong></div>
+      <div><span>外觀</span><strong>{vehicle.exteriorColor || '請洽詢'}</strong></div>
+      <div><span>內裝</span><strong>{vehicle.interiorColor || '請洽詢'}</strong></div>
+      <div><span>車況</span><strong>{vehicle.condition}</strong></div>
+      <div><span>價格</span><strong>價格請洽</strong></div>
+    </section>
+    <section class="story-grid reveal-section">
+      <div>
+        <p class="eyebrow">{settings.detailNotesEyebrow}</p>
+        <h2>{settings.detailNotesTitle}</h2>
+      </div>
+      <p>{vehicle.description}</p>
+    </section>
+    <section class="feature-list reveal-section">
+      {vehicle.features.map((feature) => <span>{feature}</span>)}
+    </section>
+    <section class="gallery reveal-section">
+      {vehicle.images.map((image) => <img src={image.url} alt={image.alt || vehicle.title} loading="lazy" decoding="async" />)}
+    </section>
+  </article>
+</PublicLayout>

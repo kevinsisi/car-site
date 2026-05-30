@@ -1,0 +1,36 @@
+:root { font-family: system-ui, -apple-system, BlinkMacSystemFont, "PingFang TC", sans-serif; color: #f8efe1; background: #0b0a09; }
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; background: #0b0a09; }
+button, input, select { font: inherit; }
+.admin-sidebar { position: fixed; inset: 0 auto 0 0; width: 15rem; padding: 1.4rem; border-right: 1px solid rgba(210, 174, 101, 0.25); background: #14110e; display: flex; flex-direction: column; gap: 1rem; }
+.admin-sidebar a, .admin-sidebar button { color: #f8efe1; background: transparent; border: 0; text-align: left; text-decoration: none; cursor: pointer; }
+.admin-logo { color: #d6b06a !important; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 1rem; }
+.admin-main { margin-left: 15rem; padding: clamp(1rem, 3vw, 2rem); }
+.admin-panel { border: 1px solid rgba(210, 174, 101, 0.24); border-radius: 1.4rem; background: #17130f; padding: clamp(1rem, 3vw, 1.6rem); box-shadow: 0 1.4rem 3rem rgba(0, 0, 0, 0.22); }
+.hero-panel { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+.admin-eyebrow { color: #d6b06a; text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.82rem; }
+.admin-panel h1, .admin-panel h2, .login-card h1 { margin: 0 0 1rem; }
+.admin-panel h3 { margin: 0.6rem 0 0; color: #d6b06a; }
+.admin-panel p { color: #c9bda6; line-height: 1.7; }
+.admin-grid { display: grid; grid-template-columns: minmax(20rem, 0.7fr) 1.3fr; gap: 1rem; }
+.settings-form { display: grid; gap: 1rem; }
+label { display: grid; gap: 0.45rem; color: #d8ccb8; }
+input, select { width: 100%; min-height: 2.8rem; border-radius: 0.8rem; border: 1px solid rgba(210, 174, 101, 0.22); background: #0d0b09; color: #f8efe1; padding: 0 0.8rem; }
+textarea { width: 100%; min-height: 7rem; border-radius: 0.8rem; border: 1px solid rgba(210, 174, 101, 0.22); background: #0d0b09; color: #f8efe1; padding: 0.8rem; resize: vertical; }
+.checkbox-row { grid-template-columns: auto 1fr; align-items: center; }
+.checkbox-row input { width: auto; }
+.admin-button, .row-actions button { display: inline-flex; align-items: center; justify-content: center; min-height: 2.8rem; border-radius: 999px; border: 1px solid rgba(210, 174, 101, 0.3); background: #d6b06a; color: #0b0a09; font-weight: 800; padding: 0 1rem; text-decoration: none; cursor: pointer; }
+.admin-message { border: 1px solid rgba(210, 174, 101, 0.3); background: #231c14; padding: 1rem; border-radius: 1rem; }
+.vehicle-admin-list { display: grid; gap: 0.8rem; }
+.vehicle-edit-form { display: grid; gap: 0.9rem; padding: 1rem; border: 1px solid rgba(210, 174, 101, 0.18); border-radius: 1rem; background: #110e0b; }
+.vehicle-edit-form h3 { margin: 0; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; }
+.form-actions { justify-content: flex-start !important; }
+.admin-car-row { display: grid; grid-template-columns: 7rem 1fr auto; gap: 1rem; align-items: center; padding: 0.8rem; border: 1px solid rgba(210, 174, 101, 0.18); border-radius: 1rem; }
+.admin-car-row img { width: 7rem; aspect-ratio: 1.4; object-fit: cover; border-radius: 0.7rem; background: #2a241d; }
+.admin-car-row span { display: block; color: #c9bda6; margin-top: 0.25rem; }
+.row-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: flex-end; }
+.row-actions button { min-height: 2.2rem; padding: 0 0.7rem; font-size: 0.92rem; background: transparent; color: #f8efe1; }
+.login-body { display: grid; place-items: center; padding: 1rem; }
+.login-card { width: min(100%, 28rem); display: grid; gap: 1rem; border: 1px solid rgba(210, 174, 101, 0.25); border-radius: 1.5rem; background: #17130f; padding: 2rem; }
+@media (max-width: 900px) { .admin-sidebar { position: static; width: auto; flex-direction: row; flex-wrap: wrap; } .admin-main { margin-left: 0; } .admin-grid, .admin-car-row { grid-template-columns: 1fr; } }

@@ -1,0 +1,22 @@
+---
+import '@/styles/admin.css';
+---
+
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Car Site Admin</title>
+  </head>
+  <body>
+    <aside class="admin-sidebar">
+      <a href="/admin" class="admin-logo">Car Site</a>
+      <a href="/">查看前台</a>
+      <form method="post" action="/api/admin/logout">
+        <button type="submit">登出</button>
+      </form>
+    </aside>
+    <main class="admin-main"><slot /></main>
+  </body>
+</html>

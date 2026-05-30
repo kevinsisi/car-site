@@ -1,0 +1,69 @@
+---
+import VehicleCard from '@/components/VehicleCard.astro';
+import PublicLayout from '@/layouts/PublicLayout.astro';
+import { getSettings } from '@/lib/settings';
+import { listMonthlyRecommendedVehicles, listPublicBrands, listPublicVehicles, listPublicVehiclesByBrand } from '@/lib/vehicles';
+
+const settings = await getSettings();
+const activeBrand = Astro.url.searchParams.get('brand') || '';
+const activeTab = activeBrand ? 'brand' : Astro.url.searchParams.get('tab') === 'recommended' ? 'recommended' : 'all';
+const allVehicles = await listPublicVehicles();
+const recommendedVehicles = await listMonthlyRecommendedVehicles();
+const brands = await listPublicBrands();
+const vehicles = activeTab === 'recommended' ? recommendedVehicles : activeBrand ? await listPublicVehiclesByBrand(activeBrand) : allVehicles;
+const activeBrandLabel = brands.find((brand) => brand.urlSlug === activeBrand)?.displayName;
+---
+
+<PublicLayout title={`嚴選車輛｜${settings.siteName}`}>
+  <section class="page-hero compact luxury-enter">
+    <p class="eyebrow">{settings.listingEyebrow}</p>
+    <h1>{settings.listingTitle}</h1>
+    <p>{settings.listingLead}</p>
+  </section>
+  <section class="inventory-shell">
+    <button class="filter-toggle" type="button" aria-expanded="false" aria-controls="brand-filter-panel">Brands</button>
+    <aside class="brand-filter-panel" id="brand-filter-panel" aria-label="Brand filters">
+      <div class="filter-panel__header">
+        <p class="eyebrow">Filter</p>
+        <button class="filter-close" type="button" aria-label="Close brand filters">Close</button>
+      </div>
+      <nav class="brand-list" aria-label="Brand filters">
+        <a class={activeTab === 'all' ? 'is-active' : ''} href="/cars"><span>All</span><strong>{allVehicles.length}</strong></a>
+        <a class={activeTab === 'recommended' ? 'is-active' : ''} href="/cars?tab=recommended"><span>Monthly Picks</span><strong>{recommendedVehicles.length}</strong></a>
+        {brands.map((brand) => (
+          <a class={activeBrand === brand.urlSlug ? 'is-active' : ''} href={`/cars?brand=${brand.urlSlug}`}><span>{brand.displayName}</span><strong>{brand.count}</strong></a>
+        ))}
+      </nav>
+    </aside>
+    <div class="filter-scrim" aria-hidden="true"></div>
+    <div class="inventory-content">
+      <div class="inventory-toolbar">
+        <div>
+          <p class="eyebrow">Selection</p>
+          <h2>{activeBrandLabel || (activeTab === 'recommended' ? 'Monthly Picks' : 'All Vehicles')}</h2>
+        </div>
+        <span>{vehicles.length} cars</span>
+      </div>
+      <div class="vehicle-grid listing-grid">
+        {vehicles.map((vehicle) => <VehicleCard vehicle={vehicle} />)}
+      </div>
+    </div>
+  </section>
+  <script>
+    const shell = document.querySelector('.inventory-shell');
+    const toggle = document.querySelector('.filter-toggle');
+    const close = document.querySelector('.filter-close');
+    const scrim = document.querySelector('.filter-scrim');
+    const setOpen = (open: boolean) => {
+      shell?.classList.toggle('is-filter-open', open);
+      toggle?.setAttribute('aria-expanded', String(open));
+      document.body.classList.toggle('has-open-filter', open);
+    };
+    toggle?.addEventListener('click', () => setOpen(true));
+    close?.addEventListener('click', () => setOpen(false));
+    scrim?.addEventListener('click', () => setOpen(false));
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') setOpen(false);
+    });
+  </script>
+</PublicLayout>

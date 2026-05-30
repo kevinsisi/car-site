@@ -1,0 +1,41 @@
+---
+import PublicLayout from '@/layouts/PublicLayout.astro';
+import VehicleCard from '@/components/VehicleCard.astro';
+import { getSettings } from '@/lib/settings';
+import { listPublicVehicles } from '@/lib/vehicles';
+
+const settings = await getSettings();
+const vehicles = await listPublicVehicles();
+const hero = vehicles[0];
+---
+
+<PublicLayout title={`私人高級車顧問｜${settings.siteName}`}>
+  <section class="hero luxury-enter">
+    <div class="hero__copy">
+      <p class="eyebrow">{settings.homepageEyebrow}</p>
+      <h1>{settings.homepageTitle}</h1>
+      <p class="hero__lead">{settings.homepageLead}</p>
+      <div class="cta-row">
+        <a class="button button--primary" href={settings.lineUrl}>LINE 洽詢</a>
+        <a class="button button--ghost" href={`tel:${settings.phoneNumber}`}>立即來電</a>
+      </div>
+    </div>
+    <div class="hero__media">
+      {hero?.coverImage && <img src={hero.coverImage.url} alt={hero.title} fetchpriority="high" decoding="async" />}
+      <div class="hero__badge">{settings.homepageBadge}</div>
+    </div>
+  </section>
+
+  <section class="salon-note reveal-section">
+    <p>{settings.homepageNote}</p>
+  </section>
+
+  <section class="section-heading reveal-section">
+    <p class="eyebrow">{settings.featuredEyebrow}</p>
+    <h2>{settings.featuredTitle}</h2>
+    <a href="/cars">查看全部</a>
+  </section>
+  <div class="vehicle-grid">
+    {vehicles.slice(0, 3).map((vehicle) => <VehicleCard vehicle={vehicle} />)}
+  </div>
+</PublicLayout>

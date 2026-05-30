@@ -1,0 +1,62 @@
+---
+import { getSettings } from '@/lib/settings';
+import { styleVars, styles, templates } from '@/lib/theme';
+import '@/styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const settings = await getSettings();
+const title = Astro.props.title || settings.siteName;
+const description = Astro.props.description || '私人高級車顧問，嚴選高端中古車款。';
+const template = templates[settings.activeTemplate];
+const style = styles[settings.activeStyle];
+const themeColor = settings.activeStyle === 'carsmeet-blue' ? '#2f66ad' : '#070605';
+---
+
+<!doctype html>
+<html lang="zh-Hant" class={`${template.layoutClass} ${style.className}`} style={styleVars(settings.activeStyle)}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content={themeColor} />
+    <title>{title}</title>
+  </head>
+  <body id="top">
+    <header class="site-header">
+      <a class="brand-mark" href="/">{settings.siteName}</a>
+      <nav aria-label="主選單">
+        <a href="/cars">車輛收藏</a>
+        <a href={settings.lineUrl}>LINE 洽詢</a>
+        <a href={`tel:${settings.phoneNumber}`}>電話</a>
+      </nav>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <p>{settings.salespersonName}</p>
+      <p>{settings.footerDisclaimer}</p>
+    </footer>
+    <a class="back-to-top" href="#top" aria-label="回到最上方">↑</a>
+    <div class="mobile-contact-bar" aria-label="快速聯絡">
+      <a href={settings.lineUrl}>LINE 洽詢</a>
+      <a href={`tel:${settings.phoneNumber}`}>立即來電</a>
+    </div>
+    <script>
+      const backToTop = document.querySelector('.back-to-top');
+      const mobileContactBar = document.querySelector('.mobile-contact-bar');
+      const header = document.querySelector('.site-header');
+      const updateBackToTop = () => {
+        const isPastHeader = window.scrollY > (header?.clientHeight || 80);
+        backToTop?.classList.toggle('is-visible', isPastHeader);
+        mobileContactBar?.classList.toggle('is-visible', window.scrollY > 180);
+      };
+      updateBackToTop();
+      window.addEventListener('scroll', updateBackToTop, { passive: true });
+    </script>
+  </body>
+</html>

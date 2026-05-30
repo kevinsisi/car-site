@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.astro/
+.env
+.env.*
+data/
+*.db
+*.db-shm
+*.db-wal
+*.tgz
+viewport-*.png
