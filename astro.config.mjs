@@ -7,6 +7,9 @@ export default defineConfig({
   adapter: node({ mode: 'standalone' }),
   integrations: [svelte()],
   prefetch: true,
+  security: {
+    checkOrigin: false,
+  },
   vite: {
     ssr: {
       external: ['better-sqlite3'],

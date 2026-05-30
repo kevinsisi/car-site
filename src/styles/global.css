@@ -175,6 +175,13 @@ img { display: block; max-width: 100%; }
 .vehicle-card h2 { margin: 0.45rem 0; font-size: clamp(1.35rem, 2.3vw, 2rem); line-height: 1.12; }
 
 .spec-line { color: var(--muted); line-height: 1.6; }
+.spec-list { display: grid; gap: 0.62rem; margin: 1rem 0 0; padding: 0; list-style: none; }
+.spec-item { display: grid; grid-template-columns: 2.15rem minmax(0, 1fr); align-items: center; gap: 0.72rem; color: var(--muted); }
+.spec-icon { width: 2.15rem; height: 2.15rem; display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--line) 72%, transparent); border-radius: 0.7rem; background: color-mix(in srgb, var(--surface-soft) 52%, var(--surface)); color: var(--accent-strong); }
+.spec-icon svg { width: 1.22rem; height: 1.22rem; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.spec-copy { min-width: 0; display: grid; gap: 0.05rem; line-height: 1.25; }
+.spec-copy span { color: color-mix(in srgb, var(--muted) 82%, transparent); font-size: 0.78rem; font-weight: 760; letter-spacing: 0.08em; text-transform: uppercase; }
+.spec-copy strong { color: var(--text); font-size: 1rem; font-weight: 760; overflow-wrap: anywhere; }
 
 .card-footer { display: flex; justify-content: space-between; gap: 1rem; color: var(--accent-strong); font-weight: 800; margin-top: 1.2rem; }
 

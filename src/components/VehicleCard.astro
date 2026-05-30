@@ -7,6 +7,11 @@ interface Props {
 
 const { vehicle } = Astro.props;
 const image = vehicle.coverImage;
+const specs = [
+  { label: '年份', value: vehicle.year, icon: 'calendar' },
+  { label: '里程', value: vehicle.mileage, icon: 'gauge' },
+  { label: '車況', value: vehicle.condition, icon: 'car' },
+].filter((spec) => spec.value);
 ---
 
 <article class="vehicle-card reveal-card">
@@ -15,11 +20,34 @@ const image = vehicle.coverImage;
       {image ? <img src={image.url} alt={image.alt || vehicle.title} loading="lazy" decoding="async" /> : <div class="image-placeholder">Awaiting Image</div>}
       {vehicle.monthlyRecommended && <span class="vehicle-badge">本月推薦</span>}
     </div>
-    <div class="vehicle-card__body">
-      <p class="eyebrow">{vehicle.brandDisplayName}</p>
-      <h2>{vehicle.title}</h2>
-      <p class="spec-line">{[vehicle.year, vehicle.mileage, vehicle.condition].filter(Boolean).join(' / ')}</p>
-      <div class="card-footer">
+      <div class="vehicle-card__body">
+        <p class="eyebrow">{vehicle.brandDisplayName}</p>
+        <h2>{vehicle.title}</h2>
+        <ul class="spec-list" aria-label="車輛資訊">
+          {specs.map((spec) => (
+            <li class="spec-item">
+              <span class="spec-icon" aria-hidden="true">
+                {spec.icon === 'calendar' && (
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M7 3v3M17 3v3M4.5 9.5h15M6.5 5.5h11A2.5 2.5 0 0 1 20 8v9.5a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5V8a2.5 2.5 0 0 1 2.5-2.5Z" />
+                  </svg>
+                )}
+                {spec.icon === 'gauge' && (
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M4.8 16.6a8 8 0 1 1 14.4 0M12 12.8l4.2-4.2M7.6 15.8h8.8" />
+                  </svg>
+                )}
+                {spec.icon === 'car' && (
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M5 14l1.6-4.2A2.8 2.8 0 0 1 9.2 8h5.6a2.8 2.8 0 0 1 2.6 1.8L19 14M4.5 14h15v4.2H17M7 18.2H5.5M7.2 14.2h.1M16.7 14.2h.1M7 18.2a1.8 1.8 0 1 0 0-3.6 1.8 1.8 0 0 0 0 3.6ZM17 18.2a1.8 1.8 0 1 0 0-3.6 1.8 1.8 0 0 0 0 3.6Z" />
+                  </svg>
+                )}
+              </span>
+              <span class="spec-copy"><span>{spec.label}</span><strong>{spec.value}</strong></span>
+            </li>
+          ))}
+        </ul>
+        <div class="card-footer">
         <span>價格請洽</span>
         <span>查看詳情</span>
       </div>
