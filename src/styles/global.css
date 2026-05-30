@@ -88,11 +88,11 @@ img { display: block; max-width: 100%; }
 
 .hero h1,
 .page-hero h1,
-.detail-copy h1 { font-size: clamp(2.35rem, 6.4vw, 5.6rem); line-height: 0.98; letter-spacing: -0.06em; margin: 0.5rem 0 1.4rem; overflow-wrap: anywhere; }
+.detail-copy h1 { font-size: clamp(2.35rem, 6.4vw, 5.6rem); line-height: 0.94; letter-spacing: -0.035em; margin: 0.5rem 0 1.25rem; overflow-wrap: anywhere; }
 
 .hero__lead,
 .page-hero p,
-.detail-headline { color: var(--muted); font-size: clamp(1.05rem, 2.2vw, 1.35rem); line-height: 1.85; max-width: 42rem; }
+.detail-headline { color: var(--muted); font-size: clamp(1.05rem, 2.2vw, 1.35rem); line-height: 1.5; max-width: 42rem; }
 
 .hero__copy,
 .detail-copy,
@@ -303,7 +303,10 @@ img { display: block; max-width: 100%; }
   .page-hero { max-width: calc(100vw - 2.5rem); }
   .hero h1,
   .page-hero h1,
-  .detail-copy h1 { max-width: calc(100vw - 2.5rem); font-size: clamp(1.35rem, 5.6vw, 1.55rem); line-height: 1.22; letter-spacing: 0; line-break: anywhere; overflow-wrap: break-word; word-break: break-word; white-space: normal; }
+  .detail-copy h1 { max-width: calc(100vw - 2.5rem); font-size: clamp(1.35rem, 5.6vw, 1.55rem); line-height: 1.08; letter-spacing: 0; line-break: anywhere; overflow-wrap: break-word; word-break: break-word; white-space: normal; }
+  .hero__lead,
+  .page-hero p,
+  .detail-headline { line-height: 1.38; }
   .hero__copy { order: 2; }
   .hero__media { order: 1; }
   .hero__media img,
