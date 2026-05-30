@@ -120,6 +120,7 @@ img { display: block; max-width: 100%; }
 .button:active { transform: translateY(0) scale(0.985); filter: saturate(0.96); }
 
 .button--primary { background: var(--accent); color: var(--bg); font-weight: 800; }
+.detail-contact-button svg { display: none; }
 
 .button--ghost { border: 1px solid var(--line); color: var(--text); }
 .button--ghost:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); background: color-mix(in srgb, var(--surface) 88%, transparent); }
@@ -307,6 +308,12 @@ img { display: block; max-width: 100%; }
   .hero__media { order: 1; }
   .hero__media img,
   .detail-cover img { max-height: 70vh; }
+  .detail-actions { gap: 0.72rem; margin-top: 1.55rem; }
+  .detail-contact-button { width: 3.35rem; height: 3.35rem; min-height: 3.35rem; padding: 0; font-size: 0; line-height: 0; }
+  .detail-contact-button svg { width: 1.45rem; height: 1.45rem; display: block; fill: none; stroke: currentColor; stroke-width: 1.95; stroke-linecap: round; stroke-linejoin: round; }
+  .detail-contact-button svg.brand-glyph { width: 1.7rem; height: 1.7rem; fill: currentColor; stroke: none; }
+  .detail-contact-button .social-cutout { fill: var(--accent); }
+  .detail-contact-button span { display: none; }
   .inventory-shell { display: block; padding: 0 clamp(1.25rem, 5vw, 6rem) 5rem; }
   .mobile-filter-strip { position: sticky; top: calc(5.75rem + env(safe-area-inset-top)); z-index: 15; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.35rem; margin: -0.35rem 0 1.4rem; padding: 0.3rem; border: 1px solid color-mix(in srgb, var(--line) 65%, transparent); border-radius: 1rem; background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: blur(18px); }
   .mobile-filter-strip a,
@@ -345,18 +352,18 @@ img { display: block; max-width: 100%; }
   .promise-grid,
   .contact-card-grid { grid-template-columns: 1fr; padding-bottom: 3rem; }
   .contact-strip { display: grid; margin-bottom: 3rem; }
-  .mobile-contact-bar { position: fixed; right: max(0.7rem, env(safe-area-inset-right)); bottom: max(0.75rem, env(safe-area-inset-bottom)); z-index: 30; display: grid; gap: 0.5rem; width: 3.25rem; opacity: 0; pointer-events: none; transform: translateY(0.7rem); transition: opacity 180ms ease, transform 180ms ease; }
+  .mobile-contact-bar { position: fixed; right: max(0.7rem, env(safe-area-inset-right)); bottom: max(5.25rem, calc(env(safe-area-inset-bottom) + 4.75rem)); z-index: 30; display: grid; gap: 0.42rem; width: 2.72rem; opacity: 0; pointer-events: none; transform: translateY(0.7rem); transition: opacity 180ms ease, transform 180ms ease; }
   .mobile-contact-bar.is-visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
-  .mobile-action { width: 3.25rem; height: 3.25rem; display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--line) 72%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--surface) 86%, transparent); color: var(--accent-strong); box-shadow: 0 0.8rem 2rem rgba(20, 35, 60, 0.16); backdrop-filter: blur(18px); }
+  .mobile-action { width: 2.72rem; height: 2.72rem; display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--line) 72%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--surface) 86%, transparent); color: var(--accent-strong); box-shadow: 0 0.65rem 1.45rem rgba(20, 35, 60, 0.14); backdrop-filter: blur(18px); }
   .mobile-action { font-size: 0; line-height: 0; }
   .mobile-action--line { background: var(--accent); color: var(--surface); border-color: var(--accent); }
   .mobile-action--line .social-cutout { fill: var(--accent); }
-  .mobile-action svg { width: 1.34rem; height: 1.34rem; fill: none; stroke: currentColor; stroke-width: 1.95; stroke-linecap: round; stroke-linejoin: round; }
-  .mobile-action svg.brand-glyph { width: 1.58rem; height: 1.58rem; fill: currentColor; stroke: none; }
+  .mobile-action svg { width: 1.12rem; height: 1.12rem; fill: none; stroke: currentColor; stroke-width: 1.95; stroke-linecap: round; stroke-linejoin: round; }
+  .mobile-action svg.brand-glyph { width: 1.38rem; height: 1.38rem; fill: currentColor; stroke: none; }
   .detail-share-button { display: none; }
   .mobile-action:hover { transform: translateY(-2px); box-shadow: 0 1rem 2.4rem rgba(0, 0, 0, 0.2); }
   .mobile-action:active { transform: translateY(0) scale(0.96); }
-  .back-to-top { right: max(0.85rem, env(safe-area-inset-right)); bottom: calc(max(0.85rem, env(safe-area-inset-bottom)) + 7.1rem); }
+  .back-to-top { right: max(0.85rem, env(safe-area-inset-right)); bottom: calc(max(5.25rem, env(safe-area-inset-bottom) + 4.75rem) + 9.5rem); }
   .site-footer { display: grid; gap: 0.55rem; padding: 1rem clamp(1.25rem, 5vw, 6rem) calc(1rem + env(safe-area-inset-bottom)); font-size: 0.72rem; }
   .footer-meta { justify-items: start; }
   .social-icons { justify-content: start; }

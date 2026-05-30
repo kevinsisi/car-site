@@ -12,20 +12,31 @@ if (!vehicle || !['published', 'sold'].includes(vehicle.status)) {
 const settings = await getSettings();
 const shareUrl = vehicleShareUrl(vehicle);
 const shareText = formatVehicleShareText(vehicle, settings.shareMessageTemplate, shareUrl);
+const knownSpecs: Record<string, Record<string, string>> = {
+  B181: { warranty: '總代理車源', spec: 'Continental GT V8 Mulliner', body: 'GT Coupe', fuel: '汽油', doorsSeats: '2門 / 4座', cylinders: 'V8', horsepower: '550 hp' },
+  B176: { warranty: '總代理車源', spec: 'Phantom Tranquillity', body: 'Luxury Saloon', fuel: '汽油', doorsSeats: '4門 / 5座', cylinders: 'V12', horsepower: '571 hp' },
+  B175: { warranty: '性能車況確認', spec: 'Huracan EVO', body: 'Supercar Coupe', fuel: '汽油', doorsSeats: '2門 / 2座', cylinders: 'V10', horsepower: '640 hp' },
+  B174: { warranty: '總代理車源', spec: 'Flying Spur V8 S', body: 'Luxury Saloon', fuel: '汽油', doorsSeats: '4門 / 5座', cylinders: 'V8', horsepower: '528 hp' },
+  B173: { warranty: '新世代車源', spec: '718 Cayman', body: 'Sports Coupe', fuel: '汽油', doorsSeats: '2門 / 2座', cylinders: '水平對臥4缸', horsepower: '300 hp' },
+  B171: { warranty: '新世代旗艦車源', spec: 'Maybach GLS600', body: 'Luxury SUV', fuel: '汽油', doorsSeats: '5門 / 4座', cylinders: 'V8', horsepower: '557 hp' },
+  B180: { warranty: '頂級性能車源', spec: 'Purosangue', body: 'Ferrari 4-door GT', fuel: '汽油', doorsSeats: '4門 / 4座', cylinders: 'V12', horsepower: '725 hp' },
+};
+const known = knownSpecs[vehicle.slug] || {};
+const advisorDescription = vehicle.description.replace(/carsmeet/gi, '既有庫存').replace(/此車由既有庫存 現有庫存匯入，?\s*/g, '');
 const specRows = [
-  ['年份', vehicle.year || '請洽詢'],
-  ['里程', vehicle.mileage || '請洽詢'],
-  ['保固', '請洽詢'],
-  ['規格', vehicle.headline || '請洽詢'],
-  ['車型', [vehicle.model, vehicle.subModel].filter(Boolean).join(' ') || '請洽詢'],
-  ['燃料', '請洽詢'],
-  ['外觀顏色', vehicle.exteriorColor || '請洽詢'],
-  ['內裝顏色', vehicle.interiorColor || '請洽詢'],
-  ['車門 / 座位', '請洽詢'],
-  ['缸數', '請洽詢'],
-  ['馬力', '請洽詢'],
+  ['年份', vehicle.year],
+  ['里程', vehicle.mileage],
+  ['保固', known.warranty],
+  ['規格', known.spec || vehicle.headline],
+  ['車型', known.body || [vehicle.model, vehicle.subModel].filter(Boolean).join(' ')],
+  ['燃料', known.fuel],
+  ['外觀顏色', vehicle.exteriorColor],
+  ['內裝顏色', vehicle.interiorColor],
+  ['車門 / 座位', known.doorsSeats],
+  ['缸數', known.cylinders],
+  ['馬力', known.horsepower],
   ['價格', '價格請洽'],
-];
+].filter(([, value]) => value);
 ---
 
 <PublicLayout title={`${vehicle.title}｜${settings.siteName}`} description={vehicle.headline || vehicle.description}>
@@ -36,8 +47,14 @@ const specRows = [
         <h1>{vehicle.title}</h1>
         <p class="detail-headline">{vehicle.headline || vehicle.condition}</p>
         <div class="detail-actions">
-          <a class="button button--primary" href={settings.lineUrl}>LINE 洽詢此車</a>
-          <a class="button button--ghost" href={`tel:${settings.phoneNumber}`}>電話聯絡</a>
+          <a class="button button--primary detail-contact-button" href={settings.lineUrl} aria-label="LINE 洽詢此車">
+            <svg class="brand-glyph" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M24 6C13.5 6 5 12.9 5 21.4c0 7.6 6.7 14 15.8 15.2.6.1 1.4.4 1.6.9.2.5.1 1.2.1 1.7l-.3 2c-.1.6-.5 2.3 1.7 1.3 2.2-1 11.7-6.9 16-11.8 3-3.3 4.1-6.4 4.1-9.3C43 12.9 34.5 6 24 6Z" /><path class="social-cutout" d="M13.4 26.2h6v-2.4h-3.3v-8.1h-2.7v10.5Zm7.2 0h2.7V15.7h-2.7v10.5Zm4.7 0H28v-6l4.8 6h2.4V15.7h-2.7v5.9l-4.7-5.9h-2.5v10.5Zm11.4 0h6.2v-2.3h-3.5v-1.8h3.1v-2.2h-3.1V18h3.5v-2.3h-6.2v10.5Z" /></svg>
+            <span>LINE 洽詢此車</span>
+          </a>
+          <a class="button button--ghost detail-contact-button" href={`tel:${settings.phoneNumber}`} aria-label="電話聯絡">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7.4 4.8 9.6 9c.3.6.2 1.3-.3 1.8l-1.1 1.1a12.3 12.3 0 0 0 4.9 4.9l1.1-1.1c.5-.5 1.2-.6 1.8-.3l4.2 2.2c.7.4 1 1.2.8 1.9-.4 1.5-1.7 2.5-3.2 2.5C9.1 22 2 14.9 2 6.2 2 4.7 3 3.4 4.5 3c.8-.2 1.6.1 1.9.8Z" /></svg>
+            <span>電話聯絡</span>
+          </a>
           <ShareButton class="detail-share-button" title={vehicle.title} url={shareUrl} text={shareText} />
         </div>
       </div>
@@ -59,10 +76,7 @@ const specRows = [
         <p class="eyebrow">{settings.detailNotesEyebrow}</p>
         <h2>{settings.detailNotesTitle}</h2>
       </div>
-      <p>{vehicle.description}</p>
-    </section>
-    <section class="feature-list reveal-section">
-      {vehicle.features.map((feature) => <span>{feature}</span>)}
+      <p>{advisorDescription}</p>
     </section>
     <section class="gallery reveal-section">
       {vehicle.images.map((image) => <img src={image.url} alt={image.alt || vehicle.title} loading="lazy" decoding="async" />)}
