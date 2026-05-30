@@ -28,7 +28,9 @@ button,
 .brand-list a,
 .mobile-filter-strip a,
 .vehicle-card,
+.social-icon,
 .back-to-top,
+.mobile-action,
 .mobile-contact-bar a {
   -webkit-tap-highlight-color: transparent;
   transition:
@@ -226,9 +228,15 @@ img { display: block; max-width: 100%; }
 .site-footer p { max-width: 34rem; margin: 0; text-align: right; }
 .footer-meta { justify-items: end; }
 .social-icons { display: flex !important; grid-auto-flow: column; gap: 0.4rem !important; justify-content: end; }
-.social-icon { width: 2.15rem; height: 2.15rem; display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--line) 62%, transparent); border-radius: 999px; color: var(--muted); background: color-mix(in srgb, var(--surface) 70%, transparent); }
-.social-icon svg { width: 1.05rem; height: 1.05rem; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.social-icon { width: 2.15rem; height: 2.15rem; display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--line) 62%, transparent); border-radius: 999px; color: color-mix(in srgb, var(--muted) 92%, transparent); background: color-mix(in srgb, var(--surface) 70%, transparent); }
+.social-icon svg { width: 1.05rem; height: 1.05rem; fill: currentColor; stroke: none; }
+.social-cutout { fill: var(--surface); }
 .social-icon:hover { color: var(--accent-strong); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); transform: translateY(-1px); }
+.social-icon--line:hover { color: #06c755; }
+.social-icon--instagram:hover { color: #e4405f; }
+.social-icon--facebook:hover { color: #1877f2; }
+.social-icon--threads:hover { color: var(--text); }
+.social-icon--tiktok:hover { color: #111111; }
 .share-toast { position: fixed; left: 50%; bottom: max(1rem, env(safe-area-inset-bottom)); z-index: 80; border: 1px solid var(--line); border-radius: 999px; padding: 0.75rem 1rem; background: color-mix(in srgb, var(--surface) 92%, transparent); color: var(--text); box-shadow: 0 1rem 2.8rem rgba(20, 35, 60, 0.18); opacity: 0; pointer-events: none; transform: translate(-50%, 0.6rem); transition: opacity 180ms ease, transform 180ms ease; }
 .share-toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
 .promise-grid,
@@ -342,7 +350,9 @@ img { display: block; max-width: 100%; }
   .mobile-action { width: 3.25rem; height: 3.25rem; display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--line) 72%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--surface) 86%, transparent); color: var(--accent-strong); box-shadow: 0 0.8rem 2rem rgba(20, 35, 60, 0.16); backdrop-filter: blur(18px); }
   .mobile-action { font-size: 0; line-height: 0; }
   .mobile-action--line { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+  .mobile-action--line .social-cutout { fill: var(--accent); }
   .mobile-action svg { width: 1.34rem; height: 1.34rem; fill: none; stroke: currentColor; stroke-width: 1.95; stroke-linecap: round; stroke-linejoin: round; }
+  .mobile-action svg.brand-glyph { width: 1.58rem; height: 1.58rem; fill: currentColor; stroke: none; }
   .mobile-action:hover { transform: translateY(-2px); box-shadow: 0 1rem 2.4rem rgba(0, 0, 0, 0.2); }
   .mobile-action:active { transform: translateY(0) scale(0.96); }
   .back-to-top { right: max(0.85rem, env(safe-area-inset-right)); bottom: calc(max(0.85rem, env(safe-area-inset-bottom)) + 7.1rem); }

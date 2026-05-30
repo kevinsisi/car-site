@@ -7,6 +7,10 @@ export interface SiteSettings {
   siteName: string;
   salespersonName: string;
   lineUrl: string;
+  instagramUrl: string;
+  facebookUrl: string;
+  threadsUrl: string;
+  tiktokUrl: string;
   phoneNumber: string;
   homepageEyebrow: string;
   homepageTitle: string;
@@ -32,6 +36,10 @@ const defaults: SiteSettings = {
   siteName: 'Private Motor Salon',
   salespersonName: '私人車庫顧問',
   lineUrl: '#',
+  instagramUrl: 'https://www.instagram.com/',
+  facebookUrl: 'https://www.facebook.com/',
+  threadsUrl: 'https://www.threads.net/',
+  tiktokUrl: 'https://www.tiktok.com/',
   phoneNumber: '+886900000000',
   homepageEyebrow: 'Private Premium Car Advisory',
   homepageTitle: '為成熟買家嚴選真正值得收藏的高級座駕',
@@ -57,10 +65,15 @@ export async function getSettings(): Promise<SiteSettings> {
   const rows = await db.select().from(siteSettings);
   const map = new Map(rows.map((row) => [row.key, row.value]));
   const importBehavior = map.get('importBehavior');
+  const settingValue = (key: keyof SiteSettings, fallback: string) => (map.has(key) ? map.get(key) || '' : fallback);
   return {
     siteName: map.get('siteName') || defaults.siteName,
     salespersonName: map.get('salespersonName') || defaults.salespersonName,
     lineUrl: map.get('lineUrl') || defaults.lineUrl,
+    instagramUrl: settingValue('instagramUrl', defaults.instagramUrl),
+    facebookUrl: settingValue('facebookUrl', defaults.facebookUrl),
+    threadsUrl: settingValue('threadsUrl', defaults.threadsUrl),
+    tiktokUrl: settingValue('tiktokUrl', defaults.tiktokUrl),
     phoneNumber: map.get('phoneNumber') || defaults.phoneNumber,
     homepageEyebrow: map.get('homepageEyebrow') || defaults.homepageEyebrow,
     homepageTitle: map.get('homepageTitle') || defaults.homepageTitle,

@@ -18,6 +18,10 @@
     siteName: settings.siteName,
     salespersonName: settings.salespersonName,
     lineUrl: settings.lineUrl,
+    instagramUrl: settings.instagramUrl,
+    facebookUrl: settings.facebookUrl,
+    threadsUrl: settings.threadsUrl,
+    tiktokUrl: settings.tiktokUrl,
     phoneNumber: settings.phoneNumber,
     homepageEyebrow: settings.homepageEyebrow,
     homepageTitle: settings.homepageTitle,
@@ -168,6 +172,11 @@
     <label>網站名稱 <input bind:value={settingsForm.siteName} /></label>
     <label>業務顯示名稱 <input bind:value={settingsForm.salespersonName} /></label>
     <label>LINE URL <input bind:value={settingsForm.lineUrl} /></label>
+    <label>Instagram URL <input bind:value={settingsForm.instagramUrl} /></label>
+    <label>Facebook URL <input bind:value={settingsForm.facebookUrl} /></label>
+    <label>Threads URL <input bind:value={settingsForm.threadsUrl} /></label>
+    <label>TikTok URL <input bind:value={settingsForm.tiktokUrl} /></label>
+    <p class="form-hint">社群 URL 留空時，前台頁尾不顯示該平台。</p>
     <label>電話 <input bind:value={settingsForm.phoneNumber} /></label>
 
     <h3>首頁文案</h3>
