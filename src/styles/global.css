@@ -353,6 +353,7 @@ img { display: block; max-width: 100%; }
   .mobile-action--line .social-cutout { fill: var(--accent); }
   .mobile-action svg { width: 1.34rem; height: 1.34rem; fill: none; stroke: currentColor; stroke-width: 1.95; stroke-linecap: round; stroke-linejoin: round; }
   .mobile-action svg.brand-glyph { width: 1.58rem; height: 1.58rem; fill: currentColor; stroke: none; }
+  .detail-share-button { display: none; }
   .mobile-action:hover { transform: translateY(-2px); box-shadow: 0 1rem 2.4rem rgba(0, 0, 0, 0.2); }
   .mobile-action:active { transform: translateY(0) scale(0.96); }
   .back-to-top { right: max(0.85rem, env(safe-area-inset-right)); bottom: calc(max(0.85rem, env(safe-area-inset-bottom)) + 7.1rem); }
