@@ -38,7 +38,10 @@ const themeColor = settings.activeStyle === 'carsmeet-blue' ? '#2f66ad' : '#0706
       <slot />
     </main>
     <footer class="site-footer">
-      <p>{settings.salespersonName}</p>
+      <div>
+        <strong>{settings.salespersonName}</strong>
+        <span>公司地址：台北市信義區範例路 00 號 0 樓</span>
+      </div>
       <p>{settings.footerDisclaimer}</p>
     </footer>
     <a class="back-to-top" href="#top" aria-label="回到最上方">↑</a>

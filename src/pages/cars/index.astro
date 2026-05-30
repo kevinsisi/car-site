@@ -21,7 +21,6 @@ const activeBrandLabel = brands.find((brand) => brand.urlSlug === activeBrand)?.
     <p>{settings.listingLead}</p>
   </section>
   <section class="inventory-shell">
-    <button class="filter-toggle" type="button" aria-expanded="false" aria-controls="brand-filter-panel">Brands</button>
     <aside class="brand-filter-panel" id="brand-filter-panel" aria-label="Brand filters">
       <div class="filter-panel__header">
         <p class="eyebrow">Filter</p>
@@ -37,6 +36,11 @@ const activeBrandLabel = brands.find((brand) => brand.urlSlug === activeBrand)?.
     </aside>
     <div class="filter-scrim" aria-hidden="true"></div>
     <div class="inventory-content">
+      <nav class="mobile-filter-strip" aria-label="車輛篩選">
+        <a class={activeTab === 'all' ? 'is-active' : ''} href="/cars">All</a>
+        <a class={activeTab === 'recommended' ? 'is-active' : ''} href="/cars?tab=recommended">Picks</a>
+        <button class={`filter-toggle ${activeBrandLabel ? 'is-active' : ''}`} type="button" aria-expanded="false" aria-controls="brand-filter-panel">{activeBrandLabel || 'Brands'}</button>
+      </nav>
       <div class="inventory-toolbar">
         <div>
           <p class="eyebrow">Selection</p>
