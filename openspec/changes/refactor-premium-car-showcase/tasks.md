@@ -3,6 +3,7 @@
 - [x] Add low-emphasis share icon buttons to vehicle cards.
 - [x] Add share action to vehicle detail CTA area.
 - [x] Add global native share/copy fallback behavior.
+- [x] Add configurable share message template with vehicle placeholders.
 - [x] Replace footer social links with icon-only controls.
 - [x] Add About page with service promises.
 - [x] Add Contact page with address, phone, LINE, and hours.

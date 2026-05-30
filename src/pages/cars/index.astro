@@ -2,6 +2,7 @@
 import VehicleCard from '@/components/VehicleCard.astro';
 import PublicLayout from '@/layouts/PublicLayout.astro';
 import { getSettings } from '@/lib/settings';
+import { formatVehicleShareText, vehicleShareUrl } from '@/lib/vehicle-share';
 import { listMonthlyRecommendedVehicles, listPublicBrands, listPublicVehicles, listPublicVehiclesByBrand } from '@/lib/vehicles';
 
 const settings = await getSettings();
@@ -49,7 +50,7 @@ const activeBrandLabel = brands.find((brand) => brand.urlSlug === activeBrand)?.
         <span>{vehicles.length} cars</span>
       </div>
       <div class="vehicle-grid listing-grid">
-        {vehicles.map((vehicle) => <VehicleCard vehicle={vehicle} />)}
+        {vehicles.map((vehicle) => <VehicleCard vehicle={vehicle} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle))} />)}
       </div>
     </div>
   </section>

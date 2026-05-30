@@ -20,6 +20,7 @@ export interface SiteSettings {
   listingLead: string;
   detailNotesEyebrow: string;
   detailNotesTitle: string;
+  shareMessageTemplate: string;
   footerDisclaimer: string;
   activeTemplate: TemplateId;
   activeStyle: StyleId;
@@ -44,6 +45,7 @@ const defaults: SiteSettings = {
   listingLead: '所有價格採專人洽詢。若您正在尋找特定品牌、年份或配置，建議直接 LINE 聯絡。',
   detailNotesEyebrow: 'Advisor Notes',
   detailNotesTitle: '顧問觀點',
+  shareMessageTemplate: '{車名}\n年份：{年份}\n品牌：{品牌}\n里程：{里程}\n價格請洽\n{網址}',
   footerDisclaimer: '所有車輛價格皆採專人洽詢，實際車況與配備以現場確認為準。',
   activeTemplate: 'private-salon',
   activeStyle: 'carsmeet-blue',
@@ -72,6 +74,7 @@ export async function getSettings(): Promise<SiteSettings> {
     listingLead: map.get('listingLead') || defaults.listingLead,
     detailNotesEyebrow: map.get('detailNotesEyebrow') || defaults.detailNotesEyebrow,
     detailNotesTitle: map.get('detailNotesTitle') || defaults.detailNotesTitle,
+    shareMessageTemplate: map.get('shareMessageTemplate') || defaults.shareMessageTemplate,
     footerDisclaimer: map.get('footerDisclaimer') || defaults.footerDisclaimer,
     activeTemplate: resolveTemplate(map.get('activeTemplate')),
     activeStyle: resolveStyle(map.get('activeStyle')),

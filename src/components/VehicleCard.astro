@@ -4,9 +4,10 @@ import ShareButton from './ShareButton.astro';
 
 interface Props {
   vehicle: VehicleView;
+  shareText?: string;
 }
 
-const { vehicle } = Astro.props;
+const { vehicle, shareText } = Astro.props;
 const image = vehicle.coverImage;
 const specs = [
   { label: '年份', value: vehicle.year, icon: 'calendar' },
@@ -54,5 +55,5 @@ const specs = [
       </div>
     </div>
   </a>
-  <ShareButton class="vehicle-share" title={vehicle.title} url={`/cars/${vehicle.slug}`} text={`${vehicle.title}｜${vehicle.year || vehicle.brandDisplayName}，價格請洽。`} />
+  <ShareButton class="vehicle-share" title={vehicle.title} url={`/cars/${vehicle.slug}`} text={shareText} />
 </article>

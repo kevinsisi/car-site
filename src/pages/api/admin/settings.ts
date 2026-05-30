@@ -23,6 +23,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     listingLead: String(body.listingLead || ''),
     detailNotesEyebrow: String(body.detailNotesEyebrow || ''),
     detailNotesTitle: String(body.detailNotesTitle || ''),
+    shareMessageTemplate: String(body.shareMessageTemplate || ''),
     footerDisclaimer: String(body.footerDisclaimer || ''),
     activeTemplate: resolveTemplate(body.activeTemplate),
     activeStyle: resolveStyle(body.activeStyle),

@@ -2,6 +2,7 @@
 import PublicLayout from '@/layouts/PublicLayout.astro';
 import ShareButton from '@/components/ShareButton.astro';
 import { getSettings } from '@/lib/settings';
+import { formatVehicleShareText, vehicleShareUrl } from '@/lib/vehicle-share';
 import { getVehicleBySlug } from '@/lib/vehicles';
 
 const vehicle = await getVehicleBySlug(Astro.params.slug || '');
@@ -9,6 +10,8 @@ if (!vehicle || !['published', 'sold'].includes(vehicle.status)) {
   return new Response('Not found', { status: 404 });
 }
 const settings = await getSettings();
+const shareUrl = vehicleShareUrl(vehicle);
+const shareText = formatVehicleShareText(vehicle, settings.shareMessageTemplate, shareUrl);
 const specRows = [
   ['年份', vehicle.year || '請洽詢'],
   ['里程', vehicle.mileage || '請洽詢'],
@@ -35,7 +38,7 @@ const specRows = [
         <div class="detail-actions">
           <a class="button button--primary" href={settings.lineUrl}>LINE 洽詢此車</a>
           <a class="button button--ghost" href={`tel:${settings.phoneNumber}`}>電話聯絡</a>
-          <ShareButton title={vehicle.title} url={`/cars/${vehicle.slug}`} text={`${vehicle.title}｜${vehicle.year || vehicle.brandDisplayName}，價格請洽。`} />
+          <ShareButton title={vehicle.title} url={shareUrl} text={shareText} />
         </div>
       </div>
       <div class="detail-cover">
