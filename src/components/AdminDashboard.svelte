@@ -15,6 +15,8 @@
   let message = $state('');
   let selectedId = $state<string | null>(null);
   let vehicleForm = $state(emptyVehicleForm());
+  let draggedImageIndex = $state<number | null>(null);
+  let isUploadingImages = $state(false);
   const shareTemplatePlaceholder = '{車名}\n年份：{年份}\n品牌：{品牌}\n里程：{里程}\n價格請洽\n{網址}';
   let brandAliasText = $state(brandAliases.map((item) => `${item.sourceBrand} = ${item.displayName} | ${item.urlSlug}`).join('\n'));
   let settingsForm = $state({
@@ -93,6 +95,60 @@
 
   function countStatus(status: VehicleView['status']) {
     return vehicles.filter((vehicle) => vehicle.status === status).length;
+  }
+
+  function imageUrls() {
+    return vehicleForm.imagesText.split('\n').map((item) => item.trim()).filter(Boolean);
+  }
+
+  function setImageUrls(urls: string[]) {
+    vehicleForm.imagesText = urls.filter(Boolean).join('\n');
+  }
+
+  async function uploadVehicleImages(event: Event) {
+    const input = event.currentTarget as HTMLInputElement;
+    const files = Array.from(input.files || []);
+    if (!files.length) return;
+    isUploadingImages = true;
+    message = '圖片上傳中...';
+    const formData = new FormData();
+    for (const file of files) formData.append('files', file);
+    const response = await fetch('/api/admin/media', { method: 'POST', body: formData });
+    const result = await response.json().catch(() => ({}));
+    if (response.ok && Array.isArray(result.urls)) {
+      setImageUrls([...imageUrls(), ...result.urls]);
+      message = `已上傳 ${result.urls.length} 張圖片`;
+    } else {
+      message = result.error || '圖片上傳失敗';
+    }
+    input.value = '';
+    isUploadingImages = false;
+  }
+
+  function moveImage(fromIndex: number, toIndex: number) {
+    const urls = imageUrls();
+    if (toIndex < 0 || toIndex >= urls.length || fromIndex === toIndex) return;
+    const [item] = urls.splice(fromIndex, 1);
+    urls.splice(toIndex, 0, item);
+    setImageUrls(urls);
+  }
+
+  function removeImage(index: number) {
+    const urls = imageUrls();
+    urls.splice(index, 1);
+    setImageUrls(urls);
+  }
+
+  function dropImage(index: number) {
+    if (draggedImageIndex === null) return;
+    moveImage(draggedImageIndex, index);
+    draggedImageIndex = null;
+  }
+
+  function previewStyleVars(styleId: keyof typeof styles) {
+    return Object.entries(styles[styleId].tokens)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join('; ');
   }
 
   function emptyVehicleForm() {
@@ -242,6 +298,34 @@
         {/each}
       </select>
     </label>
+    <div class={`theme-preview ${templates[settingsForm.activeTemplate].layoutClass}`} style={previewStyleVars(settingsForm.activeStyle)}>
+      <div class="theme-preview__topline">
+        <span>{templates[settingsForm.activeTemplate].label}</span>
+        <strong>{styles[settingsForm.activeStyle].label}</strong>
+      </div>
+      <div class="theme-preview__hero">
+        <div>
+          <p>PRIVATE MOTOR SALON</p>
+          <h4>{settingsForm.homepageTitle || '嚴選值得收藏的高級座駕'}</h4>
+          <small>{templates[settingsForm.activeTemplate].description}</small>
+        </div>
+        <div class="theme-preview__media">GT</div>
+      </div>
+      <div class="theme-preview__content">
+        <article>
+          <span>2023</span>
+          <strong>Continental GT V8 Mulliner</strong>
+          <small>26000km / 價格請洽</small>
+        </article>
+        <div class="theme-preview__specs">
+          <div><span>年份</span><strong>2023</strong></div>
+          <div><span>里程</span><strong>26000km</strong></div>
+          <div><span>車型</span><strong>GT Coupe</strong></div>
+          <div><span>價格</span><strong>價格請洽</strong></div>
+        </div>
+      </div>
+      <button type="button" class="theme-preview__cta">LINE 洽詢</button>
+    </div>
 
     <h3>匯入與公開狀態</h3>
     <label>API 匯入預設
@@ -309,7 +393,37 @@
       <label>顧問標題 <input bind:value={vehicleForm.headline} /></label>
       <label>顧問描述 <textarea bind:value={vehicleForm.description}></textarea></label>
       <label>配備亮點（每行一項） <textarea bind:value={vehicleForm.featuresText}></textarea></label>
-      <label>圖片 URL（每行一張，第一張作封面） <textarea bind:value={vehicleForm.imagesText}></textarea></label>
+      <div class="image-manager">
+        <div class="image-manager__header">
+          <div>
+            <strong>車輛圖片</strong>
+            <p class="form-hint">可上傳多張圖片，拖曳或用上下按鈕調整順序；第一張作封面。</p>
+          </div>
+          <label class="upload-button">
+            {isUploadingImages ? '上傳中...' : '上傳圖片'}
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onchange={uploadVehicleImages} disabled={isUploadingImages} />
+          </label>
+        </div>
+        {#if imageUrls().length}
+          <div class="image-sort-list">
+            {#each imageUrls() as url, index}
+              <article class="image-sort-item" class:is-dragging={draggedImageIndex === index} draggable="true" ondragstart={() => { draggedImageIndex = index; }} ondragover={(event) => event.preventDefault()} ondrop={() => dropImage(index)} ondragend={() => { draggedImageIndex = null; }}>
+                <img src={url} alt={`車輛圖片 ${index + 1}`} />
+                <div>
+                  <strong>{index === 0 ? '封面' : `第 ${index + 1} 張`}</strong>
+                  <span>{url}</span>
+                </div>
+                <div class="image-sort-actions">
+                  <button type="button" onclick={() => moveImage(index, index - 1)} disabled={index === 0}>上移</button>
+                  <button type="button" onclick={() => moveImage(index, index + 1)} disabled={index === imageUrls().length - 1}>下移</button>
+                  <button type="button" onclick={() => removeImage(index)}>移除</button>
+                </div>
+              </article>
+            {/each}
+          </div>
+        {/if}
+        <label>圖片 URL（進階，每行一張） <textarea bind:value={vehicleForm.imagesText}></textarea></label>
+      </div>
       <div class="row-actions form-actions">
         <button type="submit">儲存車輛</button>
         <button type="button" onclick={() => { selectedId = null; vehicleForm = emptyVehicleForm(); }}>清空</button>
