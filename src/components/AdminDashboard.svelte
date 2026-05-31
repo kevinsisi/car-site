@@ -13,6 +13,7 @@
   let message = $state('');
   let selectedId = $state<string | null>(null);
   let vehicleForm = $state(emptyVehicleForm());
+  const shareTemplatePlaceholder = '{車名}\n年份：{年份}\n品牌：{品牌}\n里程：{里程}\n價格請洽\n{網址}';
   let brandAliasText = $state(brandAliases.map((item) => `${item.sourceBrand} = ${item.displayName} | ${item.urlSlug}`).join('\n'));
   let settingsForm = $state({
     siteName: settings.siteName,
@@ -194,7 +195,7 @@
     <label>列表說明 <textarea bind:value={settingsForm.listingLead}></textarea></label>
     <label>詳情備註小標 <input bind:value={settingsForm.detailNotesEyebrow} /></label>
     <label>詳情備註標題 <input bind:value={settingsForm.detailNotesTitle} /></label>
-    <label>分享訊息模板 <textarea bind:value={settingsForm.shareMessageTemplate} placeholder="{車名}&#10;年份：{年份}&#10;品牌：{品牌}&#10;里程：{里程}&#10;價格請洽&#10;{網址}"></textarea></label>
+    <label>分享訊息模板 <textarea bind:value={settingsForm.shareMessageTemplate} placeholder={shareTemplatePlaceholder}></textarea></label>
     <p class="form-hint">可用變數：{'{車名}'} {'{年份}'} {'{品牌}'} {'{里程}'} {'{外觀色}'} {'{內裝色}'} {'{車況}'} {'{價格}'} {'{網址}'}</p>
     <label>頁尾提醒 <textarea bind:value={settingsForm.footerDisclaimer}></textarea></label>
 
