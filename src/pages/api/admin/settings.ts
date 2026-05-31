@@ -1,7 +1,10 @@
 import type { APIRoute } from 'astro';
 import { requireAdmin } from '@/lib/auth';
+import { detailSpecFieldOptions } from '@/lib/detail-spec-fields';
 import { setSettings } from '@/lib/settings';
 import { resolveStyle, resolveTemplate } from '@/lib/theme';
+
+const allowedDetailSpecFields = new Set<string>(detailSpecFieldOptions.map((field) => field.key));
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   await requireAdmin(cookies);
@@ -28,6 +31,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     detailNotesEyebrow: String(body.detailNotesEyebrow || ''),
     detailNotesTitle: String(body.detailNotesTitle || ''),
     shareMessageTemplate: String(body.shareMessageTemplate || ''),
+    detailSpecFields: Array.isArray(body.detailSpecFields)
+      ? body.detailSpecFields.filter((field: unknown): field is string => typeof field === 'string' && allowedDetailSpecFields.has(field))
+      : undefined,
     footerDisclaimer: String(body.footerDisclaimer || ''),
     activeTemplate: resolveTemplate(body.activeTemplate),
     activeStyle: resolveStyle(body.activeStyle),

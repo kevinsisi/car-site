@@ -19,6 +19,9 @@ input, select { width: 100%; min-height: 2.8rem; border-radius: 0.8rem; border: 
 textarea { width: 100%; min-height: 7rem; border-radius: 0.8rem; border: 1px solid rgba(210, 174, 101, 0.22); background: #0d0b09; color: #f8efe1; padding: 0.8rem; resize: vertical; font-size: 1rem; line-height: 1.45; }
 .checkbox-row { grid-template-columns: auto 1fr; align-items: center; }
 .checkbox-row input { width: auto; }
+.field-checklist { display: grid; gap: 0.55rem; padding: 1rem; border: 1px solid rgba(210, 174, 101, 0.18); border-radius: 1rem; background: #110e0b; }
+.field-checklist > strong { color: #d6b06a; }
+.field-checklist__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem 1rem; }
 .form-hint { margin: -0.35rem 0 0; color: #a99b83 !important; font-size: 0.84rem; line-height: 1.6; }
 .admin-button, .row-actions button { display: inline-flex; align-items: center; justify-content: center; min-height: 2.8rem; border-radius: 999px; border: 1px solid rgba(210, 174, 101, 0.3); background: #d6b06a; color: #0b0a09; font-weight: 800; padding: 0 1rem; text-decoration: none; cursor: pointer; }
 .admin-message { border: 1px solid rgba(210, 174, 101, 0.3); background: #231c14; padding: 1rem; border-radius: 1rem; }
@@ -40,4 +43,4 @@ textarea { width: 100%; min-height: 7rem; border-radius: 0.8rem; border: 1px sol
 .row-actions button { min-height: 2.2rem; padding: 0 0.7rem; font-size: 0.92rem; background: transparent; color: #f8efe1; }
 .login-body { display: grid; place-items: center; padding: 1rem; }
 .login-card { width: min(100%, 28rem); display: grid; gap: 1rem; border: 1px solid rgba(210, 174, 101, 0.25); border-radius: 1.5rem; background: #17130f; padding: 2rem; }
-@media (max-width: 900px) { .admin-sidebar { position: static; width: auto; flex-direction: row; flex-wrap: wrap; } .admin-main { margin-left: 0; } .hero-panel { align-items: flex-start; flex-direction: column; } .admin-grid, .admin-grid--overview, .admin-grid--single, .admin-car-row, .form-grid { grid-template-columns: 1fr; } input, select, textarea { font-size: 16px; } }
+@media (max-width: 900px) { .admin-sidebar { position: static; width: auto; flex-direction: row; flex-wrap: wrap; } .admin-main { margin-left: 0; } .hero-panel { align-items: flex-start; flex-direction: column; } .admin-grid, .admin-grid--overview, .admin-grid--single, .admin-car-row, .form-grid, .field-checklist__grid { grid-template-columns: 1fr; } input, select, textarea { font-size: 16px; } }

@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { SiteSettings } from '@/lib/settings';
+  import { detailSpecFieldOptions } from '@/lib/detail-spec-fields';
   import { styles, templates } from '@/lib/theme';
   import type { VehicleView } from '@/lib/vehicles';
 
@@ -38,6 +39,7 @@
     detailNotesEyebrow: settings.detailNotesEyebrow,
     detailNotesTitle: settings.detailNotesTitle,
     shareMessageTemplate: settings.shareMessageTemplate,
+    detailSpecFields: settings.detailSpecFields,
     footerDisclaimer: settings.footerDisclaimer,
     activeTemplate: settings.activeTemplate,
     activeStyle: settings.activeStyle,
@@ -214,6 +216,15 @@
     <label>詳情備註標題 <input bind:value={settingsForm.detailNotesTitle} /></label>
     <label>分享訊息模板 <textarea bind:value={settingsForm.shareMessageTemplate} placeholder={shareTemplatePlaceholder}></textarea></label>
     <p class="form-hint">可用變數：{'{車名}'} {'{年份}'} {'{品牌}'} {'{里程}'} {'{外觀色}'} {'{內裝色}'} {'{車況}'} {'{價格}'} {'{網址}'}</p>
+    <div class="field-checklist">
+      <strong>詳情頁資訊欄位</strong>
+      <p class="form-hint">控制車輛詳情頁「完整規格」區塊要顯示哪些欄位。</p>
+      <div class="field-checklist__grid">
+        {#each detailSpecFieldOptions as field}
+          <label class="checkbox-row"><input type="checkbox" bind:group={settingsForm.detailSpecFields} value={field.key} /> {field.label}</label>
+        {/each}
+      </div>
+    </div>
     <label>頁尾提醒 <textarea bind:value={settingsForm.footerDisclaimer}></textarea></label>
 
     <h3>外觀</h3>

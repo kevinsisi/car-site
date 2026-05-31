@@ -26,19 +26,19 @@ const advisorDescription = vehicle.description
   .replace(/此車由\s*(?:carsmeet|既有庫存)\s*現有庫存匯入，?\s*/gi, '此車已完成實拍照片整理，')
   .replace(/carsmeet/gi, '既有庫存');
 const specRows = [
-  ['年份', vehicle.year],
-  ['里程', vehicle.mileage],
-  ['保固', known.warranty],
-  ['規格', known.spec || vehicle.headline],
-  ['車型', known.body || [vehicle.model, vehicle.subModel].filter(Boolean).join(' ')],
-  ['燃料', known.fuel],
-  ['外觀顏色', vehicle.exteriorColor],
-  ['內裝顏色', vehicle.interiorColor],
-  ['車門 / 座位', known.doorsSeats],
-  ['缸數', known.cylinders],
-  ['馬力', known.horsepower],
-  ['價格', '價格請洽'],
-].filter(([, value]) => value);
+  { key: 'year', label: '年份', value: vehicle.year },
+  { key: 'mileage', label: '里程', value: vehicle.mileage },
+  { key: 'warranty', label: '保固', value: known.warranty },
+  { key: 'spec', label: '規格', value: known.spec || vehicle.headline },
+  { key: 'body', label: '車型', value: known.body || [vehicle.model, vehicle.subModel].filter(Boolean).join(' ') },
+  { key: 'fuel', label: '燃料', value: known.fuel },
+  { key: 'exteriorColor', label: '外觀顏色', value: vehicle.exteriorColor },
+  { key: 'interiorColor', label: '內裝顏色', value: vehicle.interiorColor },
+  { key: 'doorsSeats', label: '車門 / 座位', value: known.doorsSeats },
+  { key: 'cylinders', label: '缸數', value: known.cylinders },
+  { key: 'horsepower', label: '馬力', value: known.horsepower },
+  { key: 'price', label: '價格', value: '價格請洽' },
+].filter((row) => settings.detailSpecFields.includes(row.key) && row.value);
 ---
 
 <PublicLayout title={`${vehicle.title}｜${settings.siteName}`} description={vehicle.headline || vehicle.description}>
@@ -70,7 +70,7 @@ const specRows = [
         <h2>完整規格</h2>
       </div>
       <div class="spec-panel spec-panel--detail">
-        {specRows.map(([label, value]) => <div><span>{label}</span><strong>{value}</strong></div>)}
+        {specRows.map(({ label, value }) => <div><span>{label}</span><strong>{value}</strong></div>)}
       </div>
     </section>
     <section class="story-grid reveal-section">

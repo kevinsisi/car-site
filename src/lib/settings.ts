@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/db/connection';
 import { siteSettings, type ImportBehavior } from '@/db/schema';
+import { defaultDetailSpecFields } from './detail-spec-fields';
 import { resolveStyle, resolveTemplate, type StyleId, type TemplateId } from './theme';
 
 export interface SiteSettings {
@@ -25,6 +26,7 @@ export interface SiteSettings {
   detailNotesEyebrow: string;
   detailNotesTitle: string;
   shareMessageTemplate: string;
+  detailSpecFields: string[];
   footerDisclaimer: string;
   activeTemplate: TemplateId;
   activeStyle: StyleId;
@@ -54,12 +56,26 @@ const defaults: SiteSettings = {
   detailNotesEyebrow: 'Advisor Notes',
   detailNotesTitle: '顧問觀點',
   shareMessageTemplate: '{車名}\n年份：{年份}\n品牌：{品牌}\n里程：{里程}\n價格請洽\n{網址}',
+  detailSpecFields: defaultDetailSpecFields,
   footerDisclaimer: '所有車輛價格皆採專人洽詢，實際車況與配備以現場確認為準。',
   activeTemplate: 'private-salon',
   activeStyle: 'carsmeet-blue',
   importBehavior: 'draft_first',
   showSoldVehicles: false,
 };
+
+function resolveDetailSpecFields(value: string | undefined): string[] {
+  if (!value) return defaults.detailSpecFields;
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) return defaults.detailSpecFields;
+    const allowed = new Set<string>(defaultDetailSpecFields);
+    const fields = parsed.filter((field): field is string => typeof field === 'string' && allowed.has(field));
+    return fields.length ? fields : defaults.detailSpecFields;
+  } catch {
+    return defaults.detailSpecFields;
+  }
+}
 
 export async function getSettings(): Promise<SiteSettings> {
   const rows = await db.select().from(siteSettings);
@@ -88,6 +104,7 @@ export async function getSettings(): Promise<SiteSettings> {
     detailNotesEyebrow: map.get('detailNotesEyebrow') || defaults.detailNotesEyebrow,
     detailNotesTitle: map.get('detailNotesTitle') || defaults.detailNotesTitle,
     shareMessageTemplate: map.get('shareMessageTemplate') || defaults.shareMessageTemplate,
+    detailSpecFields: resolveDetailSpecFields(map.get('detailSpecFields')),
     footerDisclaimer: map.get('footerDisclaimer') || defaults.footerDisclaimer,
     activeTemplate: resolveTemplate(map.get('activeTemplate')),
     activeStyle: resolveStyle(map.get('activeStyle')),
@@ -99,11 +116,11 @@ export async function getSettings(): Promise<SiteSettings> {
   };
 }
 
-export async function setSettings(input: Partial<Record<keyof SiteSettings, string | boolean>>) {
+export async function setSettings(input: Partial<Record<keyof SiteSettings, string | boolean | string[]>>) {
   const now = new Date().toISOString();
   for (const [key, rawValue] of Object.entries(input)) {
     if (rawValue === undefined) continue;
-    const value = String(rawValue);
+    const value = Array.isArray(rawValue) ? JSON.stringify(rawValue) : String(rawValue);
     await db
       .insert(siteSettings)
       .values({ key, value, updatedAt: now })
