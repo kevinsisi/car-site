@@ -81,7 +81,131 @@ const specRows = [
       <p>{advisorDescription}</p>
     </section>
     <section class="gallery reveal-section">
-      {vehicle.images.map((image) => <img src={image.url} alt={image.alt || vehicle.title} loading="lazy" decoding="async" />)}
+      {vehicle.images.map((image, index) => (
+        <button class="gallery-item" type="button" data-gallery-index={index} aria-label={`開啟第 ${index + 1} 張大圖`}>
+          <img src={image.url} alt={image.alt || vehicle.title} loading="lazy" decoding="async" />
+        </button>
+      ))}
     </section>
+    <div class="image-lightbox" aria-hidden="true" role="dialog" aria-label="車輛照片預覽">
+      <button class="image-lightbox__close" type="button" aria-label="關閉大圖">×</button>
+      <button class="image-lightbox__nav image-lightbox__nav--prev" type="button" aria-label="上一張">‹</button>
+      <div class="image-lightbox__stage">
+        <img src="" alt="" />
+      </div>
+      <button class="image-lightbox__nav image-lightbox__nav--next" type="button" aria-label="下一張">›</button>
+      <div class="image-lightbox__toolbar" aria-label="縮放控制">
+        <button type="button" data-zoom="out" aria-label="縮小">−</button>
+        <span>1x</span>
+        <button type="button" data-zoom="in" aria-label="放大">＋</button>
+      </div>
+    </div>
   </article>
+  <script is:inline define:vars={{ images: vehicle.images.map((image) => ({ url: image.url, alt: image.alt || vehicle.title })) }}>
+    const lightbox = document.querySelector('.image-lightbox');
+    const lightboxImage = lightbox?.querySelector('img');
+    const zoomLabel = lightbox?.querySelector('.image-lightbox__toolbar span');
+    const stage = lightbox?.querySelector('.image-lightbox__stage');
+    const galleryButtons = Array.from(document.querySelectorAll('[data-gallery-index]'));
+    let activeIndex = 0;
+    let scale = 1;
+    let translateX = 0;
+    let translateY = 0;
+    let dragStart = null;
+    let pinchStart = null;
+
+    const clampScale = (value) => Math.min(4, Math.max(1, value));
+    const applyTransform = () => {
+      if (!lightboxImage) return;
+      lightboxImage.style.transform = `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale})`;
+      if (zoomLabel) zoomLabel.textContent = `${scale.toFixed(scale % 1 ? 1 : 0)}x`;
+    };
+    const resetTransform = () => {
+      scale = 1;
+      translateX = 0;
+      translateY = 0;
+      applyTransform();
+    };
+    const showImage = (index) => {
+      activeIndex = (index + images.length) % images.length;
+      if (!lightboxImage) return;
+      lightboxImage.src = images[activeIndex].url;
+      lightboxImage.alt = images[activeIndex].alt;
+      resetTransform();
+    };
+    const openLightbox = (index) => {
+      if (!lightbox || !images.length) return;
+      showImage(index);
+      lightbox.classList.add('is-open');
+      lightbox.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('has-open-lightbox');
+    };
+    const closeLightbox = () => {
+      lightbox?.classList.remove('is-open');
+      lightbox?.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('has-open-lightbox');
+    };
+    const zoomBy = (delta) => {
+      scale = clampScale(scale + delta);
+      if (scale === 1) {
+        translateX = 0;
+        translateY = 0;
+      }
+      applyTransform();
+    };
+    const touchDistance = (touches) => Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
+
+    galleryButtons.forEach((button) => {
+      button.addEventListener('click', () => openLightbox(Number(button.dataset.galleryIndex || 0)));
+    });
+    lightbox?.querySelector('.image-lightbox__close')?.addEventListener('click', closeLightbox);
+    lightbox?.querySelector('.image-lightbox__nav--prev')?.addEventListener('click', () => showImage(activeIndex - 1));
+    lightbox?.querySelector('.image-lightbox__nav--next')?.addEventListener('click', () => showImage(activeIndex + 1));
+    lightbox?.querySelector('[data-zoom="in"]')?.addEventListener('click', () => zoomBy(0.5));
+    lightbox?.querySelector('[data-zoom="out"]')?.addEventListener('click', () => zoomBy(-0.5));
+    lightbox?.addEventListener('click', (event) => {
+      if (event.target === lightbox) closeLightbox();
+    });
+    lightboxImage?.addEventListener('dblclick', () => {
+      scale = scale === 1 ? 2.5 : 1;
+      if (scale === 1) {
+        translateX = 0;
+        translateY = 0;
+      }
+      applyTransform();
+    });
+    stage?.addEventListener('wheel', (event) => {
+      event.preventDefault();
+      zoomBy(event.deltaY < 0 ? 0.25 : -0.25);
+    }, { passive: false });
+    stage?.addEventListener('pointerdown', (event) => {
+      if (scale <= 1) return;
+      stage.setPointerCapture(event.pointerId);
+      dragStart = { x: event.clientX, y: event.clientY, translateX, translateY };
+    });
+    stage?.addEventListener('pointermove', (event) => {
+      if (!dragStart) return;
+      translateX = dragStart.translateX + event.clientX - dragStart.x;
+      translateY = dragStart.translateY + event.clientY - dragStart.y;
+      applyTransform();
+    });
+    stage?.addEventListener('pointerup', () => { dragStart = null; });
+    stage?.addEventListener('pointercancel', () => { dragStart = null; });
+    stage?.addEventListener('touchstart', (event) => {
+      if (event.touches.length === 2) pinchStart = { distance: touchDistance(event.touches), scale };
+    }, { passive: true });
+    stage?.addEventListener('touchmove', (event) => {
+      if (event.touches.length !== 2 || !pinchStart) return;
+      event.preventDefault();
+      scale = clampScale(pinchStart.scale * (touchDistance(event.touches) / pinchStart.distance));
+      applyTransform();
+    }, { passive: false });
+    stage?.addEventListener('touchend', () => { pinchStart = null; }, { passive: true });
+    document.addEventListener('keydown', (event) => {
+      if (!lightbox?.classList.contains('is-open')) return;
+      if (event.key === 'Escape') closeLightbox();
+      if (event.key === 'ArrowLeft') showImage(activeIndex - 1);
+      if (event.key === 'ArrowRight') showImage(activeIndex + 1);
+    });
+  </script>
 </PublicLayout>

@@ -284,20 +284,41 @@
     <label>頁尾提醒 <textarea bind:value={settingsForm.footerDisclaimer}></textarea></label>
 
     <h3>外觀</h3>
-    <label>模板
-      <select bind:value={settingsForm.activeTemplate}>
+    <div class="visual-options">
+      <div class="visual-options__header">
+        <strong>模板</strong>
+        <span>{templates[settingsForm.activeTemplate].label}</span>
+      </div>
+      <div class="template-options">
         {#each Object.entries(templates) as [id, template]}
-          <option value={id}>{template.label}</option>
+          <button type="button" class:is-selected={settingsForm.activeTemplate === id} class={`template-option ${template.layoutClass}`} onclick={() => { settingsForm.activeTemplate = id; }}>
+            <span>{template.label}</span>
+            <small>{template.description}</small>
+            <div class="template-option__mock">
+              <i></i><i></i><i></i>
+            </div>
+          </button>
         {/each}
-      </select>
-    </label>
-    <label>風格
-      <select bind:value={settingsForm.activeStyle}>
+      </div>
+    </div>
+    <div class="visual-options">
+      <div class="visual-options__header">
+        <strong>風格</strong>
+        <span>{styles[settingsForm.activeStyle].label}</span>
+      </div>
+      <div class="style-options">
         {#each Object.entries(styles) as [id, style]}
-          <option value={id}>{style.label}</option>
+          <button type="button" class:is-selected={settingsForm.activeStyle === id} class="style-option" style={previewStyleVars(id)} onclick={() => { settingsForm.activeStyle = id; }}>
+            <span>{style.label}</span>
+            <div class="style-option__swatches">
+              <i style="background: var(--bg)"></i>
+              <i style="background: var(--surface)"></i>
+              <i style="background: var(--accent)"></i>
+            </div>
+          </button>
         {/each}
-      </select>
-    </label>
+      </div>
+    </div>
     <div class={`theme-preview ${templates[settingsForm.activeTemplate].layoutClass}`} style={previewStyleVars(settingsForm.activeStyle)}>
       <div class="theme-preview__topline">
         <span>{templates[settingsForm.activeTemplate].label}</span>
