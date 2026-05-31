@@ -7,9 +7,10 @@
     vehicles: VehicleView[];
     settings: SiteSettings;
     brandAliases: { sourceBrand: string; displayName: string; urlSlug: string }[];
+    mode?: 'overview' | 'settings' | 'contact' | 'vehicles';
   }
 
-  let { vehicles, settings, brandAliases }: Props = $props();
+  let { vehicles, settings, brandAliases, mode = 'overview' }: Props = $props();
   let message = $state('');
   let selectedId = $state<string | null>(null);
   let vehicleForm = $state(emptyVehicleForm());
@@ -88,6 +89,10 @@
     }
   }
 
+  function countStatus(status: VehicleView['status']) {
+    return vehicles.filter((vehicle) => vehicle.status === status).length;
+  }
+
   function emptyVehicleForm() {
     return {
       title: '',
@@ -156,8 +161,8 @@
 <section class="admin-panel hero-panel">
   <div>
     <p class="admin-eyebrow">Personal Premium Car Site</p>
-    <h1>管理後台</h1>
-    <p>快速調整前台文案、網站風格、聯絡資訊與車輛上架狀態。</p>
+    <h1>{mode === 'overview' ? '管理後台' : mode === 'settings' ? '網站設定' : mode === 'contact' ? '聯絡與品牌' : '車輛管理'}</h1>
+    <p>{mode === 'overview' ? '查看目前上架概況，並進入各管理區調整內容。' : mode === 'settings' ? '調整首頁、列表、詳情頁文案與網站外觀。' : mode === 'contact' ? '管理電話、LINE、社群連結與品牌英文顯示對照。' : '新增車輛、修改顧問描述、調整上架狀態。'}</p>
   </div>
   <a class="admin-button" href="/cars">查看前台車輛</a>
 </section>
@@ -166,19 +171,31 @@
   <p class="admin-message">{message}</p>
 {/if}
 
-<section class="admin-grid">
+{#if mode === 'overview'}
+  <section class="admin-grid admin-grid--overview">
+    <a class="admin-panel admin-link-card" href="/admin/vehicles">
+      <span>車輛管理</span>
+      <strong>{vehicles.length}</strong>
+      <small>全部庫存 / {countStatus('published')} 上架 / {countStatus('draft')} 草稿</small>
+    </a>
+    <a class="admin-panel admin-link-card" href="/admin/settings">
+      <span>網站設定</span>
+      <strong>{settings.activeTemplate}</strong>
+      <small>文案、模板、風格與匯入預設</small>
+    </a>
+    <a class="admin-panel admin-link-card" href="/admin/contact">
+      <span>聯絡與品牌</span>
+      <strong>{brandAliases.length}</strong>
+      <small>社群連結與品牌英文網址對照</small>
+    </a>
+  </section>
+{/if}
+
+{#if mode === 'settings'}
   <form class="admin-panel settings-form" onsubmit={(event) => { event.preventDefault(); saveSettings(); }}>
     <h2>網站設定</h2>
-    <h3>聯絡與品牌</h3>
     <label>網站名稱 <input bind:value={settingsForm.siteName} /></label>
     <label>業務顯示名稱 <input bind:value={settingsForm.salespersonName} /></label>
-    <label>LINE URL <input bind:value={settingsForm.lineUrl} /></label>
-    <label>Instagram URL <input bind:value={settingsForm.instagramUrl} /></label>
-    <label>Facebook URL <input bind:value={settingsForm.facebookUrl} /></label>
-    <label>Threads URL <input bind:value={settingsForm.threadsUrl} /></label>
-    <label>TikTok URL <input bind:value={settingsForm.tiktokUrl} /></label>
-    <p class="form-hint">社群 URL 留空時，前台頁尾不顯示該平台。</p>
-    <label>電話 <input bind:value={settingsForm.phoneNumber} /></label>
 
     <h3>首頁文案</h3>
     <label>首頁小標 <input bind:value={settingsForm.homepageEyebrow} /></label>
@@ -226,15 +243,34 @@
     <label class="checkbox-row"><input type="checkbox" bind:checked={settingsForm.showSoldVehicles} /> 前台顯示已售車輛</label>
     <button class="admin-button" type="submit">儲存設定</button>
   </form>
+{/if}
 
-  <section class="admin-panel vehicle-admin-list">
-    <h2>車輛管理</h2>
-    <form class="vehicle-edit-form" onsubmit={(event) => { event.preventDefault(); saveBrandAliases(); }}>
-      <h3>品牌英文顯示對照</h3>
+{#if mode === 'contact'}
+  <section class="admin-grid admin-grid--single">
+    <form class="admin-panel settings-form" onsubmit={(event) => { event.preventDefault(); saveSettings(); }}>
+      <h2>聯絡與社群</h2>
+      <label>LINE URL <input bind:value={settingsForm.lineUrl} /></label>
+      <label>電話 <input bind:value={settingsForm.phoneNumber} /></label>
+      <label>Instagram URL <input bind:value={settingsForm.instagramUrl} /></label>
+      <label>Facebook URL <input bind:value={settingsForm.facebookUrl} /></label>
+      <label>Threads URL <input bind:value={settingsForm.threadsUrl} /></label>
+      <label>TikTok URL <input bind:value={settingsForm.tiktokUrl} /></label>
+      <p class="form-hint">社群 URL 留空時，前台頁尾不顯示該平台。</p>
+      <button class="admin-button" type="submit">儲存聯絡資訊</button>
+    </form>
+
+    <form class="admin-panel vehicle-edit-form" onsubmit={(event) => { event.preventDefault(); saveBrandAliases(); }}>
+      <h2>品牌英文顯示對照</h2>
       <p>每行一組：來源品牌 = 前台顯示名稱 | 英文網址。網址只允許英文小寫、數字與連字號。</p>
       <label>品牌對照 <textarea bind:value={brandAliasText} placeholder="法拉利 = Ferrari | ferrari&#10;賓利(A40) = Bentley | bentley"></textarea></label>
       <button class="admin-button" type="submit">儲存品牌對照</button>
     </form>
+  </section>
+{/if}
+
+{#if mode === 'vehicles'}
+  <section class="admin-panel vehicle-admin-list">
+    <h2>車輛管理</h2>
     <form class="vehicle-edit-form" onsubmit={(event) => { event.preventDefault(); saveVehicle(); }}>
       <h3>{selectedId ? '編輯車輛' : '新增車輛'}</h3>
       <div class="form-grid">
@@ -285,4 +321,4 @@
       </article>
     {/each}
   </section>
-</section>
+{/if}
