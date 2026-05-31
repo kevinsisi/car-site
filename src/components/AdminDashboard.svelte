@@ -11,6 +11,9 @@
     mode?: 'overview' | 'settings' | 'contact' | 'vehicles';
   }
 
+  type TemplateField = 'cardTitleTemplate' | 'shareMessageTemplate';
+  type BrandAliasRow = { sourceBrand: string; displayName: string; urlSlug: string };
+
   let { vehicles, settings, brandAliases, mode = 'overview' }: Props = $props();
   let message = $state('');
   let selectedId = $state<string | null>(null);
@@ -19,8 +22,10 @@
   let isUploadingImages = $state(false);
   const shareTemplatePlaceholder = '{車名}\n年份：{年份}\n品牌：{品牌}\n里程：{里程}\n價格請洽\n{網址}';
   const cardTitleTemplatePlaceholder = '{年份} {品牌} {型號} {規格}\n{補充}';
-  const cardTitleTemplateHint = '可用變數：{車名} {年份} {品牌} {顯示品牌} {型號} {規格} {補充} {里程} {車況}。換行會保留，空白行會自動移除。';
-  let brandAliasText = $state(brandAliases.map((item) => `${item.sourceBrand} = ${item.displayName} | ${item.urlSlug}`).join('\n'));
+  const cardTitleTokens = ['車名', '年份', '品牌', '顯示品牌', '型號', '規格', '補充', '里程', '車況'];
+  const shareTemplateTokens = ['車名', '年份', '品牌', '里程', '外觀色', '內裝色', '車況', '價格', '網址'];
+  const sourceBrandOptions = Array.from(new Set([...vehicles.map((vehicle) => vehicle.brand), ...brandAliases.map((item) => item.sourceBrand)])).filter(Boolean).sort((a, b) => a.localeCompare(b));
+  let brandAliasRows = $state<BrandAliasRow[]>(brandAliases.length ? brandAliases.map((item) => ({ ...item })) : sourceBrandOptions.map((sourceBrand) => ({ sourceBrand, displayName: '', urlSlug: '' })));
   let settingsForm = $state({
     siteName: settings.siteName,
     salespersonName: settings.salespersonName,
@@ -64,15 +69,8 @@
 
   async function saveBrandAliases() {
     message = '儲存品牌對照中...';
-    const aliases = brandAliasText
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .map((line) => {
-        const [sourceBrand, ...displayParts] = line.split('=');
-        const [displayName, urlSlug = ''] = displayParts.join('=').split('|');
-        return { sourceBrand: sourceBrand.trim(), displayName: displayName.trim(), urlSlug: urlSlug.trim() };
-      })
+    const aliases = brandAliasRows
+      .map((item) => ({ sourceBrand: item.sourceBrand.trim(), displayName: item.displayName.trim(), urlSlug: item.urlSlug.trim() }))
       .filter((item) => item.sourceBrand && item.displayName);
     const response = await fetch('/api/admin/brand-aliases', {
       method: 'POST',
@@ -94,6 +92,24 @@
     } else {
       message = '車輛狀態更新失敗';
     }
+  }
+
+  function insertTemplateToken(field: TemplateField, token: string) {
+    settingsForm[field] = `${settingsForm[field]}{${token}}`;
+  }
+
+  function insertTemplateLineBreak(field: TemplateField) {
+    settingsForm[field] = `${settingsForm[field]}\n`;
+  }
+
+  function addBrandAliasRow() {
+    const used = new Set(brandAliasRows.map((row) => row.sourceBrand));
+    const sourceBrand = sourceBrandOptions.find((brand) => !used.has(brand)) || sourceBrandOptions[0] || '';
+    brandAliasRows = [...brandAliasRows, { sourceBrand, displayName: '', urlSlug: '' }];
+  }
+
+  function removeBrandAliasRow(index: number) {
+    brandAliasRows = brandAliasRows.filter((_, rowIndex) => rowIndex !== index);
   }
 
   function countStatus(status: VehicleView['status']) {
@@ -273,12 +289,28 @@
     <label>列表小標 <input bind:value={settingsForm.listingEyebrow} /></label>
     <label>列表主標 <textarea bind:value={settingsForm.listingTitle}></textarea></label>
     <label>列表說明 <textarea bind:value={settingsForm.listingLead}></textarea></label>
-    <label>卡片標題模板 <textarea bind:value={settingsForm.cardTitleTemplate} placeholder={cardTitleTemplatePlaceholder}></textarea></label>
-    <p class="form-hint">{cardTitleTemplateHint}</p>
+    <div class="template-builder">
+      <label>卡片標題模板 <textarea bind:value={settingsForm.cardTitleTemplate} placeholder={cardTitleTemplatePlaceholder}></textarea></label>
+      <div class="token-picker" aria-label="卡片標題變數">
+        {#each cardTitleTokens as token}
+          <button type="button" onclick={() => insertTemplateToken('cardTitleTemplate', token)}>{token}</button>
+        {/each}
+        <button type="button" onclick={() => insertTemplateLineBreak('cardTitleTemplate')}>換行</button>
+      </div>
+      <p class="form-hint">用上方按鈕插入變數，換行會保留，空白行會自動移除。</p>
+    </div>
     <label>詳情備註小標 <input bind:value={settingsForm.detailNotesEyebrow} /></label>
     <label>詳情備註標題 <input bind:value={settingsForm.detailNotesTitle} /></label>
-    <label>分享訊息模板 <textarea bind:value={settingsForm.shareMessageTemplate} placeholder={shareTemplatePlaceholder}></textarea></label>
-    <p class="form-hint">可用變數：{'{車名}'} {'{年份}'} {'{品牌}'} {'{里程}'} {'{外觀色}'} {'{內裝色}'} {'{車況}'} {'{價格}'} {'{網址}'}</p>
+    <div class="template-builder">
+      <label>分享訊息模板 <textarea bind:value={settingsForm.shareMessageTemplate} placeholder={shareTemplatePlaceholder}></textarea></label>
+      <div class="token-picker" aria-label="分享訊息變數">
+        {#each shareTemplateTokens as token}
+          <button type="button" onclick={() => insertTemplateToken('shareMessageTemplate', token)}>{token}</button>
+        {/each}
+        <button type="button" onclick={() => insertTemplateLineBreak('shareMessageTemplate')}>換行</button>
+      </div>
+      <p class="form-hint">用上方按鈕插入變數，不需要手打大括號。</p>
+    </div>
     <div class="field-checklist">
       <strong>詳情頁資訊欄位</strong>
       <p class="form-hint">控制車輛詳情頁「完整規格」區塊要顯示哪些欄位。</p>
@@ -384,8 +416,24 @@
 
     <form class="admin-panel vehicle-edit-form" onsubmit={(event) => { event.preventDefault(); saveBrandAliases(); }}>
       <h2>品牌英文顯示對照</h2>
-      <p>每行一組：來源品牌 = 前台顯示名稱 | 英文網址。網址只允許英文小寫、數字與連字號。</p>
-      <label>品牌對照 <textarea bind:value={brandAliasText} placeholder="法拉利 = Ferrari | ferrari&#10;賓利(A40) = Bentley | bentley"></textarea></label>
+      <p>來源品牌用選的，前台顯示名稱與英文網址再手動補。網址只允許英文小寫、數字與連字號。</p>
+      <div class="alias-editor">
+        {#each brandAliasRows as row, index}
+          <div class="alias-row">
+            <label>來源品牌
+              <select bind:value={row.sourceBrand}>
+                {#each sourceBrandOptions as sourceBrand}
+                  <option value={sourceBrand}>{sourceBrand}</option>
+                {/each}
+              </select>
+            </label>
+            <label>前台顯示名稱 <input bind:value={row.displayName} placeholder="例如 Bentley" /></label>
+            <label>英文網址 <input bind:value={row.urlSlug} placeholder="例如 bentley" /></label>
+            <button type="button" onclick={() => removeBrandAliasRow(index)}>移除</button>
+          </div>
+        {/each}
+      </div>
+      <button class="secondary-button" type="button" onclick={addBrandAliasRow}>新增品牌對照</button>
       <button class="admin-button" type="submit">儲存品牌對照</button>
     </form>
   </section>

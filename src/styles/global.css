@@ -354,12 +354,15 @@ img { display: block; max-width: 100%; }
   .inventory-shell.is-filter-open .brand-filter-panel { transform: translateX(0); }
   .filter-scrim { position: fixed; inset: 0; z-index: 55; display: block; background: rgba(10, 18, 32, 0.24); opacity: 0; pointer-events: none; transition: opacity 220ms ease; backdrop-filter: blur(4px); }
   .inventory-shell.is-filter-open .filter-scrim { opacity: 1; pointer-events: auto; }
-  .filter-panel__header { position: sticky; top: 0; z-index: 1; padding: max(1.1rem, env(safe-area-inset-top)) 1.05rem 0.8rem; background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(18px); }
+  .filter-panel__header { position: sticky; top: 0; z-index: 1; display: flex; padding: max(1.1rem, env(safe-area-inset-top)) 1.05rem 0.8rem; background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(18px); }
   .filter-close { min-height: 2.4rem; display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; padding: 0 0.8rem; background: color-mix(in srgb, var(--surface-soft) 80%, transparent); color: var(--muted); font: inherit; font-size: 0.86rem; font-weight: 750; }
   .filter-close:hover { color: var(--accent-strong); border-color: color-mix(in srgb, var(--accent) 46%, var(--line)); background: var(--surface); }
   .filter-close:active { transform: scale(0.965); }
-  .brand-list { padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
-  .brand-list a { min-height: 3.45rem; }
+  .brand-list { display: grid; grid-template-columns: 1fr; gap: 0.42rem; padding: 0.35rem 0.85rem calc(1rem + env(safe-area-inset-bottom)); }
+  .brand-list a { min-height: 2.75rem; width: 100%; border: 1px solid color-mix(in srgb, var(--line) 58%, transparent); border-radius: 0.95rem; padding: 0 0.85rem; background: color-mix(in srgb, var(--surface) 52%, transparent); font-size: 0.96rem; }
+  .brand-list a:hover { transform: none; }
+  .brand-list a:active { transform: scale(0.985); }
+  .brand-list strong { min-width: 1.75rem; height: 1.75rem; display: inline-grid; place-items: center; border-radius: 999px; background: color-mix(in srgb, var(--surface-soft) 80%, transparent); font-size: 0.82rem; }
   .inventory-toolbar { align-items: start; margin-bottom: 1rem; }
   .inventory-toolbar h2 { font-size: clamp(1.65rem, 8vw, 2.4rem); }
   .inventory-toolbar > span { padding-top: 0.35rem; white-space: nowrap; }
