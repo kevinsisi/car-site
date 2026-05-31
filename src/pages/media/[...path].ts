@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { Readable } from 'node:stream';
 import type { APIRoute } from 'astro';
 import { appConfig } from '@/lib/config';
 
@@ -28,10 +29,12 @@ export const GET: APIRoute = async ({ params }) => {
     return new Response('Not found', { status: 404 });
   }
 
-  const data = await fs.promises.readFile(filePath);
-  return new Response(data, {
+  const stat = await fs.promises.stat(filePath);
+  const stream = Readable.toWeb(fs.createReadStream(filePath)) as ReadableStream;
+  return new Response(stream, {
     headers: {
       'content-type': mimeType,
+      'content-length': String(stat.size),
       'cache-control': 'public, max-age=31536000, immutable',
     },
   });
