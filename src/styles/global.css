@@ -131,7 +131,7 @@ img { display: block; max-width: 100%; }
 .button--ghost { border: 1px solid var(--line); color: var(--text); }
 .button--ghost:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); background: color-mix(in srgb, var(--surface) 88%, transparent); }
 .icon-button { width: 2.75rem; height: 2.75rem; display: inline-grid; place-items: center; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--surface) 82%, transparent); color: var(--accent-strong); backdrop-filter: blur(16px); box-shadow: 0 0.55rem 1.25rem rgba(20, 35, 60, 0.04); }
-.icon-button svg { width: 1.08rem; height: 1.08rem; fill: none; stroke: currentColor; stroke-width: 1.05; stroke-linecap: round; stroke-linejoin: round; }
+.icon-button svg { width: 1.925rem; height: 1.925rem; fill: none; stroke: currentColor; stroke-width: 0.95; stroke-linecap: round; stroke-linejoin: round; }
 .icon-button:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--accent) 48%, var(--line)); background: var(--surface); }
 .icon-button:active { transform: scale(0.96); }
 
@@ -184,6 +184,7 @@ img { display: block; max-width: 100%; }
 
 .vehicle-badge { position: absolute; left: 1rem; top: 1rem; padding: 0.55rem 0.85rem; border-radius: 999px; background: var(--accent); color: var(--surface); font-size: 0.92rem; font-weight: 900; box-shadow: 0 0.8rem 1.8rem rgba(0, 0, 0, 0.18); }
 .vehicle-share { position: absolute; right: 0.85rem; top: 0.85rem; z-index: 3; width: 2.45rem; height: 2.45rem; opacity: 0.78; }
+.vehicle-share svg { width: 1.715rem; height: 1.715rem; }
 .vehicle-share:hover { opacity: 1; }
 
 .vehicle-card__body { padding: 1.25rem; }
@@ -194,7 +195,7 @@ img { display: block; max-width: 100%; }
 .spec-list { display: grid; gap: 0.62rem; margin: 1rem 0 0; padding: 0; list-style: none; }
 .spec-item { display: grid; grid-template-columns: 2.15rem minmax(0, 1fr); align-items: center; gap: 0.72rem; color: var(--muted); }
 .spec-icon { width: 2.15rem; height: 2.15rem; display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--line) 72%, transparent); border-radius: 0.7rem; background: color-mix(in srgb, var(--surface-soft) 52%, var(--surface)); color: var(--accent-strong); }
-.spec-icon svg { width: 1.22rem; height: 1.22rem; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.spec-icon svg { width: 1.5rem; height: 1.5rem; fill: none; stroke: currentColor; stroke-width: 1.15; stroke-linecap: round; stroke-linejoin: round; }
 .spec-copy { min-width: 0; display: grid; gap: 0.05rem; line-height: 1.25; }
 .spec-copy span { color: color-mix(in srgb, var(--muted) 82%, transparent); font-size: 0.78rem; font-weight: 760; letter-spacing: 0.08em; text-transform: uppercase; }
 .spec-copy strong { color: var(--text); font-size: 1rem; font-weight: 760; overflow-wrap: anywhere; }
@@ -257,8 +258,8 @@ img { display: block; max-width: 100%; }
 .footer-meta { justify-items: end; }
 .social-icons { display: flex !important; grid-auto-flow: column; gap: 0.4rem !important; justify-content: end; }
 .social-icon { width: 1.9rem; height: 1.9rem; display: grid; place-items: center; border: 0; border-radius: 999px; color: color-mix(in srgb, var(--muted) 68%, transparent); background: color-mix(in srgb, var(--surface) 36%, transparent); box-shadow: none; }
-.social-icon svg { width: 0.98rem; height: 0.98rem; fill: currentColor; stroke: none; }
-.social-icon--line svg { width: 1.06rem; height: 1.06rem; transform: translateY(0.035rem); }
+.social-icon svg { width: 1.33rem; height: 1.33rem; fill: currentColor; stroke: none; }
+.social-icon--line svg { width: 1.33rem; height: 1.33rem; transform: translateY(0.035rem); }
 .social-cutout { fill: var(--surface); }
 .social-icon:hover { color: var(--accent-strong); box-shadow: none; transform: translateY(-1px); }
 .social-icon--line:hover { color: #06c755; }
@@ -275,7 +276,7 @@ img { display: block; max-width: 100%; }
 .promise-grid h2 { margin: 1rem 0 0.6rem; font-size: 1.25rem; }
 .promise-grid p { margin: 0; color: var(--muted); line-height: 1.75; }
 .promise-icon { width: 2.45rem; height: 2.45rem; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 0.85rem; color: var(--accent-strong); background: color-mix(in srgb, var(--surface-soft) 54%, var(--surface)); }
-.promise-icon svg { width: 1.25rem; height: 1.25rem; fill: none; stroke: currentColor; stroke-width: 1.85; stroke-linecap: round; stroke-linejoin: round; }
+.promise-icon svg { width: 1.72rem; height: 1.72rem; fill: none; stroke: currentColor; stroke-width: 1.12; stroke-linecap: round; stroke-linejoin: round; }
 .contact-strip { display: flex; align-items: center; justify-content: space-between; gap: 2rem; margin: 0 clamp(1.25rem, 5vw, 6rem) 5rem; padding: 1.6rem; border: 1px solid var(--line); border-radius: 1.7rem; background: color-mix(in srgb, var(--surface) 86%, transparent); }
 .contact-strip h2 { margin: 0.2rem 0 0; font-size: clamp(1.5rem, 3vw, 2.8rem); letter-spacing: -0.045em; }
 .contact-card { display: grid; gap: 0.7rem; color: var(--muted); }
@@ -302,7 +303,7 @@ img { display: block; max-width: 100%; }
   transform: translateY(0.7rem);
   transition: opacity 180ms ease, transform 180ms ease, border-color 180ms ease;
 }
-.back-to-top svg { width: 1.05rem; height: 1.05rem; fill: none; stroke: currentColor; stroke-width: 1.55; stroke-linecap: round; stroke-linejoin: round; }
+.back-to-top svg { width: 2.1rem; height: 2.1rem; fill: none; stroke: currentColor; stroke-width: 0.95; stroke-linecap: round; stroke-linejoin: round; }
 
 .back-to-top.is-visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
 .back-to-top:hover { border-color: var(--accent); }
@@ -344,8 +345,8 @@ img { display: block; max-width: 100%; }
   .detail-contact-button.button--primary { background: color-mix(in srgb, var(--accent) 72%, var(--surface)); color: color-mix(in srgb, var(--surface) 86%, transparent); }
   .detail-contact-button.button--ghost,
   .detail-share-button { background: color-mix(in srgb, var(--surface) 58%, transparent); }
-  .detail-contact-button svg { width: 1.26rem; height: 1.26rem; display: block; fill: none; stroke: currentColor; stroke-width: 1.02; stroke-linecap: round; stroke-linejoin: round; opacity: 0.88; }
-  .detail-contact-button svg.brand-glyph { width: 1.38rem; height: 1.38rem; fill: currentColor; stroke: none; opacity: 0.84; transform: translateY(0.025rem); }
+  .detail-contact-button svg { width: 2.1rem; height: 2.1rem; display: block; fill: none; stroke: currentColor; stroke-width: 0.95; stroke-linecap: round; stroke-linejoin: round; opacity: 0.88; }
+  .detail-contact-button svg.brand-glyph { width: 2.1rem; height: 2.1rem; fill: currentColor; stroke: none; opacity: 0.84; transform: translateY(0.025rem); }
   .detail-contact-button .social-cutout { fill: color-mix(in srgb, var(--accent) 72%, var(--surface)); }
   .detail-contact-button span { display: none; }
   .inventory-shell { display: block; padding: 0 clamp(1.25rem, 5vw, 6rem) 5rem; }
@@ -408,10 +409,11 @@ img { display: block; max-width: 100%; }
   .mobile-action--line { background: color-mix(in srgb, var(--accent) 72%, var(--surface)); color: color-mix(in srgb, var(--surface) 86%, transparent); box-shadow: 0 0.25rem 0.65rem rgba(20, 35, 60, 0.04); }
   .mobile-action--line .social-cutout { fill: color-mix(in srgb, var(--accent) 72%, var(--surface)); }
   .mobile-action svg,
-  .back-to-top svg { width: 0.92rem; height: 0.92rem; fill: none; stroke: currentColor; stroke-width: 1.02; stroke-linecap: round; stroke-linejoin: round; opacity: 0.88; }
-  .mobile-action svg.brand-glyph { width: 1.02rem; height: 1.02rem; fill: currentColor; stroke: none; opacity: 0.84; transform: translateY(0.025rem); }
+  .mobile-action svg,
+  .back-to-top svg { width: 1.48rem; height: 1.48rem; fill: none; stroke: currentColor; stroke-width: 0.95; stroke-linecap: round; stroke-linejoin: round; opacity: 0.88; }
+  .mobile-action svg.brand-glyph { width: 1.48rem; height: 1.48rem; fill: currentColor; stroke: none; opacity: 0.84; transform: translateY(0.025rem); }
   .detail-share-button { width: 3rem; height: 3rem; min-height: 3rem; box-shadow: 0 0.25rem 0.65rem rgba(20, 35, 60, 0.025); }
-  .detail-share-button svg { width: 1.26rem; height: 1.26rem; stroke-width: 1.02; opacity: 0.88; }
+  .detail-share-button svg { width: 2.1rem; height: 2.1rem; stroke-width: 0.95; opacity: 0.88; }
   .mobile-action:hover { transform: translateY(-2px); box-shadow: 0 0.7rem 1.4rem rgba(0, 0, 0, 0.12); }
   .mobile-action:active { transform: translateY(0) scale(0.96); }
   .back-to-top { right: max(0.85rem, env(safe-area-inset-right)); bottom: calc(max(5.25rem, env(safe-area-inset-bottom) + 4.75rem) + 9.5rem); }
