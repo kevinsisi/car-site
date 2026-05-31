@@ -17,7 +17,7 @@ const specs = [
 ---
 
 <article class="vehicle-card reveal-card">
-  <a href={`/cars/${vehicle.slug}`} aria-label={`查看 ${vehicle.title}`}>
+  <a href={`/cars/${vehicle.slug}`} aria-label={`查看 ${vehicle.title}`} rel="prefetch">
     <div class="vehicle-card__media">
       {image ? <img src={image.url} alt={image.alt || vehicle.title} loading="lazy" decoding="async" /> : <div class="image-placeholder">Awaiting Image</div>}
       {vehicle.monthlyRecommended && <span class="vehicle-badge">本月推薦</span>}

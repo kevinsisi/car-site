@@ -16,7 +16,7 @@ const activeBrandLabel = brands.find((brand) => brand.urlSlug === activeBrand)?.
 const shareOrigin = shareOriginFromRequest(Astro.request, Astro.url);
 ---
 
-<PublicLayout title={`嚴選車輛｜${settings.siteName}`}>
+<PublicLayout title={`嚴選車輛｜${settings.siteName}`} showMobileActions={false} showBackToTop={false}>
   <section class="page-hero compact luxury-enter">
     <p class="eyebrow">{settings.listingEyebrow}</p>
     <h1>{settings.listingTitle}</h1>
