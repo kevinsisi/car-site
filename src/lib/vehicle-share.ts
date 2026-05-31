@@ -6,6 +6,12 @@ export function vehicleShareUrl(vehicle: VehicleView, origin = '') {
   return `${origin}/cars/${vehicle.slug}`;
 }
 
+export function shareOriginFromRequest(request: Request, fallback: URL) {
+  const forwardedProto = request.headers.get('x-forwarded-proto') || fallback.protocol.replace(':', '');
+  const forwardedHost = request.headers.get('x-forwarded-host') || request.headers.get('host') || fallback.host;
+  return `${forwardedProto}://${forwardedHost}`;
+}
+
 export function formatVehicleShareText(vehicle: VehicleView, template: string, url: string) {
   const values: Record<string, string> = {
     車名: vehicle.title,

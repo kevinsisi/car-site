@@ -7,11 +7,15 @@ import '@/styles/global.css';
 interface Props {
   title?: string;
   description?: string;
+  shareText?: string;
+  shareUrl?: string;
 }
 
 const settings = await getSettings();
 const title = Astro.props.title || settings.siteName;
 const description = Astro.props.description || '私人高級車顧問，嚴選高端中古車款。';
+const pageShareText = Astro.props.shareText || description;
+const pageShareUrl = Astro.props.shareUrl || Astro.url.pathname;
 const template = templates[settings.activeTemplate];
 const style = styles[settings.activeStyle];
 const themeColor = settings.activeStyle === 'carsmeet-blue' ? '#2f66ad' : '#070605';
@@ -67,7 +71,7 @@ const socialLinks = [
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 19V5M6.5 10.5 12 5l5.5 5.5" /></svg>
     </a>
     <div class="mobile-contact-bar" aria-label="快速聯絡">
-      <button class="mobile-action mobile-action--share" type="button" data-share-title={title} data-share-text={description} data-share-url={Astro.url.pathname} aria-label="分享目前頁面">
+      <button class="mobile-action mobile-action--share" type="button" data-share-title={title} data-share-text={pageShareText} data-share-url={pageShareUrl} aria-label="分享目前頁面">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7.5 12.5 16 8M7.5 11.5 16 16M6.5 15.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6ZM17.5 9.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6ZM17.5 20.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z" /></svg>
       </button>
       <a class="mobile-action mobile-action--line" href={settings.lineUrl} aria-label="LINE 洽詢">
@@ -100,18 +104,18 @@ const socialLinks = [
         event.preventDefault();
         event.stopPropagation();
         const url = new URL(trigger.dataset.shareUrl || '/', window.location.origin).toString();
-        const title = trigger.dataset.shareTitle || document.title;
         const text = trigger.dataset.shareText || '';
+        const message = text.includes(url) ? text : [text, url].filter(Boolean).join('\n');
         try {
           if (navigator.share) {
-            await navigator.share({ title, text, url });
+            await navigator.share({ text: message });
             return;
           }
-          await navigator.clipboard.writeText(url);
+          await navigator.clipboard.writeText(message);
           showShareToast();
         } catch (error) {
           if (error instanceof DOMException && error.name === 'AbortError') return;
-          await navigator.clipboard.writeText(url);
+          await navigator.clipboard.writeText(message);
           showShareToast();
         }
       });

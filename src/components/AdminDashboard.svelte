@@ -20,7 +20,7 @@
   let vehicleForm = $state(emptyVehicleForm());
   let draggedImageIndex = $state<number | null>(null);
   let isUploadingImages = $state(false);
-  const shareTemplatePlaceholder = '{車名}\n年份：{年份}\n品牌：{品牌}\n里程：{里程}\n價格請洽\n{網址}';
+  const shareTemplatePlaceholder = '憶文豪車，推薦給您\n{車名}\n年份：{年份}\n品牌：{品牌}\n里程：{里程}\n實拍現車，專人介紹車況與配備\n{網址}';
   const cardTitleTemplatePlaceholder = '{年份} {品牌} {型號} {規格}\n{補充}';
   const cardTitleTokens = ['車名', '年份', '品牌', '顯示品牌', '型號', '規格', '補充', '里程', '車況'];
   const shareTemplateTokens = ['車名', '年份', '品牌', '里程', '外觀色', '內裝色', '車況', '價格', '網址'];

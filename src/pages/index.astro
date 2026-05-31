@@ -2,12 +2,13 @@
 import PublicLayout from '@/layouts/PublicLayout.astro';
 import VehicleCard from '@/components/VehicleCard.astro';
 import { getSettings } from '@/lib/settings';
-import { formatVehicleShareText, vehicleShareUrl } from '@/lib/vehicle-share';
+import { formatVehicleShareText, shareOriginFromRequest, vehicleShareUrl } from '@/lib/vehicle-share';
 import { listPublicVehicles } from '@/lib/vehicles';
 
 const settings = await getSettings();
 const vehicles = await listPublicVehicles();
 const hero = vehicles[0];
+const shareOrigin = shareOriginFromRequest(Astro.request, Astro.url);
 ---
 
 <PublicLayout title={`私人高級車顧問｜${settings.siteName}`}>
@@ -37,6 +38,6 @@ const hero = vehicles[0];
     <a href="/cars">查看全部</a>
   </section>
   <div class="vehicle-grid">
-    {vehicles.slice(0, 3).map((vehicle) => <VehicleCard vehicle={vehicle} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle))} />)}
+    {vehicles.slice(0, 3).map((vehicle) => <VehicleCard vehicle={vehicle} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
   </div>
 </PublicLayout>

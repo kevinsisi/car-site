@@ -2,7 +2,7 @@
 import PublicLayout from '@/layouts/PublicLayout.astro';
 import ShareButton from '@/components/ShareButton.astro';
 import { getSettings } from '@/lib/settings';
-import { formatVehicleShareText, vehicleShareUrl } from '@/lib/vehicle-share';
+import { formatVehicleShareText, shareOriginFromRequest, vehicleShareUrl } from '@/lib/vehicle-share';
 import { getVehicleBySlug } from '@/lib/vehicles';
 
 const vehicle = await getVehicleBySlug(Astro.params.slug || '');
@@ -10,7 +10,7 @@ if (!vehicle || !['published', 'sold'].includes(vehicle.status)) {
   return new Response('Not found', { status: 404 });
 }
 const settings = await getSettings();
-const shareUrl = vehicleShareUrl(vehicle);
+const shareUrl = vehicleShareUrl(vehicle, shareOriginFromRequest(Astro.request, Astro.url));
 const shareText = formatVehicleShareText(vehicle, settings.shareMessageTemplate, shareUrl);
 const knownSpecs: Record<string, Record<string, string>> = {
   B181: { warranty: '總代理車源', spec: 'Continental GT V8 Mulliner', body: 'GT Coupe', fuel: '汽油', doorsSeats: '2門 / 4座', cylinders: 'V8', horsepower: '550 hp' },
@@ -41,7 +41,7 @@ const specRows = [
 ].filter((row) => settings.detailSpecFields.includes(row.key) && row.value);
 ---
 
-<PublicLayout title={`${vehicle.title}｜${settings.siteName}`} description={vehicle.headline || vehicle.description}>
+<PublicLayout title={`${vehicle.title}｜${settings.siteName}`} description={vehicle.headline || vehicle.description} shareText={shareText} shareUrl={shareUrl}>
   <article class="detail-page luxury-enter">
     <section class="detail-hero">
       <div class="detail-copy">

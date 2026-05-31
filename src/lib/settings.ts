@@ -57,7 +57,7 @@ const defaults: SiteSettings = {
   cardTitleTemplate: '{年份} {品牌} {型號} {規格}\n{補充}',
   detailNotesEyebrow: 'Advisor Notes',
   detailNotesTitle: '顧問觀點',
-  shareMessageTemplate: '{車名}\n年份：{年份}\n品牌：{品牌}\n里程：{里程}\n價格請洽\n{網址}',
+  shareMessageTemplate: '憶文豪車，推薦給您\n{車名}\n年份：{年份}\n品牌：{品牌}\n里程：{里程}\n實拍現車，專人介紹車況與配備\n{網址}',
   detailSpecFields: defaultDetailSpecFields,
   footerDisclaimer: '所有車輛價格皆採專人洽詢，實際車況與配備以現場確認為準。',
   activeTemplate: 'private-salon',

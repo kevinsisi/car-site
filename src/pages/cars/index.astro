@@ -2,7 +2,7 @@
 import VehicleCard from '@/components/VehicleCard.astro';
 import PublicLayout from '@/layouts/PublicLayout.astro';
 import { getSettings } from '@/lib/settings';
-import { formatVehicleShareText, vehicleShareUrl } from '@/lib/vehicle-share';
+import { formatVehicleShareText, shareOriginFromRequest, vehicleShareUrl } from '@/lib/vehicle-share';
 import { listMonthlyRecommendedVehicles, listPublicBrands, listPublicVehicles, listPublicVehiclesByBrand } from '@/lib/vehicles';
 
 const settings = await getSettings();
@@ -13,6 +13,7 @@ const recommendedVehicles = await listMonthlyRecommendedVehicles();
 const brands = await listPublicBrands();
 const vehicles = activeTab === 'recommended' ? recommendedVehicles : activeBrand ? await listPublicVehiclesByBrand(activeBrand) : allVehicles;
 const activeBrandLabel = brands.find((brand) => brand.urlSlug === activeBrand)?.displayName;
+const shareOrigin = shareOriginFromRequest(Astro.request, Astro.url);
 ---
 
 <PublicLayout title={`嚴選車輛｜${settings.siteName}`}>
@@ -50,7 +51,7 @@ const activeBrandLabel = brands.find((brand) => brand.urlSlug === activeBrand)?.
         <span>{vehicles.length} cars</span>
       </div>
       <div class="vehicle-grid listing-grid">
-        {vehicles.map((vehicle) => <VehicleCard vehicle={vehicle} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle))} />)}
+        {vehicles.map((vehicle) => <VehicleCard vehicle={vehicle} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
       </div>
     </div>
   </section>
