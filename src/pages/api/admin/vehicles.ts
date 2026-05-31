@@ -16,6 +16,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     id: body.id ? String(body.id) : undefined,
     slug: body.slug ? String(body.slug) : undefined,
     title: String(body.title),
+    cardTitleSupplement: body.cardTitleSupplement ? String(body.cardTitleSupplement) : '',
     brand: String(body.brand),
     model: String(body.model),
     subModel: body.subModel ? String(body.subModel) : undefined,

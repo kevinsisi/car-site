@@ -6,6 +6,7 @@ export const vehicles = sqliteTable(
     id: text('id').primaryKey(),
     slug: text('slug').notNull().unique(),
     title: text('title').notNull(),
+    cardTitleSupplement: text('card_title_supplement').notNull().default(''),
     brand: text('brand').notNull(),
     model: text('model').notNull(),
     subModel: text('sub_model').notNull().default(''),

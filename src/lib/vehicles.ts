@@ -17,6 +17,8 @@ export interface VehicleView {
   id: string;
   slug: string;
   title: string;
+  cardTitle: string;
+  cardTitleSupplement: string;
   brand: string;
   brandDisplayName: string;
   brandUrlSlug: string;
@@ -68,9 +70,34 @@ function normalizeRouteSlug(input: string | undefined | null): string {
     .slice(0, 90);
 }
 
+function cleanTemplateOutput(value: string): string {
+  return value
+    .split('\n')
+    .map((line) => line.replace(/[ \t]+/g, ' ').trim())
+    .filter(Boolean)
+    .join('\n');
+}
+
+function formatCardTitle(template: string, row: typeof vehicles.$inferSelect, brandDisplayName: string): string {
+  const variables: Record<string, string> = {
+    車名: row.title,
+    年份: row.year,
+    品牌: row.brand,
+    顯示品牌: brandDisplayName,
+    型號: row.model,
+    規格: row.subModel,
+    補充: row.cardTitleSupplement,
+    里程: row.mileage,
+    車況: row.condition,
+  };
+  const rendered = template.replace(/\{([^}]+)\}/g, (_, key: string) => variables[key] || '');
+  return cleanTemplateOutput(rendered) || row.title;
+}
+
 async function attachImages(rows: (typeof vehicles.$inferSelect)[]): Promise<VehicleView[]> {
   if (!rows.length) return [];
   const brandAliasMap = await getBrandAliasMap();
+  const settings = await getSettings();
   const images = await db
     .select()
     .from(vehicleImages)
@@ -85,12 +112,15 @@ async function attachImages(rows: (typeof vehicles.$inferSelect)[]): Promise<Veh
   return rows.map((row) => {
     const rowImages = imageMap.get(row.id) || [];
     const brandAlias = brandAliasMap.get(row.brand);
+    const brandDisplayName = brandAlias?.displayName || row.brand;
     return {
       id: row.id,
       slug: row.slug,
       title: row.title,
+      cardTitle: formatCardTitle(settings.cardTitleTemplate, row, brandDisplayName),
+      cardTitleSupplement: row.cardTitleSupplement,
       brand: row.brand,
-      brandDisplayName: brandAlias?.displayName || row.brand,
+      brandDisplayName,
       brandUrlSlug: brandAlias?.urlSlug || '',
       model: row.model,
       subModel: row.subModel,
@@ -167,6 +197,7 @@ export async function upsertVehicle(input: {
   id?: string;
   slug?: string;
   title: string;
+  cardTitleSupplement?: string;
   brand: string;
   model: string;
   subModel?: string;
@@ -196,6 +227,7 @@ export async function upsertVehicle(input: {
     id,
     slug,
     title: input.title,
+    cardTitleSupplement: input.cardTitleSupplement ?? existing[0]?.cardTitleSupplement ?? '',
     brand: input.brand,
     model: input.model,
     subModel: input.subModel || '',

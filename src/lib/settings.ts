@@ -23,6 +23,7 @@ export interface SiteSettings {
   listingEyebrow: string;
   listingTitle: string;
   listingLead: string;
+  cardTitleTemplate: string;
   detailNotesEyebrow: string;
   detailNotesTitle: string;
   shareMessageTemplate: string;
@@ -53,6 +54,7 @@ const defaults: SiteSettings = {
   listingEyebrow: 'Curated Inventory',
   listingTitle: '只放上值得親自介紹的車',
   listingLead: '所有價格採專人洽詢。若您正在尋找特定品牌、年份或配置，建議直接 LINE 聯絡。',
+  cardTitleTemplate: '{年份} {品牌} {型號} {規格}\n{補充}',
   detailNotesEyebrow: 'Advisor Notes',
   detailNotesTitle: '顧問觀點',
   shareMessageTemplate: '{車名}\n年份：{年份}\n品牌：{品牌}\n里程：{里程}\n價格請洽\n{網址}',
@@ -101,6 +103,7 @@ export async function getSettings(): Promise<SiteSettings> {
     listingEyebrow: map.get('listingEyebrow') || defaults.listingEyebrow,
     listingTitle: map.get('listingTitle') || defaults.listingTitle,
     listingLead: map.get('listingLead') || defaults.listingLead,
+    cardTitleTemplate: map.get('cardTitleTemplate') || defaults.cardTitleTemplate,
     detailNotesEyebrow: map.get('detailNotesEyebrow') || defaults.detailNotesEyebrow,
     detailNotesTitle: map.get('detailNotesTitle') || defaults.detailNotesTitle,
     shareMessageTemplate: map.get('shareMessageTemplate') || defaults.shareMessageTemplate,

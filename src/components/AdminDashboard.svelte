@@ -18,6 +18,8 @@
   let draggedImageIndex = $state<number | null>(null);
   let isUploadingImages = $state(false);
   const shareTemplatePlaceholder = '{車名}\n年份：{年份}\n品牌：{品牌}\n里程：{里程}\n價格請洽\n{網址}';
+  const cardTitleTemplatePlaceholder = '{年份} {品牌} {型號} {規格}\n{補充}';
+  const cardTitleTemplateHint = '可用變數：{車名} {年份} {品牌} {顯示品牌} {型號} {規格} {補充} {里程} {車況}。換行會保留，空白行會自動移除。';
   let brandAliasText = $state(brandAliases.map((item) => `${item.sourceBrand} = ${item.displayName} | ${item.urlSlug}`).join('\n'));
   let settingsForm = $state({
     siteName: settings.siteName,
@@ -38,6 +40,7 @@
     listingEyebrow: settings.listingEyebrow,
     listingTitle: settings.listingTitle,
     listingLead: settings.listingLead,
+    cardTitleTemplate: settings.cardTitleTemplate,
     detailNotesEyebrow: settings.detailNotesEyebrow,
     detailNotesTitle: settings.detailNotesTitle,
     shareMessageTemplate: settings.shareMessageTemplate,
@@ -154,6 +157,7 @@
   function emptyVehicleForm() {
     return {
       title: '',
+      cardTitleSupplement: '',
       slug: '',
       brand: '',
       model: '',
@@ -176,6 +180,7 @@
     selectedId = vehicle.id;
     vehicleForm = {
       title: vehicle.title,
+      cardTitleSupplement: vehicle.cardTitleSupplement,
       slug: vehicle.slug,
       brand: vehicle.brand,
       model: vehicle.model,
@@ -268,6 +273,8 @@
     <label>列表小標 <input bind:value={settingsForm.listingEyebrow} /></label>
     <label>列表主標 <textarea bind:value={settingsForm.listingTitle}></textarea></label>
     <label>列表說明 <textarea bind:value={settingsForm.listingLead}></textarea></label>
+    <label>卡片標題模板 <textarea bind:value={settingsForm.cardTitleTemplate} placeholder={cardTitleTemplatePlaceholder}></textarea></label>
+    <p class="form-hint">{cardTitleTemplateHint}</p>
     <label>詳情備註小標 <input bind:value={settingsForm.detailNotesEyebrow} /></label>
     <label>詳情備註標題 <input bind:value={settingsForm.detailNotesTitle} /></label>
     <label>分享訊息模板 <textarea bind:value={settingsForm.shareMessageTemplate} placeholder={shareTemplatePlaceholder}></textarea></label>
@@ -391,6 +398,7 @@
       <h3>{selectedId ? '編輯車輛' : '新增車輛'}</h3>
       <div class="form-grid">
         <label>標題 <input bind:value={vehicleForm.title} required /></label>
+        <label>卡片標題補充 <input bind:value={vehicleForm.cardTitleSupplement} placeholder="例如 總代、稀有配色、Mulliner" /></label>
         <label>路由編號 <input bind:value={vehicleForm.slug} placeholder="例如 B181" /></label>
         <label>品牌 <input bind:value={vehicleForm.brand} required /></label>
         <label>型號 <input bind:value={vehicleForm.model} required /></label>
@@ -454,7 +462,7 @@
       <article class="admin-car-row">
         <img src={vehicle.coverImage?.url || ''} alt={vehicle.title} />
         <div>
-          <strong>{vehicle.title}</strong>
+          <strong>{vehicle.cardTitle}</strong>
           <span>{vehicle.status} / /cars/{vehicle.slug} / {vehicle.year} / {vehicle.mileage}{vehicle.monthlyRecommended ? ' / 本月推薦' : ''}</span>
         </div>
         <div class="row-actions">

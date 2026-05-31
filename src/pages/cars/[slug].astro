@@ -113,6 +113,7 @@ const specRows = [
     let translateY = 0;
     let dragStart = null;
     let pinchStart = null;
+    let lastTapTime = 0;
 
     const clampScale = (value) => Math.min(4, Math.max(1, value));
     const applyTransform = () => {
@@ -122,6 +123,12 @@ const specRows = [
     };
     const resetTransform = () => {
       scale = 1;
+      translateX = 0;
+      translateY = 0;
+      applyTransform();
+    };
+    const toggleZoom = () => {
+      scale = scale === 1 ? 2.5 : 1;
       translateX = 0;
       translateY = 0;
       applyTransform();
@@ -144,6 +151,7 @@ const specRows = [
       lightbox?.classList.remove('is-open');
       lightbox?.setAttribute('aria-hidden', 'true');
       document.body.classList.remove('has-open-lightbox');
+      resetTransform();
     };
     const zoomBy = (delta) => {
       scale = clampScale(scale + delta);
@@ -166,13 +174,9 @@ const specRows = [
     lightbox?.addEventListener('click', (event) => {
       if (event.target === lightbox) closeLightbox();
     });
-    lightboxImage?.addEventListener('dblclick', () => {
-      scale = scale === 1 ? 2.5 : 1;
-      if (scale === 1) {
-        translateX = 0;
-        translateY = 0;
-      }
-      applyTransform();
+    stage?.addEventListener('dblclick', (event) => {
+      event.preventDefault();
+      toggleZoom();
     });
     stage?.addEventListener('wheel', (event) => {
       event.preventDefault();
@@ -200,7 +204,18 @@ const specRows = [
       scale = clampScale(pinchStart.scale * (touchDistance(event.touches) / pinchStart.distance));
       applyTransform();
     }, { passive: false });
-    stage?.addEventListener('touchend', () => { pinchStart = null; }, { passive: true });
+    stage?.addEventListener('touchend', (event) => {
+      pinchStart = null;
+      if (event.touches.length || event.changedTouches.length !== 1) return;
+      const now = Date.now();
+      if (now - lastTapTime < 320) {
+        event.preventDefault();
+        toggleZoom();
+        lastTapTime = 0;
+        return;
+      }
+      lastTapTime = now;
+    }, { passive: false });
     document.addEventListener('keydown', (event) => {
       if (!lightbox?.classList.contains('is-open')) return;
       if (event.key === 'Escape') closeLightbox();
