@@ -85,10 +85,17 @@ const socialLinks = [
       const backToTop = document.querySelector('.back-to-top');
       const mobileContactBar = document.querySelector('.mobile-contact-bar');
       const header = document.querySelector('.site-header');
+      let lastScrollY = window.scrollY;
       const updateBackToTop = () => {
-        const isPastHeader = window.scrollY > (header?.clientHeight || 80);
+        const currentScrollY = window.scrollY;
+        const isPastHeader = currentScrollY > (header?.clientHeight || 80);
+        const isScrollingDown = currentScrollY > lastScrollY + 8;
+        const isScrollingUp = currentScrollY < lastScrollY - 8;
         backToTop?.classList.toggle('is-visible', isPastHeader);
-        mobileContactBar?.classList.toggle('is-visible', window.scrollY > 180);
+        mobileContactBar?.classList.toggle('is-visible', currentScrollY > 180);
+        if (isScrollingDown && currentScrollY > 120) header?.classList.add('is-hidden');
+        if (isScrollingUp || currentScrollY < 40) header?.classList.remove('is-hidden');
+        lastScrollY = currentScrollY;
       };
       updateBackToTop();
       window.addEventListener('scroll', updateBackToTop, { passive: true });
