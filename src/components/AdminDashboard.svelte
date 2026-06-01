@@ -154,7 +154,8 @@
 
   function iconPreviewStyle(cfg: SocialIconConfig | undefined): string {
     if (!cfg?.url) return '';
-    const w = (cfg.zoom || 1) * 100;
+    const baseScale = 70;
+    const w = (cfg.zoom || 1) * baseScale;
     return `width: ${w}%; height: ${w}%; object-position: ${cfg.offsetX ?? 50}% ${cfg.offsetY ?? 50}%;`;
   }
 

@@ -51,7 +51,11 @@ export function parseSocialIcons(raw: string | undefined | null): SocialIconsMap
 export function socialIconCropStyle(cfg: SocialIconConfig | undefined): string {
   if (!cfg?.url) return '';
   const zoom = cfg.zoom || 1;
-  return `width: ${zoom * 100}%; height: ${zoom * 100}%; object-position: ${cfg.offsetX ?? 50}% ${cfg.offsetY ?? 50}%;`;
+  // base 70% = inscribed-circle scale so square images at zoom 1 fit inside the circular chip
+  // without their corners being clipped by border-radius. zoom 1.43 ≈ fills the chip,
+  // zoom >1.43 starts cropping.
+  const baseScale = 70;
+  return `width: ${zoom * baseScale}%; height: ${zoom * baseScale}%; object-position: ${cfg.offsetX ?? 50}% ${cfg.offsetY ?? 50}%;`;
 }
 
 export function serializeSocialIcons(map: SocialIconsMap): string {

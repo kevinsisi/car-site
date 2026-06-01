@@ -16,8 +16,9 @@ interface Props {
 }
 
 const { platform, href, label, customIcon } = Astro.props;
+const baseScale = 70;
 const customStyle = customIcon
-  ? `width: ${(customIcon.zoom || 1) * 100}%; height: ${(customIcon.zoom || 1) * 100}%; object-position: ${customIcon.offsetX ?? 50}% ${customIcon.offsetY ?? 50}%;`
+  ? `width: ${(customIcon.zoom || 1) * baseScale}%; height: ${(customIcon.zoom || 1) * baseScale}%; object-position: ${customIcon.offsetX ?? 50}% ${customIcon.offsetY ?? 50}%;`
   : '';
 ---
 
