@@ -1,5 +1,8 @@
 ---
 import AdminLayout from '@/layouts/AdminLayout.astro';
+import { asc } from 'drizzle-orm';
+import { db } from '@/db/connection';
+import { adminUsers } from '@/db/schema';
 import { getSession } from '@/lib/auth';
 
 const admin = await getSession(Astro.cookies);
@@ -7,6 +10,10 @@ if (!admin) {
   return Astro.redirect('/admin/login');
 }
 const isForced = Astro.url.searchParams.get('force') === '1';
+const accounts = await db
+  .select({ id: adminUsers.id, username: adminUsers.username, createdAt: adminUsers.createdAt })
+  .from(adminUsers)
+  .orderBy(asc(adminUsers.createdAt));
 ---
 
 <AdminLayout>
@@ -14,7 +21,7 @@ const isForced = Astro.url.searchParams.get('force') === '1';
     <div>
       <p class="admin-eyebrow">帳號設定</p>
       <h1>帳號設定</h1>
-      <p>更改登入帳號密碼。</p>
+      <p>變更自己的密碼，並管理可登入後台的管理員帳號。</p>
     </div>
     <span class="account-current">目前帳號：<strong>{admin.username}</strong></span>
   </section>
@@ -27,7 +34,7 @@ const isForced = Astro.url.searchParams.get('force') === '1';
   )}
 
   <section class="admin-panel">
-    <h2>變更密碼</h2>
+    <h2>變更自己的密碼</h2>
     <form id="change-password-form" class="settings-form" autocomplete="off">
       <label>目前密碼 <input name="currentPassword" type="password" autocomplete="current-password" required minlength="4" /></label>
       <label>新密碼 <input name="newPassword" type="password" autocomplete="new-password" required minlength="8" /></label>
@@ -37,11 +44,48 @@ const isForced = Astro.url.searchParams.get('force') === '1';
     </form>
   </section>
 
+  <section class="admin-panel">
+    <div class="hero-panel">
+      <div>
+        <h2>管理員帳號</h2>
+        <p>所有可登入後台的帳號。至少保留一個帳號；無法刪除目前登入中的帳號。</p>
+      </div>
+      <span class="account-current">總共 <strong id="account-count">{accounts.length}</strong> 個</span>
+    </div>
+
+    <ul class="account-list" id="account-list">
+      {accounts.map((acc) => (
+        <li class="account-item" data-id={acc.id}>
+          <div>
+            <strong>{acc.username}</strong>
+            {acc.id === admin.id && <span class="account-badge">目前登入</span>}
+            <small>建立於 {new Date(acc.createdAt).toLocaleDateString('zh-TW')}</small>
+          </div>
+          {acc.id !== admin.id && (
+            <button type="button" class="row-button--danger account-delete" data-id={acc.id} data-username={acc.username}>刪除帳號</button>
+          )}
+        </li>
+      ))}
+    </ul>
+
+    <h3>新增管理員</h3>
+    <form id="new-account-form" class="settings-form" autocomplete="off">
+      <label>帳號 <input name="username" required minlength="3" placeholder="英文字母、數字、底線、點、短橫線" /></label>
+      <label>密碼 <input name="password" type="password" autocomplete="new-password" required minlength="8" /></label>
+      <p class="form-hint">建立後，新帳號就能用上述帳密登入後台。</p>
+      <button class="admin-button" type="submit">建立帳號</button>
+    </form>
+  </section>
+
   <div id="account-toast-root"></div>
 
   <script>
-    const form = document.getElementById('change-password-form') as HTMLFormElement | null;
+    const passForm = document.getElementById('change-password-form') as HTMLFormElement | null;
+    const newAccountForm = document.getElementById('new-account-form') as HTMLFormElement | null;
+    const accountList = document.getElementById('account-list');
+    const accountCount = document.getElementById('account-count');
     const toastRoot = document.getElementById('account-toast-root');
+
     function showToast(text: string, level: 'success' | 'error' = 'success') {
       if (!toastRoot) return;
       const stack = toastRoot.querySelector('.toast-stack') || (() => {
@@ -61,9 +105,19 @@ const isForced = Astro.url.searchParams.get('force') === '1';
       (t.querySelector('.toast__close') as HTMLElement).addEventListener('click', close);
       window.setTimeout(close, level === 'error' ? 6000 : 3000);
     }
-    form?.addEventListener('submit', async (event) => {
+
+    async function jsonFetch(input: string, init?: RequestInit) {
+      const response = await fetch(input, init);
+      if (response.status === 401) {
+        window.location.href = '/admin/login?expired=1';
+        throw new Error('expired');
+      }
+      return response;
+    }
+
+    passForm?.addEventListener('submit', async (event) => {
       event.preventDefault();
-      const formData = new FormData(form);
+      const formData = new FormData(passForm);
       const currentPassword = String(formData.get('currentPassword') || '');
       const newPassword = String(formData.get('newPassword') || '');
       const confirmPassword = String(formData.get('confirmPassword') || '');
@@ -71,21 +125,57 @@ const isForced = Astro.url.searchParams.get('force') === '1';
         showToast('新密碼兩次輸入不一致', 'error');
         return;
       }
-      const response = await fetch('/api/admin/change-password', {
+      const response = await jsonFetch('/api/admin/change-password', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ currentPassword, newPassword }),
       });
-      if (response.status === 401) {
-        window.location.href = '/admin/login?expired=1';
-        return;
-      }
       const result = await response.json().catch(() => ({}));
       if (response.ok) {
         showToast('密碼已更新');
-        form.reset();
+        passForm.reset();
       } else {
         showToast(result.error || '密碼更新失敗', 'error');
+      }
+    });
+
+    newAccountForm?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const formData = new FormData(newAccountForm);
+      const username = String(formData.get('username') || '').trim();
+      const password = String(formData.get('password') || '');
+      const response = await jsonFetch('/api/admin/accounts', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (response.ok) {
+        showToast(`已建立帳號「${username}」`);
+        newAccountForm.reset();
+        window.setTimeout(() => window.location.reload(), 700);
+      } else {
+        showToast(result.error || '帳號建立失敗', 'error');
+      }
+    });
+
+    accountList?.addEventListener('click', async (event) => {
+      const btn = (event.target as HTMLElement)?.closest('.account-delete') as HTMLElement | null;
+      if (!btn) return;
+      const id = btn.dataset.id;
+      const username = btn.dataset.username;
+      if (!id) return;
+      const ok = window.confirm(`確定要刪除帳號「${username}」嗎？刪除後該帳號將無法再登入後台，且操作無法復原。`);
+      if (!ok) return;
+      const response = await jsonFetch(`/api/admin/accounts/${id}`, { method: 'DELETE' });
+      const result = await response.json().catch(() => ({}));
+      if (response.ok) {
+        showToast(`已刪除帳號「${username}」`);
+        const item = accountList.querySelector(`[data-id="${id}"]`);
+        item?.remove();
+        if (accountCount) accountCount.textContent = String(accountList.querySelectorAll('.account-item').length);
+      } else {
+        showToast(result.error || '刪除失敗', 'error');
       }
     });
   </script>
@@ -97,4 +187,11 @@ const isForced = Astro.url.searchParams.get('force') === '1';
   .force-banner { border-color: rgba(220, 154, 60, 0.6); background: rgba(229, 154, 60, 0.1); }
   .force-banner strong { color: #f0b576; font-size: 1.05rem; display: block; margin-bottom: 0.4rem; }
   .force-banner code { padding: 0.1rem 0.35rem; background: rgba(255, 255, 255, 0.1); border-radius: 0.25rem; font-size: 0.9em; }
+  .account-list { list-style: none; margin: 0 0 1.2rem; padding: 0; display: grid; gap: 0.5rem; }
+  .account-item { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.9rem 1.05rem; border: 1px solid rgba(210, 174, 101, 0.2); border-radius: 0.85rem; background: #110e0b; }
+  .account-item > div { display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap; }
+  .account-item strong { color: #f8efe1; font-size: 1.05rem; }
+  .account-item small { display: block; flex-basis: 100%; color: #75695a; font-size: 0.78rem; margin-top: 0.18rem; }
+  .account-badge { padding: 0.18rem 0.6rem; border-radius: 999px; background: rgba(214, 176, 106, 0.15); color: #d6b06a; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; }
+  .account-delete { min-height: 2.2rem; padding: 0 0.85rem; border-radius: 999px; cursor: pointer; }
 </style>
