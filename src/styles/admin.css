@@ -157,6 +157,14 @@ textarea { width: 100%; min-height: 7rem; border-radius: 0.8rem; border: 1px sol
 .toast--progress { border-color: rgba(214, 176, 106, 0.4); background: #1f1a14; }
 @keyframes toast-slide-in { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes toast-spin { to { transform: rotate(360deg); } }
+.confirm-overlay { position: fixed; inset: 0; z-index: 250; display: grid; place-items: center; padding: 1.5rem; background: rgba(5, 4, 3, 0.7); backdrop-filter: blur(6px); animation: confirm-fade 160ms ease-out; }
+.confirm-card { width: min(28rem, 100%); padding: 1.5rem 1.6rem; border-radius: 1.1rem; background: #1a1612; border: 1px solid rgba(210, 174, 101, 0.32); box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.55); color: #f8efe1; }
+.confirm-card h3 { margin: 0 0 0.55rem; color: #d6b06a; font-size: 1.15rem; }
+.confirm-card p { margin: 0 0 1.3rem; color: #c9bda6; line-height: 1.65; }
+.confirm-actions { display: flex; gap: 0.6rem; justify-content: flex-end; }
+.confirm-danger { background: #c25555 !important; color: #fff !important; border-color: #c25555 !important; }
+.confirm-danger:hover { background: #d66464 !important; }
+@keyframes confirm-fade { from { opacity: 0; } to { opacity: 1; } }
 .admin-grid--overview { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .overview-kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.85rem; margin-bottom: 1rem; }
 .overview-kpi { padding: 1rem 1.1rem; border: 1px solid rgba(210, 174, 101, 0.2); border-radius: 1rem; background: #110e0b; display: grid; gap: 0.25rem; }

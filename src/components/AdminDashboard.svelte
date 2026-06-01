@@ -194,7 +194,7 @@
 
   async function setStatus(id: string, status: string) {
     if (destructiveStatuses.has(status)) {
-      const ok = window.confirm(statusConfirmTexts[status] || '確定要執行此操作嗎？');
+      const ok = await confirmDialog('請確認狀態變更', statusConfirmTexts[status] || '確定要執行此操作嗎？', true);
       if (!ok) return;
     }
     const response = await adminFetch(`/api/admin/vehicles/${id}/status`, {
@@ -264,6 +264,71 @@
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   });
+
+  $effect(() => {
+    const isInputTarget = (el: Element | null): boolean => {
+      if (!el) return false;
+      const tag = el.tagName;
+      return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (el as HTMLElement).isContentEditable;
+    };
+    const handler = (event: KeyboardEvent) => {
+      const cmdKey = event.metaKey || event.ctrlKey;
+      if (cmdKey && event.key.toLowerCase() === 's') {
+        const targetForm = mode === 'settings' || mode === 'contact'
+          ? document.querySelector<HTMLFormElement>('.settings-form')
+          : mode === 'vehicles'
+            ? document.querySelector<HTMLFormElement>('.vehicle-edit-form')
+            : null;
+        if (targetForm) {
+          event.preventDefault();
+          targetForm.requestSubmit();
+        }
+        return;
+      }
+      if (!isInputTarget(document.activeElement) && event.key === '/') {
+        const search = document.querySelector<HTMLInputElement>('.admin-search input');
+        if (search) {
+          event.preventDefault();
+          search.focus();
+          search.select();
+        }
+        return;
+      }
+      if (!isInputTarget(document.activeElement) && event.key.toLowerCase() === 'n' && mode === 'vehicles') {
+        if (!vehicleFormDirty) {
+          event.preventDefault();
+          resetVehicleForm();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          const firstInput = document.querySelector<HTMLInputElement>('.vehicle-edit-form input[name], .vehicle-edit-form input');
+          firstInput?.focus();
+        }
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  });
+
+  type ConfirmRequest = { title: string; body: string; danger: boolean; resolve: (ok: boolean) => void };
+  let confirmRequest = $state<ConfirmRequest | null>(null);
+  function confirmDialog(title: string, body: string, danger = false): Promise<boolean> {
+    return new Promise((resolve) => { confirmRequest = { title, body, danger, resolve }; });
+  }
+  function answerConfirm(ok: boolean) {
+    confirmRequest?.resolve(ok);
+    confirmRequest = null;
+  }
+
+  function exportSettings() {
+    const payload = JSON.stringify({ exportedAt: new Date().toISOString(), settings: settingsForm }, null, 2);
+    const blob = new Blob([payload], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `site-settings-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    notifySuccess('已匯出網站設定');
+  }
 
   function addBrandAliasRow() {
     const used = new Set(brandAliasRows.map((row) => row.sourceBrand));
@@ -973,10 +1038,24 @@
     </details>
 
     <div class="settings-save-bar">
-      <span class="settings-save-bar__hint">{settingsFormDirty ? '有未儲存的變更' : '所有設定已是最新狀態'}</span>
+      <span class="settings-save-bar__hint">{settingsFormDirty ? '有未儲存的變更（Cmd/Ctrl+S 可儲存）' : '所有設定已是最新狀態'}</span>
+      <button type="button" class="secondary-button" onclick={exportSettings}>匯出設定</button>
       <button class="admin-button" type="submit" disabled={!settingsFormDirty}>儲存設定</button>
     </div>
   </form>
+{/if}
+
+{#if confirmRequest}
+  <div class="confirm-overlay" role="dialog" aria-modal="true" onclick={() => answerConfirm(false)}>
+    <div class="confirm-card" onclick={(e) => e.stopPropagation()}>
+      <h3>{confirmRequest.title}</h3>
+      <p>{confirmRequest.body}</p>
+      <div class="confirm-actions">
+        <button type="button" class="secondary-button" onclick={() => answerConfirm(false)}>取消</button>
+        <button type="button" class={confirmRequest.danger ? 'admin-button confirm-danger' : 'admin-button'} onclick={() => answerConfirm(true)}>確認</button>
+      </div>
+    </div>
+  </div>
 {/if}
 
 {#if mode === 'contact'}

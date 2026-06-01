@@ -6,6 +6,7 @@ const admin = await getSession(Astro.cookies);
 if (!admin) {
   return Astro.redirect('/admin/login');
 }
+const isForced = Astro.url.searchParams.get('force') === '1';
 ---
 
 <AdminLayout>
@@ -17,6 +18,13 @@ if (!admin) {
     </div>
     <span class="account-current">目前帳號：<strong>{admin.username}</strong></span>
   </section>
+
+  {isForced && (
+    <div class="admin-panel force-banner" role="alert">
+      <strong>請先變更預設密碼</strong>
+      <p>目前仍在使用部署時的預設密碼 <code>change-me-now</code>，必須先設定新密碼才能繼續使用後台。</p>
+    </div>
+  )}
 
   <section class="admin-panel">
     <h2>變更密碼</h2>
@@ -86,4 +94,7 @@ if (!admin) {
 <style>
   .account-current { color: #c9bda6; font-size: 0.92rem; }
   .account-current strong { color: #d6b06a; }
+  .force-banner { border-color: rgba(220, 154, 60, 0.6); background: rgba(229, 154, 60, 0.1); }
+  .force-banner strong { color: #f0b576; font-size: 1.05rem; display: block; margin-bottom: 0.4rem; }
+  .force-banner code { padding: 0.1rem 0.35rem; background: rgba(255, 255, 255, 0.1); border-radius: 0.25rem; font-size: 0.9em; }
 </style>
