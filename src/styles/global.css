@@ -316,9 +316,9 @@ img.image-error::after { content: attr(alt); }
 .social-icons { display: flex !important; grid-auto-flow: column; gap: 0.55rem !important; justify-content: end; align-items: center; }
 .social-icon { position: relative; width: 2.25rem; height: 2.25rem; display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--line) 80%, transparent); border-radius: 999px; color: var(--muted); background: var(--surface); box-shadow: 0 0.4rem 0.9rem rgba(0, 0, 0, 0.06); overflow: hidden; }
 .social-icon svg { width: 1.6rem; height: 1.6rem; fill: currentColor; stroke: none; display: block; }
-.social-icon__custom-img { display: block; min-width: 100%; min-height: 100%; object-fit: cover; }
+.social-icon__custom-img { display: block; min-width: 100%; min-height: 100%; object-fit: contain; }
 .social-icon--custom { padding: 0; }
-.brand-custom-img { display: block; min-width: 100%; min-height: 100%; object-fit: cover; border-radius: inherit; }
+.brand-custom-img { display: block; min-width: 100%; min-height: 100%; object-fit: contain; border-radius: inherit; }
 .detail-contact-button .brand-custom-img { display: none; }
 .site-cta__link--custom { overflow: hidden; padding: 0; border-color: transparent; }
 .site-cta__link--custom .brand-custom-img { display: block; }

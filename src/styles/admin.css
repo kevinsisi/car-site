@@ -255,7 +255,7 @@ textarea { width: 100%; min-height: 7rem; border-radius: 0.8rem; border: 1px sol
 .social-icon-card__head strong { color: #d6b06a; font-size: 1rem; }
 .social-icon-card__preview { display: flex; align-items: center; gap: 0.8rem; }
 .social-icon-card__circle { position: relative; width: 4rem; height: 4rem; border-radius: 999px; border: 1px solid rgba(210, 174, 101, 0.3); background: #1a1612; overflow: hidden; display: grid; place-items: center; flex-shrink: 0; }
-.social-icon-card__circle img { display: block; object-fit: cover; }
+.social-icon-card__circle img { display: block; object-fit: contain; }
 .social-icon-card__circle--empty span { color: #75695a; font-size: 0.75rem; }
 .social-icon-card__preview .upload-button { flex: 1; min-width: 0; justify-content: center; min-height: 2.3rem; font-size: 0.85rem; padding: 0 0.85rem; }
 .social-icon-card__controls { display: grid; gap: 0.5rem; }

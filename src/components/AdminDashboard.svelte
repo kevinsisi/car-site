@@ -239,19 +239,29 @@
   }
 
   $effect(() => {
-    const textareas = document.querySelectorAll<HTMLTextAreaElement>('textarea[data-autoresize]');
     const resize = (ta: HTMLTextAreaElement) => {
       ta.style.height = 'auto';
       ta.style.height = `${Math.max(ta.scrollHeight + 2, 80)}px`;
     };
-    const handlers = new Map<HTMLTextAreaElement, () => void>();
-    textareas.forEach((ta) => {
-      const h = () => resize(ta);
-      ta.addEventListener('input', h);
-      handlers.set(ta, h);
-      resize(ta);
-    });
-    return () => handlers.forEach((h, ta) => ta.removeEventListener('input', h));
+    const ensureAttached = () => {
+      const textareas = document.querySelectorAll<HTMLTextAreaElement>('textarea[data-autoresize]');
+      textareas.forEach((ta) => {
+        if (!(ta as HTMLTextAreaElement & { __resize?: boolean }).__resize) {
+          (ta as HTMLTextAreaElement & { __resize?: boolean }).__resize = true;
+          ta.addEventListener('input', () => resize(ta));
+        }
+        resize(ta);
+      });
+    };
+    ensureAttached();
+    const details = document.querySelectorAll<HTMLDetailsElement>('details.settings-section');
+    const onToggle = () => window.setTimeout(ensureAttached, 0);
+    details.forEach((d) => d.addEventListener('toggle', onToggle));
+    const interval = window.setInterval(ensureAttached, 800);
+    return () => {
+      details.forEach((d) => d.removeEventListener('toggle', onToggle));
+      window.clearInterval(interval);
+    };
   });
 
   $effect(() => {
