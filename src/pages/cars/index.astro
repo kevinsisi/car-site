@@ -11,9 +11,34 @@ const activeTab = activeBrand ? 'brand' : Astro.url.searchParams.get('tab') === 
 const allVehicles = await listPublicVehicles();
 const recommendedVehicles = await listMonthlyRecommendedVehicles();
 const brands = await listPublicBrands();
-const vehicles = activeTab === 'recommended' ? recommendedVehicles : activeBrand ? await listPublicVehiclesByBrand(activeBrand) : allVehicles;
+const baseVehicles = activeTab === 'recommended' ? recommendedVehicles : activeBrand ? await listPublicVehiclesByBrand(activeBrand) : allVehicles;
 const activeBrandLabel = brands.find((brand) => brand.urlSlug === activeBrand)?.displayName;
 const shareOrigin = shareOriginFromRequest(Astro.request, Astro.url);
+
+const SORT_OPTIONS = [
+  { value: 'recent', label: '最近更新' },
+  { value: 'year-desc', label: '年份：新到舊' },
+  { value: 'year-asc', label: '年份：舊到新' },
+  { value: 'mileage-asc', label: '里程：少到多' },
+] as const;
+type SortValue = (typeof SORT_OPTIONS)[number]['value'];
+const sortParam = (Astro.url.searchParams.get('sort') || 'recent') as SortValue;
+const activeSort = SORT_OPTIONS.find((opt) => opt.value === sortParam)?.value || 'recent';
+const numericValue = (raw: string) => {
+  const match = String(raw || '').replace(/[^\d.]/g, '');
+  if (!match) return Number.NaN;
+  const n = Number.parseFloat(match);
+  return Number.isFinite(n) ? n : Number.NaN;
+};
+const sortedVehicles = [...baseVehicles];
+if (activeSort === 'year-desc') {
+  sortedVehicles.sort((a, b) => (numericValue(b.year) || 0) - (numericValue(a.year) || 0));
+} else if (activeSort === 'year-asc') {
+  sortedVehicles.sort((a, b) => (numericValue(a.year) || 9999) - (numericValue(b.year) || 9999));
+} else if (activeSort === 'mileage-asc') {
+  sortedVehicles.sort((a, b) => (numericValue(a.mileage) || Infinity) - (numericValue(b.mileage) || Infinity));
+}
+const vehicles = sortedVehicles;
 ---
 
 <PublicLayout title={`嚴選車輛｜${settings.siteName}`} showMobileActions={false} showBackToTop={false}>
@@ -48,11 +73,30 @@ const shareOrigin = shareOriginFromRequest(Astro.request, Astro.url);
           <p class="eyebrow">選車</p>
           <h2>{activeBrandLabel || (activeTab === 'recommended' ? '本月精選' : '全部車輛')}</h2>
         </div>
-        <span>{vehicles.length} 台車</span>
+        <div class="inventory-toolbar__controls">
+          <label class="sort-control">
+            <span>排序</span>
+            <select id="sort-select" aria-label="車輛排序">
+              {SORT_OPTIONS.map((opt) => (
+                <option value={opt.value} selected={activeSort === opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </label>
+          <span class="vehicle-count">{vehicles.length} 台車</span>
+        </div>
       </div>
-      <div class="vehicle-grid listing-grid">
-        {vehicles.map((vehicle) => <VehicleCard vehicle={vehicle} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
-      </div>
+      {vehicles.length === 0 ? (
+        <div class="empty-state">
+          <p class="eyebrow">目前無符合車輛</p>
+          <h3>這個分類暫時沒有上架的車輛</h3>
+          <p>歡迎透過 <a href={settings.lineUrl}>LINE 洽詢</a> 告訴我們想找的品牌、年份或預算，我們會主動協助尋車。</p>
+          <a class="button button--ghost" href="/cars">查看全部車輛</a>
+        </div>
+      ) : (
+        <div class="vehicle-grid listing-grid">
+          {vehicles.map((vehicle) => <VehicleCard vehicle={vehicle} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
+        </div>
+      )}
     </div>
   </section>
   <script>
@@ -70,6 +114,15 @@ const shareOrigin = shareOriginFromRequest(Astro.request, Astro.url);
     scrim?.addEventListener('click', () => setOpen(false));
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') setOpen(false);
+    });
+
+    const sortSelect = document.getElementById('sort-select');
+    sortSelect?.addEventListener('change', (event) => {
+      const target = event.currentTarget as HTMLSelectElement;
+      const url = new URL(window.location.href);
+      if (target.value === 'recent') url.searchParams.delete('sort');
+      else url.searchParams.set('sort', target.value);
+      window.location.href = url.toString();
     });
   </script>
 </PublicLayout>

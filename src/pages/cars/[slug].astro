@@ -3,7 +3,7 @@ import PublicLayout from '@/layouts/PublicLayout.astro';
 import ShareButton from '@/components/ShareButton.astro';
 import { getSettings } from '@/lib/settings';
 import { formatVehicleShareText, shareOriginFromRequest, vehicleShareUrl } from '@/lib/vehicle-share';
-import { getVehicleBySlug } from '@/lib/vehicles';
+import { getVehicleBySlug, listPublicVehicles } from '@/lib/vehicles';
 import { devPlaceholderSpecs } from '@/lib/dev-placeholder-vehicle-specs';
 
 const vehicle = await getVehicleBySlug(Astro.params.slug || '');
@@ -14,9 +14,47 @@ const settings = await getSettings();
 const shareUrl = vehicleShareUrl(vehicle, shareOriginFromRequest(Astro.request, Astro.url));
 const shareText = formatVehicleShareText(vehicle, settings.shareMessageTemplate, shareUrl);
 const known = devPlaceholderSpecs[vehicle.slug] || {};
-const advisorDescription = vehicle.description
-  .replace(/此車由\s*(?:carsmeet|既有庫存)\s*現有庫存匯入，?\s*/gi, '此車已完成實拍照片整理，')
-  .replace(/carsmeet/gi, '既有庫存');
+const advisorDescription = vehicle.description;
+const allVehicles = await listPublicVehicles();
+const currentIndex = allVehicles.findIndex((v) => v.id === vehicle.id);
+const prevVehicle = currentIndex > 0 ? allVehicles[currentIndex - 1] : null;
+const nextVehicle = currentIndex >= 0 && currentIndex < allVehicles.length - 1 ? allVehicles[currentIndex + 1] : null;
+
+const origin = `${Astro.url.protocol}//${Astro.url.host}`;
+const vehicleJsonLd: Record<string, unknown> = {
+  '@context': 'https://schema.org',
+  '@type': 'Vehicle',
+  name: vehicle.title,
+  brand: { '@type': 'Brand', name: vehicle.brandDisplayName || vehicle.brand },
+  model: vehicle.model || undefined,
+  vehicleModelDate: vehicle.year || undefined,
+  bodyType: known.body || undefined,
+  fuelType: known.fuel || undefined,
+  numberOfDoors: known.doorsSeats ? known.doorsSeats.split('/')[0]?.trim() : undefined,
+  color: vehicle.exteriorColor || undefined,
+  vehicleInteriorColor: vehicle.interiorColor || undefined,
+  mileageFromOdometer: vehicle.mileage ? { '@type': 'QuantitativeValue', value: vehicle.mileage } : undefined,
+  image: vehicle.images.map((image) => new URL(image.url, origin).toString()),
+  url: new URL(`/cars/${vehicle.slug}`, origin).toString(),
+  description: vehicle.description || vehicle.headline,
+  itemCondition: 'https://schema.org/UsedCondition',
+  offers: {
+    '@type': 'Offer',
+    availability: vehicle.status === 'sold' ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock',
+    priceCurrency: 'TWD',
+    price: '0',
+    priceSpecification: { '@type': 'PriceSpecification', priceCurrency: 'TWD', minPrice: 0, description: '價格請洽' },
+  },
+};
+const breadcrumbJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: '首頁', item: origin },
+    { '@type': 'ListItem', position: 2, name: '車輛收藏', item: new URL('/cars', origin).toString() },
+    { '@type': 'ListItem', position: 3, name: vehicle.title, item: new URL(`/cars/${vehicle.slug}`, origin).toString() },
+  ],
+};
 const specRows = [
   { key: 'year', label: '年份', value: vehicle.year },
   { key: 'mileage', label: '里程', value: vehicle.mileage },
@@ -33,7 +71,7 @@ const specRows = [
 ].filter((row) => settings.detailSpecFields.includes(row.key) && row.value);
 ---
 
-<PublicLayout title={`${vehicle.title}｜${settings.siteName}`} description={vehicle.headline || vehicle.description} shareText={shareText} shareUrl={shareUrl}>
+<PublicLayout title={`${vehicle.title}｜${settings.siteName}`} description={vehicle.headline || vehicle.description} shareText={shareText} shareUrl={shareUrl} ogImage={vehicle.coverImage?.url} ogType="product" jsonLd={[vehicleJsonLd, breadcrumbJsonLd]}>
   <article class="detail-page luxury-enter">
     <section class="detail-hero">
       <div class="detail-copy">
@@ -53,7 +91,7 @@ const specRows = [
         </div>
       </div>
       <div class="detail-cover">
-        {vehicle.coverImage && <img src={vehicle.coverImage.url} alt={vehicle.coverImage.alt || vehicle.title} fetchpriority="high" decoding="async" />}
+        {vehicle.coverImage && <img src={vehicle.coverImage.url} alt={vehicle.coverImage.alt || `${vehicle.title} 封面照`} fetchpriority="high" decoding="async" />}
       </div>
     </section>
     <section class="detail-section reveal-section">
@@ -70,17 +108,49 @@ const specRows = [
         <p class="eyebrow">{settings.detailNotesEyebrow}</p>
         <h2>{settings.detailNotesTitle}</h2>
       </div>
-      <p>{advisorDescription}</p>
+      <div class="advisor-note">
+        <p>{advisorDescription}</p>
+        <p class="advisor-note__signature">— {settings.salespersonName}</p>
+      </div>
     </section>
+    {vehicle.images.length > 0 && (
+      <div class="gallery-header reveal-section">
+        <p class="eyebrow">完整圖庫</p>
+        <span>共 {vehicle.images.length} 張</span>
+      </div>
+    )}
     <section class="gallery reveal-section">
       {vehicle.images.map((image, index) => (
         <button class="gallery-item" type="button" data-gallery-index={index} aria-label={`開啟第 ${index + 1} 張大圖`}>
-          <img src={image.url} alt={image.alt || vehicle.title} loading="lazy" decoding="async" />
+          <img src={image.url} alt={image.alt || `${vehicle.title} 圖片 ${index + 1} / ${vehicle.images.length}`} loading="lazy" decoding="async" />
+          <span class="gallery-item__zoom" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6" /><path d="m20 20-4-4M8 11h6M11 8v6" /></svg>
+          </span>
+          <span class="gallery-item__index" aria-hidden="true">{index + 1} / {vehicle.images.length}</span>
         </button>
       ))}
     </section>
+    <nav class="detail-pager reveal-section" aria-label="車輛切換">
+      {prevVehicle ? (
+        <a class="detail-pager__link detail-pager__link--prev" href={`/cars/${prevVehicle.slug}`} rel="prev">
+          <span class="eyebrow">上一台</span>
+          <strong>{prevVehicle.title}</strong>
+        </a>
+      ) : (<span class="detail-pager__placeholder" aria-hidden="true"></span>)}
+      <a class="detail-pager__home" href="/cars">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></svg>
+        <span>回到車輛收藏</span>
+      </a>
+      {nextVehicle ? (
+        <a class="detail-pager__link detail-pager__link--next" href={`/cars/${nextVehicle.slug}`} rel="next">
+          <span class="eyebrow">下一台</span>
+          <strong>{nextVehicle.title}</strong>
+        </a>
+      ) : (<span class="detail-pager__placeholder" aria-hidden="true"></span>)}
+    </nav>
   </article>
   <div class="image-lightbox" aria-hidden="true" role="dialog" aria-label="車輛照片預覽">
+    <span class="image-lightbox__counter" aria-live="polite">1 / 1</span>
     <button class="image-lightbox__close" type="button" aria-label="關閉大圖">×</button>
     <button class="image-lightbox__nav image-lightbox__nav--prev" type="button" aria-label="上一張">‹</button>
     <div class="image-lightbox__stage">
@@ -97,6 +167,7 @@ const specRows = [
     const lightbox = document.querySelector('.image-lightbox');
     const lightboxImage = lightbox?.querySelector('img');
     const zoomLabel = lightbox?.querySelector('.image-lightbox__toolbar span');
+    const counter = lightbox?.querySelector('.image-lightbox__counter');
     const stage = lightbox?.querySelector('.image-lightbox__stage');
     const galleryButtons = Array.from(document.querySelectorAll('[data-gallery-index]'));
     let activeIndex = 0;
@@ -130,20 +201,27 @@ const specRows = [
       if (!lightboxImage) return;
       lightboxImage.src = images[activeIndex].url;
       lightboxImage.alt = images[activeIndex].alt;
+      if (counter) counter.textContent = `${activeIndex + 1} / ${images.length}`;
       resetTransform();
     };
+    let previouslyFocused = null;
+    const focusableSelector = '.image-lightbox__close, .image-lightbox__nav, .image-lightbox__toolbar button';
     const openLightbox = (index) => {
       if (!lightbox || !images.length) return;
+      previouslyFocused = document.activeElement;
       showImage(index);
       lightbox.classList.add('is-open');
       lightbox.setAttribute('aria-hidden', 'false');
       document.body.classList.add('has-open-lightbox');
+      const firstFocusable = lightbox.querySelector(focusableSelector);
+      if (firstFocusable instanceof HTMLElement) firstFocusable.focus();
     };
     const closeLightbox = () => {
       lightbox?.classList.remove('is-open');
       lightbox?.setAttribute('aria-hidden', 'true');
       document.body.classList.remove('has-open-lightbox');
       resetTransform();
+      if (previouslyFocused instanceof HTMLElement) previouslyFocused.focus();
     };
     const zoomBy = (delta) => {
       scale = clampScale(scale + delta);
@@ -210,9 +288,22 @@ const specRows = [
     }, { passive: false });
     document.addEventListener('keydown', (event) => {
       if (!lightbox?.classList.contains('is-open')) return;
-      if (event.key === 'Escape') closeLightbox();
-      if (event.key === 'ArrowLeft') showImage(activeIndex - 1);
-      if (event.key === 'ArrowRight') showImage(activeIndex + 1);
+      if (event.key === 'Escape') { closeLightbox(); return; }
+      if (event.key === 'ArrowLeft') { showImage(activeIndex - 1); return; }
+      if (event.key === 'ArrowRight') { showImage(activeIndex + 1); return; }
+      if (event.key === 'Tab') {
+        const focusables = Array.from(lightbox.querySelectorAll(focusableSelector)).filter((el) => el instanceof HTMLElement && !el.hasAttribute('disabled'));
+        if (!focusables.length) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
     });
   </script>
 </PublicLayout>

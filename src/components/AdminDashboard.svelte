@@ -35,6 +35,8 @@
     threadsUrl: settings.threadsUrl,
     tiktokUrl: settings.tiktokUrl,
     phoneNumber: settings.phoneNumber,
+    storeAddress: settings.storeAddress,
+    businessHours: settings.businessHours,
     homepageEyebrow: settings.homepageEyebrow,
     homepageTitle: settings.homepageTitle,
     homepageLead: settings.homepageLead,
@@ -42,6 +44,7 @@
     homepageBadge: settings.homepageBadge,
     featuredEyebrow: settings.featuredEyebrow,
     featuredTitle: settings.featuredTitle,
+    featuredCount: settings.featuredCount,
     listingEyebrow: settings.listingEyebrow,
     listingTitle: settings.listingTitle,
     listingLead: settings.listingLead,
@@ -51,6 +54,7 @@
     shareMessageTemplate: settings.shareMessageTemplate,
     detailSpecFields: settings.detailSpecFields,
     footerDisclaimer: settings.footerDisclaimer,
+    heroVehicleSlug: settings.heroVehicleSlug,
     activeTemplate: settings.activeTemplate,
     activeStyle: settings.activeStyle,
     importBehavior: settings.importBehavior,
@@ -80,7 +84,17 @@
     message = response.ok ? '品牌對照已更新' : '品牌對照更新失敗';
   }
 
+  const destructiveStatuses = new Set(['sold', 'archived']);
+  const statusConfirmTexts: Record<string, string> = {
+    sold: '確定要將此車設為「已售出」嗎？將會在公開網頁顯示為已售。',
+    archived: '確定要封存此車嗎？封存後不會顯示在後台列表，僅能透過資料庫還原。',
+  };
+
   async function setStatus(id: string, status: string) {
+    if (destructiveStatuses.has(status)) {
+      const ok = window.confirm(statusConfirmTexts[status] || '確定要執行此操作嗎？');
+      if (!ok) return;
+    }
     const response = await fetch(`/api/admin/vehicles/${id}/status`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -245,13 +259,34 @@
       }),
     });
     if (response.ok) {
-      message = '車輛已儲存，重新整理後可看到最新列表';
+      message = '車輛已儲存，正在重新載入最新資料...';
       selectedId = null;
       vehicleForm = emptyVehicleForm();
+      window.setTimeout(() => window.location.reload(), 600);
     } else {
       message = '車輛儲存失敗，請確認標題、品牌、型號與圖片';
     }
   }
+
+  let vehicleSearch = $state('');
+  let lightboxImage = $state<string | null>(null);
+
+  function vehiclesMatching(query: string): VehicleView[] {
+    const q = query.trim().toLowerCase();
+    if (!q) return vehicles;
+    return vehicles.filter((v) =>
+      v.title.toLowerCase().includes(q) ||
+      v.brand.toLowerCase().includes(q) ||
+      v.model.toLowerCase().includes(q) ||
+      v.slug.toLowerCase().includes(q),
+    );
+  }
+
+  function previewUrl(vehicle: VehicleView): string {
+    return `/cars/${vehicle.slug}`;
+  }
+
+  const previewVehicle = vehicles.find((v) => v.status === 'published') || vehicles[0] || null;
 </script>
 
 <section class="admin-panel hero-panel">
@@ -299,8 +334,19 @@
     <label>首頁說明 <textarea bind:value={settingsForm.homepageLead}></textarea></label>
     <label>首頁形象短句 <textarea bind:value={settingsForm.homepageNote}></textarea></label>
     <label>封面徽章文字 <input bind:value={settingsForm.homepageBadge} /></label>
+    <label>首頁主圖車輛
+      <select bind:value={settingsForm.heroVehicleSlug}>
+        <option value="">自動：使用最新更新的車輛</option>
+        {#each vehicles.filter((v) => v.status === 'published' || v.status === 'sold') as v}
+          <option value={v.slug}>{v.title}</option>
+        {/each}
+      </select>
+    </label>
     <label>精選區小標 <input bind:value={settingsForm.featuredEyebrow} /></label>
     <label>精選區標題 <input bind:value={settingsForm.featuredTitle} /></label>
+    <label>精選車輛顯示數量
+      <input type="number" min="1" max="12" bind:value={settingsForm.featuredCount} />
+    </label>
 
     <h3>列表與詳情文案</h3>
     <label>列表小標 <input bind:value={settingsForm.listingEyebrow} /></label>
@@ -382,22 +428,22 @@
       </div>
       <div class="theme-preview__hero">
         <div>
-          <p>私人精品車展</p>
+          <p>{settingsForm.siteName || '私人精品車展'}</p>
           <h4>{settingsForm.homepageTitle || '嚴選值得收藏的高級座駕'}</h4>
           <small>{templates[settingsForm.activeTemplate].description}</small>
         </div>
-        <div class="theme-preview__media">GT</div>
+        <div class="theme-preview__media">{previewVehicle?.brand?.slice(0, 2).toUpperCase() || 'GT'}</div>
       </div>
       <div class="theme-preview__content">
         <article>
-          <span>2023</span>
-          <strong>示範車款 Continental GT V8 Mulliner</strong>
-          <small>26,000 km ／ 價格請洽</small>
+          <span>{previewVehicle?.year || '2023'}</span>
+          <strong>{previewVehicle?.title || '示範車款 Continental GT V8 Mulliner'}</strong>
+          <small>{previewVehicle?.mileage || '26,000 km'} ／ 價格請洽</small>
         </article>
         <div class="theme-preview__specs">
-          <div><span>年份</span><strong>2023</strong></div>
-          <div><span>里程</span><strong>26,000 km</strong></div>
-          <div><span>車型</span><strong>雙門 GT 跑車</strong></div>
+          <div><span>年份</span><strong>{previewVehicle?.year || '—'}</strong></div>
+          <div><span>里程</span><strong>{previewVehicle?.mileage || '—'}</strong></div>
+          <div><span>外觀</span><strong>{previewVehicle?.exteriorColor || '—'}</strong></div>
           <div><span>價格</span><strong>價格請洽</strong></div>
         </div>
       </div>
@@ -423,6 +469,8 @@
       <h2>聯絡與社群</h2>
       <label>LINE 網址 <input bind:value={settingsForm.lineUrl} /></label>
       <label>電話 <input bind:value={settingsForm.phoneNumber} /></label>
+      <label>門市地址 <input bind:value={settingsForm.storeAddress} placeholder="例如 台北市信義區忠孝東路五段 00 號 0 樓" /></label>
+      <label>營業時間 <input bind:value={settingsForm.businessHours} placeholder="例如 週一至週六 10:00-19:00，採預約賞車" /></label>
       <label>Instagram 網址 <input bind:value={settingsForm.instagramUrl} /></label>
       <label>Facebook 網址 <input bind:value={settingsForm.facebookUrl} /></label>
       <label>Threads 網址 <input bind:value={settingsForm.threadsUrl} /></label>
@@ -460,7 +508,14 @@
   <section class="admin-panel vehicle-admin-list">
     <h2>車輛管理</h2>
     <form class="vehicle-edit-form" onsubmit={(event) => { event.preventDefault(); saveVehicle(); }}>
-      <h3>{selectedId ? '編輯車輛' : '新增車輛'}</h3>
+      <div class="vehicle-edit-form__head">
+        <h3>{selectedId ? '編輯車輛' : '新增車輛'}</h3>
+        {#if selectedId && vehicleForm.slug && (vehicleForm.status === 'published' || vehicleForm.status === 'sold')}
+          <a class="preview-link" href={`/cars/${vehicleForm.slug}`} target="_blank" rel="noopener">
+            在公開網頁預覽 →
+          </a>
+        {/if}
+      </div>
       <div class="form-grid">
         <label>標題 <input bind:value={vehicleForm.title} required /></label>
         <label>卡片標題補充 <input bind:value={vehicleForm.cardTitleSupplement} placeholder="例如 總代、稀有配色、Mulliner" /></label>
@@ -502,7 +557,9 @@
           <div class="image-sort-list">
             {#each imageUrls() as url, index}
               <article class="image-sort-item" class:is-dragging={draggedImageIndex === index} draggable="true" ondragstart={() => { draggedImageIndex = index; }} ondragover={(event) => event.preventDefault()} ondrop={() => dropImage(index)} ondragend={() => { draggedImageIndex = null; }}>
-                <img src={url} alt={`車輛圖片 ${index + 1}`} />
+                <button type="button" class="image-sort-item__thumb" onclick={() => { lightboxImage = url; }} aria-label={`預覽圖片 ${index + 1}`}>
+                  <img src={url} alt={`車輛圖片 ${index + 1}`} />
+                </button>
                 <div>
                   <strong>{index === 0 ? '封面' : `第 ${index + 1} 張`}</strong>
                   <span>{url}</span>
@@ -510,7 +567,7 @@
                 <div class="image-sort-actions">
                   <button type="button" onclick={() => moveImage(index, index - 1)} disabled={index === 0}>上移</button>
                   <button type="button" onclick={() => moveImage(index, index + 1)} disabled={index === imageUrls().length - 1}>下移</button>
-                  <button type="button" onclick={() => removeImage(index)}>移除</button>
+                  <button type="button" class="row-button--danger" onclick={() => removeImage(index)}>移除</button>
                 </div>
               </article>
             {/each}
@@ -523,7 +580,14 @@
         <button type="button" onclick={() => { selectedId = null; vehicleForm = emptyVehicleForm(); }}>清空</button>
       </div>
     </form>
-    {#each vehicles as vehicle}
+    <div class="admin-list-toolbar">
+      <label class="admin-search">
+        <span>搜尋車輛</span>
+        <input type="search" bind:value={vehicleSearch} placeholder="輸入標題、品牌、型號或網址代號" />
+      </label>
+      <span class="admin-search__count">{vehiclesMatching(vehicleSearch).length} / {vehicles.length}</span>
+    </div>
+    {#each vehiclesMatching(vehicleSearch) as vehicle}
       <article class="admin-car-row">
         <img src={vehicle.coverImage?.url || ''} alt={vehicle.title} />
         <div>
@@ -532,12 +596,22 @@
         </div>
         <div class="row-actions">
           <button onclick={() => editVehicle(vehicle)}>編輯</button>
+          <a class="row-button-link" href={`/cars/${vehicle.slug}`} target="_blank" rel="noopener">預覽</a>
           <button onclick={() => setStatus(vehicle.id, 'published')}>上架</button>
           <button onclick={() => setStatus(vehicle.id, 'unpublished')}>下架</button>
-          <button onclick={() => setStatus(vehicle.id, 'sold')}>已售</button>
-          <button onclick={() => setStatus(vehicle.id, 'archived')}>封存</button>
+          <button class="row-button--warn" onclick={() => setStatus(vehicle.id, 'sold')}>已售</button>
+          <button class="row-button--danger" onclick={() => setStatus(vehicle.id, 'archived')}>封存</button>
         </div>
       </article>
     {/each}
+    {#if vehiclesMatching(vehicleSearch).length === 0}
+      <p class="admin-empty">沒有符合條件的車輛。</p>
+    {/if}
   </section>
+{/if}
+
+{#if lightboxImage}
+  <button class="admin-image-lightbox" type="button" onclick={() => { lightboxImage = null; }} aria-label="關閉預覽">
+    <img src={lightboxImage} alt="圖片預覽" />
+  </button>
 {/if}

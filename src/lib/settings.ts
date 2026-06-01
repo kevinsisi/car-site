@@ -13,6 +13,8 @@ export interface SiteSettings {
   threadsUrl: string;
   tiktokUrl: string;
   phoneNumber: string;
+  storeAddress: string;
+  businessHours: string;
   homepageEyebrow: string;
   homepageTitle: string;
   homepageLead: string;
@@ -20,6 +22,7 @@ export interface SiteSettings {
   homepageBadge: string;
   featuredEyebrow: string;
   featuredTitle: string;
+  featuredCount: number;
   listingEyebrow: string;
   listingTitle: string;
   listingLead: string;
@@ -29,6 +32,7 @@ export interface SiteSettings {
   shareMessageTemplate: string;
   detailSpecFields: string[];
   footerDisclaimer: string;
+  heroVehicleSlug: string;
   activeTemplate: TemplateId;
   activeStyle: StyleId;
   importBehavior: ImportBehavior;
@@ -44,6 +48,8 @@ const defaults: SiteSettings = {
   threadsUrl: 'https://www.threads.net/',
   tiktokUrl: 'https://www.tiktok.com/',
   phoneNumber: '+886900000000',
+  storeAddress: '台北市信義區範例路 00 號 0 樓',
+  businessHours: '週一至週六 10:00-19:00，採預約賞車',
   homepageEyebrow: '私人高級車顧問',
   homepageTitle: '為成熟買家嚴選真正值得收藏的高級座駕',
   homepageLead: '不以價格吸引目光，而以車況、來源、配備與顧問判斷建立信任。每一台車都適合先聊過，再安排細看。',
@@ -51,6 +57,7 @@ const defaults: SiteSettings = {
   homepageBadge: 'NT$20M+ 嚴選典藏',
   featuredEyebrow: '近期庫存',
   featuredTitle: '近期嚴選車輛',
+  featuredCount: 3,
   listingEyebrow: '嚴選車庫',
   listingTitle: '只放上值得親自介紹的車',
   listingLead: '所有價格採專人洽詢。若您正在尋找特定品牌、年份或配置，建議直接 LINE 聯絡。',
@@ -59,7 +66,8 @@ const defaults: SiteSettings = {
   detailNotesTitle: '顧問觀點',
   shareMessageTemplate: '憶文豪車，推薦給您\n{車名}\n年份：{年份}\n品牌：{品牌}\n里程：{里程}\n實拍現車，專人介紹車況與配備\n{網址}',
   detailSpecFields: defaultDetailSpecFields,
-  footerDisclaimer: '所有車輛價格皆採專人洽詢，實際車況與配備以現場確認為準。',
+  footerDisclaimer: '所有價格皆採專人洽詢；實際車況與配備以現場為準，歡迎預約賞車。',
+  heroVehicleSlug: '',
   activeTemplate: 'private-salon',
   activeStyle: 'carsmeet-blue',
   importBehavior: 'draft_first',
@@ -93,6 +101,8 @@ export async function getSettings(): Promise<SiteSettings> {
     threadsUrl: settingValue('threadsUrl', defaults.threadsUrl),
     tiktokUrl: settingValue('tiktokUrl', defaults.tiktokUrl),
     phoneNumber: map.get('phoneNumber') || defaults.phoneNumber,
+    storeAddress: settingValue('storeAddress', defaults.storeAddress),
+    businessHours: settingValue('businessHours', defaults.businessHours),
     homepageEyebrow: map.get('homepageEyebrow') || defaults.homepageEyebrow,
     homepageTitle: map.get('homepageTitle') || defaults.homepageTitle,
     homepageLead: map.get('homepageLead') || defaults.homepageLead,
@@ -100,6 +110,10 @@ export async function getSettings(): Promise<SiteSettings> {
     homepageBadge: map.get('homepageBadge') || defaults.homepageBadge,
     featuredEyebrow: map.get('featuredEyebrow') || defaults.featuredEyebrow,
     featuredTitle: map.get('featuredTitle') || defaults.featuredTitle,
+    featuredCount: (() => {
+      const raw = Number.parseInt(map.get('featuredCount') ?? '', 10);
+      return Number.isFinite(raw) && raw >= 1 && raw <= 12 ? raw : defaults.featuredCount;
+    })(),
     listingEyebrow: map.get('listingEyebrow') || defaults.listingEyebrow,
     listingTitle: map.get('listingTitle') || defaults.listingTitle,
     listingLead: map.get('listingLead') || defaults.listingLead,
@@ -109,6 +123,7 @@ export async function getSettings(): Promise<SiteSettings> {
     shareMessageTemplate: map.get('shareMessageTemplate') || defaults.shareMessageTemplate,
     detailSpecFields: resolveDetailSpecFields(map.get('detailSpecFields')),
     footerDisclaimer: map.get('footerDisclaimer') || defaults.footerDisclaimer,
+    heroVehicleSlug: settingValue('heroVehicleSlug', defaults.heroVehicleSlug),
     activeTemplate: resolveTemplate(map.get('activeTemplate')),
     activeStyle: resolveStyle(map.get('activeStyle')),
     importBehavior:

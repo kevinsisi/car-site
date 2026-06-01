@@ -18,6 +18,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     threadsUrl: String(body.threadsUrl || ''),
     tiktokUrl: String(body.tiktokUrl || ''),
     phoneNumber: String(body.phoneNumber || ''),
+    storeAddress: String(body.storeAddress || ''),
+    businessHours: String(body.businessHours || ''),
     homepageEyebrow: String(body.homepageEyebrow || ''),
     homepageTitle: String(body.homepageTitle || ''),
     homepageLead: String(body.homepageLead || ''),
@@ -25,6 +27,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     homepageBadge: String(body.homepageBadge || ''),
     featuredEyebrow: String(body.featuredEyebrow || ''),
     featuredTitle: String(body.featuredTitle || ''),
+    featuredCount: (() => {
+      const n = Number.parseInt(String(body.featuredCount ?? ''), 10);
+      return Number.isFinite(n) && n >= 1 && n <= 12 ? String(n) : '3';
+    })(),
     listingEyebrow: String(body.listingEyebrow || ''),
     listingTitle: String(body.listingTitle || ''),
     listingLead: String(body.listingLead || ''),
@@ -36,6 +42,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       ? body.detailSpecFields.filter((field: unknown): field is string => typeof field === 'string' && allowedDetailSpecFields.has(field))
       : undefined,
     footerDisclaimer: String(body.footerDisclaimer || ''),
+    heroVehicleSlug: String(body.heroVehicleSlug || ''),
     activeTemplate: resolveTemplate(body.activeTemplate),
     activeStyle: resolveStyle(body.activeStyle),
     importBehavior: ['draft_first', 'auto_publish', 'import_only'].includes(body.importBehavior) ? body.importBehavior : 'draft_first',

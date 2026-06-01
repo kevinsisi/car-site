@@ -4,10 +4,26 @@ import { getSettings } from '@/lib/settings';
 
 const settings = await getSettings();
 const promises = [
-  ['車況先行', '交付前以外觀、內裝、儀表與基本機件狀態為核心，先確認風險，再安排賞車。'],
-  ['精準媒合', '不追求大量刊登，只協助客戶縮短篩選時間，找到值得親自看的車。'],
-  ['交易陪同', '從初談、預約賞車到後續交付，以顧問式流程降低資訊落差。'],
-  ['保修銜接', '可協助安排後續保養、檢查與交車前整備建議，讓高級車使用更安心。'],
+  {
+    title: '車況先行',
+    body: '交付前以外觀、內裝、儀表與基本機件狀態為核心，先確認風險，再安排賞車。',
+    icon: 'shield',
+  },
+  {
+    title: '精準媒合',
+    body: '不追求大量刊登，只協助客戶縮短篩選時間，找到值得親自看的車。',
+    icon: 'target',
+  },
+  {
+    title: '交易陪同',
+    body: '從初談、預約賞車到後續交付，以顧問式流程降低資訊落差。',
+    icon: 'people',
+  },
+  {
+    title: '保修銜接',
+    body: '可協助安排後續保養、檢查與交車前整備建議，讓高級車使用更安心。',
+    icon: 'wrench',
+  },
 ];
 ---
 
@@ -18,9 +34,22 @@ const promises = [
     <p>我們重視車況、來源、配置與時間效率。每一次推薦，都以是否值得親自介紹作為標準。</p>
   </section>
   <section class="promise-grid reveal-section">
-    {promises.map(([title, body]) => (
+    {promises.map(({ title, body, icon }) => (
       <article>
-        <span class="promise-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3.5 19 7v5.1c0 4.3-2.8 7.5-7 8.4-4.2-.9-7-4.1-7-8.4V7l7-3.5Z" /><path d="m8.7 12.1 2.1 2.1 4.7-5" /></svg></span>
+        <span class="promise-icon" aria-hidden="true">
+          {icon === 'shield' && (
+            <svg viewBox="0 0 24 24"><path d="M12 3.5 19 7v5.1c0 4.3-2.8 7.5-7 8.4-4.2-.9-7-4.1-7-8.4V7l7-3.5Z" /><path d="m8.7 12.1 2.1 2.1 4.7-5" /></svg>
+          )}
+          {icon === 'target' && (
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="4.5" /><circle cx="12" cy="12" r="1.5" /></svg>
+          )}
+          {icon === 'people' && (
+            <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9.5" r="2.3" /><path d="M3.5 20c.4-3.2 2.7-5 5.5-5s5.1 1.8 5.5 5" /><path d="M14 20c.3-2.6 1.8-4 3.5-4s3.2 1.4 3.5 4" /></svg>
+          )}
+          {icon === 'wrench' && (
+            <svg viewBox="0 0 24 24"><path d="M14.7 6.3a3 3 0 0 1 4 4l-3 .8-1.8-1.8.8-3z" /><path d="M14.5 10.2 4.3 20.4a2 2 0 0 1-2.8-2.8L11.7 7.4" /></svg>
+          )}
+        </span>
         <h2>{title}</h2>
         <p>{body}</p>
       </article>

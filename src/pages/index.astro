@@ -7,8 +7,10 @@ import { listPublicVehicles } from '@/lib/vehicles';
 
 const settings = await getSettings();
 const vehicles = await listPublicVehicles();
-const hero = vehicles[0];
+const heroBySlug = settings.heroVehicleSlug ? vehicles.find((v) => v.slug === settings.heroVehicleSlug) : null;
+const hero = heroBySlug || vehicles[0];
 const shareOrigin = shareOriginFromRequest(Astro.request, Astro.url);
+const featuredCount = Math.max(1, Math.min(12, settings.featuredCount ?? 3));
 ---
 
 <PublicLayout title={`私人高級車顧問｜${settings.siteName}`}>
@@ -38,6 +40,6 @@ const shareOrigin = shareOriginFromRequest(Astro.request, Astro.url);
     <a href="/cars">查看全部</a>
   </section>
   <div class="vehicle-grid">
-    {vehicles.slice(0, 3).map((vehicle) => <VehicleCard vehicle={vehicle} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
+    {vehicles.slice(0, featuredCount).map((vehicle) => <VehicleCard vehicle={vehicle} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
   </div>
 </PublicLayout>
