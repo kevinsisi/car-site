@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { requireAdmin } from '@/lib/auth';
 import { detailSpecFieldOptions } from '@/lib/detail-spec-fields';
-import { setSettings } from '@/lib/settings';
+import { parseSocialIcons, setSettings } from '@/lib/settings';
 import { resolveStyle, resolveTemplate } from '@/lib/theme';
 
 const allowedDetailSpecFields = new Set<string>(detailSpecFieldOptions.map((field) => field.key));
@@ -47,6 +47,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     activeStyle: resolveStyle(body.activeStyle),
     importBehavior: ['draft_first', 'auto_publish', 'import_only'].includes(body.importBehavior) ? body.importBehavior : 'draft_first',
     showSoldVehicles: body.showSoldVehicles === true,
+    socialIcons: parseSocialIcons(typeof body.socialIcons === 'string' ? body.socialIcons : JSON.stringify(body.socialIcons ?? {})),
   });
   return Response.json({ ok: true });
 };

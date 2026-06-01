@@ -56,6 +56,7 @@ const socialLinks = [
   { platform: 'threads', href: settings.threadsUrl, label: 'Threads' },
   { platform: 'tiktok', href: settings.tiktokUrl, label: 'TikTok' },
 ].filter((item) => item.href && item.href !== '#') as { platform: 'line' | 'instagram' | 'facebook' | 'threads' | 'tiktok'; href: string; label: string }[];
+const socialIcons = settings.socialIcons || {};
 ---
 
 <!doctype html>
@@ -117,7 +118,7 @@ const socialLinks = [
       <div class="footer-meta">
         {socialLinks.length > 0 && (
           <div class="social-icons" aria-label="社群連結">
-            {socialLinks.map((item) => <SocialIcon platform={item.platform} href={item.href} label={item.label} />)}
+            {socialLinks.map((item) => <SocialIcon platform={item.platform} href={item.href} label={item.label} customIcon={socialIcons[item.platform]} />)}
           </div>
         )}
         <p>{settings.footerDisclaimer}</p>

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { SiteSettings } from '@/lib/settings';
+  import type { SiteSettings, SocialIconConfig, SocialPlatform } from '@/lib/settings';
   import { detailSpecFieldOptions } from '@/lib/detail-spec-fields';
   import { styles, templates } from '@/lib/theme';
   import type { VehicleView } from '@/lib/vehicles';
@@ -59,7 +59,68 @@
     activeStyle: settings.activeStyle,
     importBehavior: settings.importBehavior,
     showSoldVehicles: settings.showSoldVehicles,
+    socialIcons: { ...settings.socialIcons } as Record<SocialPlatform, SocialIconConfig | undefined>,
   });
+
+  const socialPlatformList: { key: SocialPlatform; label: string }[] = [
+    { key: 'line', label: 'LINE' },
+    { key: 'instagram', label: 'Instagram' },
+    { key: 'facebook', label: 'Facebook' },
+    { key: 'threads', label: 'Threads' },
+    { key: 'tiktok', label: 'TikTok' },
+  ];
+
+  let uploadingPlatform = $state<SocialPlatform | null>(null);
+
+  function ensureIconConfig(platform: SocialPlatform): SocialIconConfig {
+    const existing = settingsForm.socialIcons[platform];
+    if (existing) return existing;
+    const fresh: SocialIconConfig = { url: '', zoom: 1, offsetX: 50, offsetY: 50 };
+    settingsForm.socialIcons[platform] = fresh;
+    return fresh;
+  }
+
+  async function uploadSocialIcon(platform: SocialPlatform, event: Event) {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    uploadingPlatform = platform;
+    message = `${platform.toUpperCase()} 圖示上傳中...`;
+    const formData = new FormData();
+    formData.append('files', file);
+    const response = await fetch('/api/admin/media', { method: 'POST', body: formData });
+    const result = await response.json().catch(() => ({}));
+    if (response.ok && Array.isArray(result.urls) && result.urls[0]) {
+      const cfg = ensureIconConfig(platform);
+      cfg.url = result.urls[0];
+      cfg.zoom = cfg.zoom || 1;
+      cfg.offsetX = cfg.offsetX ?? 50;
+      cfg.offsetY = cfg.offsetY ?? 50;
+      settingsForm.socialIcons = { ...settingsForm.socialIcons };
+      message = `${platform.toUpperCase()} 圖示上傳完成，記得按下方「儲存聯絡資訊」`;
+    } else {
+      message = result.error || `${platform.toUpperCase()} 圖示上傳失敗`;
+    }
+    input.value = '';
+    uploadingPlatform = null;
+  }
+
+  function clearSocialIcon(platform: SocialPlatform) {
+    settingsForm.socialIcons[platform] = undefined;
+    settingsForm.socialIcons = { ...settingsForm.socialIcons };
+  }
+
+  function updateIconField(platform: SocialPlatform, field: 'zoom' | 'offsetX' | 'offsetY', value: number) {
+    const cfg = ensureIconConfig(platform);
+    cfg[field] = value;
+    settingsForm.socialIcons = { ...settingsForm.socialIcons };
+  }
+
+  function iconPreviewStyle(cfg: SocialIconConfig | undefined): string {
+    if (!cfg?.url) return '';
+    const w = (cfg.zoom || 1) * 100;
+    return `width: ${w}%; height: ${w}%; object-position: ${cfg.offsetX ?? 50}% ${cfg.offsetY ?? 50}%;`;
+  }
 
   async function saveSettings() {
     message = '儲存中...';
@@ -476,6 +537,54 @@
       <label>Threads 網址 <input bind:value={settingsForm.threadsUrl} /></label>
       <label>TikTok 網址 <input bind:value={settingsForm.tiktokUrl} /></label>
       <p class="form-hint">社群網址留空時，公開網頁的頁尾就不會顯示該平台。</p>
+
+      <h3>社群平台自訂圖示</h3>
+      <p class="form-hint">每個社群可上傳專屬圖示，並調整顯示範圍（縮放與位置）。不上傳則使用預設圖示。</p>
+      <div class="social-icon-editor">
+        {#each socialPlatformList as platform}
+          {@const cfg = settingsForm.socialIcons[platform.key]}
+          <article class="social-icon-card">
+            <div class="social-icon-card__head">
+              <strong>{platform.label}</strong>
+              {#if cfg?.url}
+                <button type="button" class="row-button--danger" onclick={() => clearSocialIcon(platform.key)}>清除自訂</button>
+              {/if}
+            </div>
+            <div class="social-icon-card__preview">
+              {#if cfg?.url}
+                <div class="social-icon-card__circle">
+                  <img src={cfg.url} alt={`${platform.label} 圖示預覽`} style={iconPreviewStyle(cfg)} />
+                </div>
+              {:else}
+                <div class="social-icon-card__circle social-icon-card__circle--empty">
+                  <span>未自訂</span>
+                </div>
+              {/if}
+              <label class="upload-button">
+                {uploadingPlatform === platform.key ? '上傳中...' : (cfg?.url ? '更換圖示' : '上傳圖示')}
+                <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onchange={(e) => uploadSocialIcon(platform.key, e)} disabled={uploadingPlatform !== null} />
+              </label>
+            </div>
+            {#if cfg?.url}
+              <div class="social-icon-card__controls">
+                <label class="slider-row">
+                  <span>縮放 {(cfg.zoom || 1).toFixed(2)}x</span>
+                  <input type="range" min="1" max="3" step="0.05" value={cfg.zoom || 1} oninput={(e) => updateIconField(platform.key, 'zoom', Number.parseFloat((e.currentTarget as HTMLInputElement).value))} />
+                </label>
+                <label class="slider-row">
+                  <span>水平位置 {cfg.offsetX ?? 50}%</span>
+                  <input type="range" min="0" max="100" step="1" value={cfg.offsetX ?? 50} oninput={(e) => updateIconField(platform.key, 'offsetX', Number.parseInt((e.currentTarget as HTMLInputElement).value, 10))} />
+                </label>
+                <label class="slider-row">
+                  <span>垂直位置 {cfg.offsetY ?? 50}%</span>
+                  <input type="range" min="0" max="100" step="1" value={cfg.offsetY ?? 50} oninput={(e) => updateIconField(platform.key, 'offsetY', Number.parseInt((e.currentTarget as HTMLInputElement).value, 10))} />
+                </label>
+              </div>
+            {/if}
+          </article>
+        {/each}
+      </div>
+
       <button class="admin-button" type="submit">儲存聯絡資訊</button>
     </form>
 

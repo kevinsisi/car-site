@@ -4,6 +4,65 @@ import { siteSettings, type ImportBehavior } from '@/db/schema';
 import { defaultDetailSpecFields } from './detail-spec-fields';
 import { resolveStyle, resolveTemplate, type StyleId, type TemplateId } from './theme';
 
+export type SocialPlatform = 'line' | 'instagram' | 'facebook' | 'threads' | 'tiktok';
+
+export interface SocialIconConfig {
+  url: string;
+  zoom: number;
+  offsetX: number;
+  offsetY: number;
+}
+
+export type SocialIconsMap = Partial<Record<SocialPlatform, SocialIconConfig>>;
+
+const SOCIAL_PLATFORMS: SocialPlatform[] = ['line', 'instagram', 'facebook', 'threads', 'tiktok'];
+
+function clampNumber(value: unknown, min: number, max: number, fallback: number): number {
+  const n = typeof value === 'number' ? value : Number.parseFloat(String(value ?? ''));
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
+
+export function parseSocialIcons(raw: string | undefined | null): SocialIconsMap {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return {};
+    const result: SocialIconsMap = {};
+    for (const platform of SOCIAL_PLATFORMS) {
+      const entry = (parsed as Record<string, unknown>)[platform];
+      if (!entry || typeof entry !== 'object') continue;
+      const cfg = entry as Record<string, unknown>;
+      const url = typeof cfg.url === 'string' ? cfg.url.trim() : '';
+      if (!url) continue;
+      result[platform] = {
+        url,
+        zoom: clampNumber(cfg.zoom, 1, 3, 1),
+        offsetX: clampNumber(cfg.offsetX, 0, 100, 50),
+        offsetY: clampNumber(cfg.offsetY, 0, 100, 50),
+      };
+    }
+    return result;
+  } catch {
+    return {};
+  }
+}
+
+export function serializeSocialIcons(map: SocialIconsMap): string {
+  const clean: SocialIconsMap = {};
+  for (const platform of SOCIAL_PLATFORMS) {
+    const cfg = map[platform];
+    if (!cfg?.url) continue;
+    clean[platform] = {
+      url: cfg.url,
+      zoom: clampNumber(cfg.zoom, 1, 3, 1),
+      offsetX: clampNumber(cfg.offsetX, 0, 100, 50),
+      offsetY: clampNumber(cfg.offsetY, 0, 100, 50),
+    };
+  }
+  return JSON.stringify(clean);
+}
+
 export interface SiteSettings {
   siteName: string;
   salespersonName: string;
@@ -37,6 +96,7 @@ export interface SiteSettings {
   activeStyle: StyleId;
   importBehavior: ImportBehavior;
   showSoldVehicles: boolean;
+  socialIcons: SocialIconsMap;
 }
 
 const defaults: SiteSettings = {
@@ -72,6 +132,7 @@ const defaults: SiteSettings = {
   activeStyle: 'carsmeet-blue',
   importBehavior: 'draft_first',
   showSoldVehicles: false,
+  socialIcons: {},
 };
 
 function resolveDetailSpecFields(value: string | undefined): string[] {
@@ -131,14 +192,18 @@ export async function getSettings(): Promise<SiteSettings> {
         ? importBehavior
         : defaults.importBehavior,
     showSoldVehicles: map.get('showSoldVehicles') === 'true',
+    socialIcons: parseSocialIcons(map.get('socialIcons')),
   };
 }
 
-export async function setSettings(input: Partial<Record<keyof SiteSettings, string | boolean | string[]>>) {
+export async function setSettings(input: Partial<Record<keyof SiteSettings, string | number | boolean | string[] | SocialIconsMap>>) {
   const now = new Date().toISOString();
   for (const [key, rawValue] of Object.entries(input)) {
     if (rawValue === undefined) continue;
-    const value = Array.isArray(rawValue) ? JSON.stringify(rawValue) : String(rawValue);
+    let value: string;
+    if (Array.isArray(rawValue)) value = JSON.stringify(rawValue);
+    else if (rawValue && typeof rawValue === 'object') value = JSON.stringify(rawValue);
+    else value = String(rawValue);
     await db
       .insert(siteSettings)
       .values({ key, value, updatedAt: now })
