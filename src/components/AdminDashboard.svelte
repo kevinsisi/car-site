@@ -668,7 +668,10 @@
     return `/cars/${vehicle.slug}`;
   }
 
-  const previewVehicle = vehicles.find((v) => v.status === 'published') || vehicles[0] || null;
+  const defaultPreviewVehicle = vehicles.find((v) => v.status === 'published') || vehicles[0] || null;
+  let previewVehicleId = $state<string>(defaultPreviewVehicle?.id || '');
+  const previewVehicle = $derived(vehicles.find((v) => v.id === previewVehicleId) || defaultPreviewVehicle);
+  const previewSiteUrl = $derived(previewVehicle ? `/cars/${previewVehicle.slug}` : '/');
 </script>
 
 <section class="admin-panel hero-panel">
@@ -695,6 +698,39 @@
 {/if}
 
 {#if mode === 'overview'}
+  {@const newThisWeek = vehicles.filter((v) => Date.now() - new Date(v.createdAt).getTime() < 7 * 86400000).length}
+  {@const missingCover = vehicles.filter((v) => !v.coverImage && v.status !== 'archived')}
+  {@const missingDescription = vehicles.filter((v) => !v.description.trim() && v.status !== 'archived')}
+  {@const recentlyEdited = [...vehicles].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 5)}
+
+  <section class="overview-kpis">
+    <article class="overview-kpi">
+      <span>總車輛</span>
+      <strong>{vehicles.length}</strong>
+      <small>含所有狀態</small>
+    </article>
+    <article class="overview-kpi">
+      <span>上架中</span>
+      <strong>{countStatus('published')}</strong>
+      <small>公開網頁顯示</small>
+    </article>
+    <article class="overview-kpi">
+      <span>草稿</span>
+      <strong>{countStatus('draft')}</strong>
+      <small>尚未上架</small>
+    </article>
+    <article class="overview-kpi">
+      <span>已售出</span>
+      <strong>{countStatus('sold')}</strong>
+      <small>累計成交</small>
+    </article>
+    <article class="overview-kpi overview-kpi--accent">
+      <span>本週新增</span>
+      <strong>{newThisWeek}</strong>
+      <small>近 7 天建立的車輛</small>
+    </article>
+  </section>
+
   <section class="admin-grid admin-grid--overview">
     <a class="admin-panel admin-link-card" href="/admin/vehicles">
       <span>車輛管理</span>
@@ -711,6 +747,56 @@
       <strong>{brandAliases.length}</strong>
       <small>社群連結與品牌英文網址對照</small>
     </a>
+  </section>
+
+  <section class="admin-grid admin-grid--single">
+    <article class="admin-panel">
+      <h2>待辦事項</h2>
+      {#if missingCover.length === 0 && missingDescription.length === 0}
+        <p class="admin-empty" style="border: 0; padding: 0.5rem 0;">目前沒有需要處理的車輛資料 ✓</p>
+      {:else}
+        {#if missingCover.length > 0}
+          <div class="todo-row">
+            <span class="todo-row__label">缺封面圖片</span>
+            <strong>{missingCover.length} 台</strong>
+            <div class="todo-row__list">
+              {#each missingCover.slice(0, 3) as v}
+                <a href="/admin/vehicles?focus={v.id}">{v.title}</a>
+              {/each}
+              {#if missingCover.length > 3}<span>...等 {missingCover.length - 3} 台</span>{/if}
+            </div>
+          </div>
+        {/if}
+        {#if missingDescription.length > 0}
+          <div class="todo-row">
+            <span class="todo-row__label">缺顧問描述</span>
+            <strong>{missingDescription.length} 台</strong>
+            <div class="todo-row__list">
+              {#each missingDescription.slice(0, 3) as v}
+                <a href="/admin/vehicles?focus={v.id}">{v.title}</a>
+              {/each}
+              {#if missingDescription.length > 3}<span>...等 {missingDescription.length - 3} 台</span>{/if}
+            </div>
+          </div>
+        {/if}
+      {/if}
+    </article>
+
+    <article class="admin-panel">
+      <h2>最近編輯</h2>
+      {#if recentlyEdited.length === 0}
+        <p class="admin-empty" style="border: 0; padding: 0.5rem 0;">還沒有車輛資料</p>
+      {:else}
+        <ul class="recent-edits">
+          {#each recentlyEdited as v}
+            <li>
+              <a href="/admin/vehicles?focus={v.id}">{v.title}</a>
+              <small>{statusLabels[v.status]}｜{formatUpdatedAt(v.updatedAt)}</small>
+            </li>
+          {/each}
+        </ul>
+      {/if}
+    </article>
   </section>
 {/if}
 
@@ -829,6 +915,17 @@
           </button>
         {/each}
       </div>
+    </div>
+    <div class="theme-preview-controls">
+      <label class="admin-sort">
+        <span>預覽車輛</span>
+        <select bind:value={previewVehicleId}>
+          {#each vehicles as v}
+            <option value={v.id}>{v.title}</option>
+          {/each}
+        </select>
+      </label>
+      <a class="secondary-button" href={previewSiteUrl} target="_blank" rel="noopener">在新分頁開啟前台預覽 ↗</a>
     </div>
     <div class={`theme-preview ${templates[settingsForm.activeTemplate].layoutClass}`} style={previewStyleVars(settingsForm.activeStyle)}>
       <div class="theme-preview__topline">
