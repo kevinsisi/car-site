@@ -22,7 +22,19 @@ button, input, select, textarea { font: inherit; }
 .admin-panel h3 { margin: 0.6rem 0 0; color: #d6b06a; }
 .admin-panel p { color: #c9bda6; line-height: 1.7; }
 .admin-grid { display: grid; grid-template-columns: minmax(20rem, 0.7fr) 1.3fr; gap: 1rem; }
-.settings-form { display: grid; gap: 1rem; }
+.settings-form { display: grid; gap: 1rem; padding-bottom: 5.5rem; }
+.settings-section { border: 1px solid rgba(210, 174, 101, 0.18); border-radius: 1rem; background: #110e0b; overflow: hidden; }
+.settings-section summary { display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 0.95rem 1.1rem; font-weight: 800; color: #d6b06a; font-size: 1.05rem; letter-spacing: 0.04em; list-style: none; }
+.settings-section summary::-webkit-details-marker { display: none; }
+.settings-section summary::after { content: '▾'; font-size: 0.85rem; transition: transform 180ms ease; color: #a99b83; }
+.settings-section[open] summary::after { transform: rotate(180deg); }
+.settings-section summary:hover { background: rgba(210, 174, 101, 0.06); }
+.settings-section__body { padding: 1.1rem 1.1rem 1.3rem; border-top: 1px solid rgba(210, 174, 101, 0.14); display: grid; gap: 1rem; }
+.settings-save-bar { position: sticky; bottom: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.95rem 1.1rem; margin: 1rem -1rem -1rem; border-top: 1px solid rgba(210, 174, 101, 0.32); background: rgba(20, 17, 14, 0.95); backdrop-filter: blur(14px); }
+.settings-save-bar__hint { color: #a99b83; font-size: 0.92rem; }
+.settings-save-bar button[disabled] { opacity: 0.4; cursor: not-allowed; }
+.dirty-banner { padding: 0.65rem 0.95rem; border-radius: 0.7rem; background: rgba(214, 176, 106, 0.14); border: 1px solid rgba(214, 176, 106, 0.4); color: #f0d28b; font-weight: 700; font-size: 0.92rem; }
+textarea[data-autoresize] { min-height: 5rem; resize: vertical; overflow: hidden; }
 label { display: grid; gap: 0.45rem; color: #d8ccb8; }
 input, select { width: 100%; min-height: 2.8rem; border-radius: 0.8rem; border: 1px solid rgba(210, 174, 101, 0.22); background: #0d0b09; color: #f8efe1; padding: 0 0.8rem; font-size: 1rem; }
 textarea { width: 100%; min-height: 7rem; border-radius: 0.8rem; border: 1px solid rgba(210, 174, 101, 0.22); background: #0d0b09; color: #f8efe1; padding: 0.8rem; resize: vertical; font-size: 1rem; line-height: 1.45; }

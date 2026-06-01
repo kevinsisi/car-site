@@ -48,7 +48,8 @@
 
   let selectedId = $state<string | null>(null);
   let vehicleForm = $state(emptyVehicleForm());
-  let vehicleFormDirty = $state(false);
+  let vehicleFormBaseline = $state(JSON.stringify(emptyVehicleForm()));
+  let vehicleFormDirty = $derived(JSON.stringify(vehicleForm) !== vehicleFormBaseline);
   let draggedImageIndex = $state<number | null>(null);
   let isUploadingImages = $state(false);
   let uploadProgress = $state<{ current: number; total: number }>({ current: 0, total: 0 });
@@ -209,13 +210,60 @@
     }
   }
 
+  function insertAtCursor(field: TemplateField, snippet: string) {
+    const ta = document.querySelector<HTMLTextAreaElement>(`textarea[data-template-field="${field}"]`);
+    if (!ta) {
+      settingsForm[field] = `${settingsForm[field]}${snippet}`;
+      return;
+    }
+    const wasFocused = document.activeElement === ta;
+    const start = wasFocused ? (ta.selectionStart ?? ta.value.length) : ta.value.length;
+    const end = wasFocused ? (ta.selectionEnd ?? ta.value.length) : ta.value.length;
+    const before = ta.value.slice(0, start);
+    const after = ta.value.slice(end);
+    settingsForm[field] = before + snippet + after;
+    setTimeout(() => {
+      ta.focus();
+      const pos = start + snippet.length;
+      ta.setSelectionRange(pos, pos);
+      ta.dispatchEvent(new Event('input', { bubbles: true }));
+    }, 0);
+  }
+
   function insertTemplateToken(field: TemplateField, token: string) {
-    settingsForm[field] = `${settingsForm[field]}{${token}}`;
+    insertAtCursor(field, `{${token}}`);
   }
 
   function insertTemplateLineBreak(field: TemplateField) {
-    settingsForm[field] = `${settingsForm[field]}\n`;
+    insertAtCursor(field, '\n');
   }
+
+  $effect(() => {
+    const textareas = document.querySelectorAll<HTMLTextAreaElement>('textarea[data-autoresize]');
+    const resize = (ta: HTMLTextAreaElement) => {
+      ta.style.height = 'auto';
+      ta.style.height = `${Math.max(ta.scrollHeight + 2, 80)}px`;
+    };
+    const handlers = new Map<HTMLTextAreaElement, () => void>();
+    textareas.forEach((ta) => {
+      const h = () => resize(ta);
+      ta.addEventListener('input', h);
+      handlers.set(ta, h);
+      resize(ta);
+    });
+    return () => handlers.forEach((h, ta) => ta.removeEventListener('input', h));
+  });
+
+  $effect(() => {
+    const isDirty = settingsFormDirty || vehicleFormDirty;
+    const handler = (event: BeforeUnloadEvent) => {
+      if (!isDirty) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  });
 
   function addBrandAliasRow() {
     const used = new Set(brandAliasRows.map((row) => row.sourceBrand));
@@ -327,8 +375,9 @@
   }
 
   function editVehicle(vehicle: VehicleView) {
+    if (vehicleFormDirty && !window.confirm('目前編輯中尚未儲存，要切換到別台車嗎？變更會遺失。')) return;
     selectedId = vehicle.id;
-    vehicleForm = {
+    const next = {
       title: vehicle.title,
       cardTitleSupplement: vehicle.cardTitleSupplement,
       slug: vehicle.slug,
@@ -347,6 +396,43 @@
       featuresText: vehicle.features.join('\n'),
       imagesText: vehicle.images.map((image) => image.url).join('\n'),
     };
+    vehicleForm = next;
+    vehicleFormBaseline = JSON.stringify(next);
+  }
+
+  function resetVehicleForm() {
+    if (vehicleFormDirty && !window.confirm('目前編輯中尚未儲存，確定要清空？')) return;
+    selectedId = null;
+    vehicleForm = emptyVehicleForm();
+    vehicleFormBaseline = JSON.stringify(vehicleForm);
+  }
+
+  function duplicateVehicle(vehicle: VehicleView) {
+    if (vehicleFormDirty && !window.confirm('目前編輯中尚未儲存，確定要切換？變更會遺失。')) return;
+    selectedId = null;
+    const next = {
+      title: `${vehicle.title}（複本）`,
+      cardTitleSupplement: vehicle.cardTitleSupplement,
+      slug: '',
+      brand: vehicle.brand,
+      model: vehicle.model,
+      subModel: vehicle.subModel,
+      year: vehicle.year,
+      mileage: vehicle.mileage,
+      exteriorColor: vehicle.exteriorColor,
+      interiorColor: vehicle.interiorColor,
+      condition: vehicle.condition,
+      status: 'draft' as VehicleView['status'],
+      monthlyRecommended: false,
+      headline: vehicle.headline,
+      description: vehicle.description,
+      featuresText: vehicle.features.join('\n'),
+      imagesText: vehicle.images.map((image) => image.url).join('\n'),
+    };
+    vehicleForm = next;
+    vehicleFormBaseline = JSON.stringify(next);
+    notify('已建立草稿副本，請修改後儲存');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   async function saveVehicle() {
@@ -365,7 +451,7 @@
       updateToast(tid, '車輛已儲存，正在重新載入最新資料...', 'success');
       selectedId = null;
       vehicleForm = emptyVehicleForm();
-      vehicleFormDirty = false;
+      vehicleFormBaseline = JSON.stringify(vehicleForm);
       window.setTimeout(() => window.location.reload(), 700);
     } else {
       updateToast(tid, '車輛儲存失敗，請確認標題、品牌、型號與圖片', 'error');
@@ -438,69 +524,86 @@
 
 {#if mode === 'settings'}
   <form class="admin-panel settings-form" onsubmit={(event) => { event.preventDefault(); saveSettings(); }}>
-    <h2>網站設定</h2>
-    <label>網站名稱 <input bind:value={settingsForm.siteName} /></label>
-    <label>業務顯示名稱 <input bind:value={settingsForm.salespersonName} /></label>
-
-    <h3>首頁文案</h3>
-    <label>首頁小標 <input bind:value={settingsForm.homepageEyebrow} /></label>
-    <label>首頁主標 <textarea bind:value={settingsForm.homepageTitle}></textarea></label>
-    <label>首頁說明 <textarea bind:value={settingsForm.homepageLead}></textarea></label>
-    <label>首頁形象短句 <textarea bind:value={settingsForm.homepageNote}></textarea></label>
-    <label>封面徽章文字 <input bind:value={settingsForm.homepageBadge} /></label>
-    <label>首頁主圖車輛
-      <select bind:value={settingsForm.heroVehicleSlug}>
-        <option value="">自動：使用最新更新的車輛</option>
-        {#each vehicles.filter((v) => v.status === 'published' || v.status === 'sold') as v}
-          <option value={v.slug}>{v.title}</option>
-        {/each}
-      </select>
-    </label>
-    <label>精選區小標 <input bind:value={settingsForm.featuredEyebrow} /></label>
-    <label>精選區標題 <input bind:value={settingsForm.featuredTitle} /></label>
-    <label>精選車輛顯示數量
-      <input type="number" min="1" max="12" bind:value={settingsForm.featuredCount} />
-    </label>
-
-    <h3>列表與詳情文案</h3>
-    <label>列表小標 <input bind:value={settingsForm.listingEyebrow} /></label>
-    <label>列表主標 <textarea bind:value={settingsForm.listingTitle}></textarea></label>
-    <label>列表說明 <textarea bind:value={settingsForm.listingLead}></textarea></label>
-    <div class="template-builder">
-      <label>卡片標題模板 <textarea bind:value={settingsForm.cardTitleTemplate} placeholder={cardTitleTemplatePlaceholder}></textarea></label>
-      <div class="token-picker" aria-label="卡片標題變數">
-        {#each cardTitleTokens as token}
-          <button type="button" onclick={() => insertTemplateToken('cardTitleTemplate', token)}>{token}</button>
-        {/each}
-        <button type="button" onclick={() => insertTemplateLineBreak('cardTitleTemplate')}>換行</button>
+    {#if settingsFormDirty}
+      <div class="dirty-banner" role="status">有未儲存的變更</div>
+    {/if}
+    <details class="settings-section" open>
+      <summary>網站名稱與業務</summary>
+      <div class="settings-section__body">
+        <label>網站名稱 <input bind:value={settingsForm.siteName} /></label>
+        <label>業務顯示名稱 <input bind:value={settingsForm.salespersonName} /></label>
       </div>
-      <p class="form-hint">按上方按鈕就會自動把對應項目插入內容中，換行會保留，空白行會自動移除。</p>
-    </div>
-    <label>詳情備註小標 <input bind:value={settingsForm.detailNotesEyebrow} /></label>
-    <label>詳情備註標題 <input bind:value={settingsForm.detailNotesTitle} /></label>
-    <div class="template-builder">
-      <label>分享訊息模板 <textarea bind:value={settingsForm.shareMessageTemplate} placeholder={shareTemplatePlaceholder}></textarea></label>
-      <div class="token-picker" aria-label="分享訊息變數">
-        {#each shareTemplateTokens as token}
-          <button type="button" onclick={() => insertTemplateToken('shareMessageTemplate', token)}>{token}</button>
-        {/each}
-        <button type="button" onclick={() => insertTemplateLineBreak('shareMessageTemplate')}>換行</button>
-      </div>
-      <p class="form-hint">按上方按鈕就會自動把對應項目加入訊息中，不需要自己打括號。</p>
-    </div>
-    <div class="field-checklist">
-      <strong>詳情頁資訊欄位</strong>
-      <p class="form-hint">控制車輛詳情頁「完整規格」區塊要顯示哪些欄位。</p>
-      <div class="field-checklist__grid">
-        {#each detailSpecFieldOptions as field}
-          <label class="checkbox-row"><input type="checkbox" bind:group={settingsForm.detailSpecFields} value={field.key} /> {field.label}</label>
-        {/each}
-      </div>
-    </div>
-    <label>頁尾提醒 <textarea bind:value={settingsForm.footerDisclaimer}></textarea></label>
+    </details>
 
-    <h3>外觀</h3>
-    <div class="visual-options">
+    <details class="settings-section" open>
+      <summary>首頁文案</summary>
+      <div class="settings-section__body">
+        <label>首頁小標 <input bind:value={settingsForm.homepageEyebrow} /></label>
+        <label>首頁主標 <textarea data-autoresize bind:value={settingsForm.homepageTitle}></textarea></label>
+        <label>首頁說明 <textarea data-autoresize bind:value={settingsForm.homepageLead}></textarea></label>
+        <label>首頁形象短句 <textarea data-autoresize bind:value={settingsForm.homepageNote}></textarea></label>
+        <label>封面徽章文字 <input bind:value={settingsForm.homepageBadge} /></label>
+        <label>首頁主圖車輛
+          <select bind:value={settingsForm.heroVehicleSlug}>
+            <option value="">自動：使用最新更新的車輛</option>
+            {#each vehicles.filter((v) => v.status === 'published' || v.status === 'sold') as v}
+              <option value={v.slug}>{v.title}</option>
+            {/each}
+          </select>
+        </label>
+        <label>精選區小標 <input bind:value={settingsForm.featuredEyebrow} /></label>
+        <label>精選區標題 <input bind:value={settingsForm.featuredTitle} /></label>
+        <label>精選車輛顯示數量
+          <input type="number" min="1" max="12" bind:value={settingsForm.featuredCount} />
+        </label>
+      </div>
+    </details>
+
+    <details class="settings-section">
+      <summary>列表與詳情文案</summary>
+      <div class="settings-section__body">
+        <label>列表小標 <input bind:value={settingsForm.listingEyebrow} /></label>
+        <label>列表主標 <textarea data-autoresize bind:value={settingsForm.listingTitle}></textarea></label>
+        <label>列表說明 <textarea data-autoresize bind:value={settingsForm.listingLead}></textarea></label>
+        <div class="template-builder">
+          <label>卡片標題模板 <textarea data-autoresize data-template-field="cardTitleTemplate" bind:value={settingsForm.cardTitleTemplate} placeholder={cardTitleTemplatePlaceholder}></textarea></label>
+          <div class="token-picker" aria-label="卡片標題變數">
+            {#each cardTitleTokens as token}
+              <button type="button" aria-label={`插入${token}`} onclick={() => insertTemplateToken('cardTitleTemplate', token)}>{token}</button>
+            {/each}
+            <button type="button" aria-label="插入換行" onclick={() => insertTemplateLineBreak('cardTitleTemplate')}>換行</button>
+          </div>
+          <p class="form-hint">按按鈕會插入到游標位置（若沒對焦輸入框則插在末尾），換行會保留，空白行會自動移除。</p>
+        </div>
+        <label>詳情備註小標 <input bind:value={settingsForm.detailNotesEyebrow} /></label>
+        <label>詳情備註標題 <input bind:value={settingsForm.detailNotesTitle} /></label>
+        <div class="template-builder">
+          <label>分享訊息模板 <textarea data-autoresize data-template-field="shareMessageTemplate" bind:value={settingsForm.shareMessageTemplate} placeholder={shareTemplatePlaceholder}></textarea></label>
+          <div class="token-picker" aria-label="分享訊息變數">
+            {#each shareTemplateTokens as token}
+              <button type="button" aria-label={`插入${token}`} onclick={() => insertTemplateToken('shareMessageTemplate', token)}>{token}</button>
+            {/each}
+            <button type="button" aria-label="插入換行" onclick={() => insertTemplateLineBreak('shareMessageTemplate')}>換行</button>
+          </div>
+          <p class="form-hint">按按鈕會插入到游標位置，不需要自己打括號。</p>
+        </div>
+        <div class="field-checklist">
+          <strong>詳情頁資訊欄位</strong>
+          <p class="form-hint">控制車輛詳情頁「完整規格」區塊要顯示哪些欄位。</p>
+          <div class="field-checklist__grid">
+            {#each detailSpecFieldOptions as field}
+              <label class="checkbox-row"><input type="checkbox" bind:group={settingsForm.detailSpecFields} value={field.key} /> {field.label}</label>
+            {/each}
+          </div>
+        </div>
+        <label>頁尾提醒 <textarea data-autoresize bind:value={settingsForm.footerDisclaimer}></textarea></label>
+      </div>
+    </details>
+
+    <details class="settings-section">
+      <summary>外觀（模板與風格）</summary>
+      <div class="settings-section__body">
+        <div class="visual-options">
       <div class="visual-options__header">
         <strong>模板</strong>
         <span>{templates[settingsForm.activeTemplate].label}</span>
@@ -563,17 +666,27 @@
       </div>
       <button type="button" class="theme-preview__cta">LINE 洽詢</button>
     </div>
+      </div>
+    </details>
 
-    <h3>外部匯入與公開狀態</h3>
-    <label>外部來源新車輛預設
-      <select bind:value={settingsForm.importBehavior}>
-        <option value="draft_first">先存為草稿，需手動上架</option>
-        <option value="auto_publish">自動上架到公開網頁</option>
-        <option value="import_only">只匯入但不顯示在公開網頁</option>
-      </select>
-    </label>
-    <label class="checkbox-row"><input type="checkbox" bind:checked={settingsForm.showSoldVehicles} /> 公開網頁顯示已售出車輛</label>
-    <button class="admin-button" type="submit">儲存設定</button>
+    <details class="settings-section">
+      <summary>外部匯入與公開狀態</summary>
+      <div class="settings-section__body">
+        <label>外部來源新車輛預設
+          <select bind:value={settingsForm.importBehavior}>
+            <option value="draft_first">先存為草稿，需手動上架</option>
+            <option value="auto_publish">自動上架到公開網頁</option>
+            <option value="import_only">只匯入但不顯示在公開網頁</option>
+          </select>
+        </label>
+        <label class="checkbox-row"><input type="checkbox" bind:checked={settingsForm.showSoldVehicles} /> 公開網頁顯示已售出車輛</label>
+      </div>
+    </details>
+
+    <div class="settings-save-bar">
+      <span class="settings-save-bar__hint">{settingsFormDirty ? '有未儲存的變更' : '所有設定已是最新狀態'}</span>
+      <button class="admin-button" type="submit" disabled={!settingsFormDirty}>儲存設定</button>
+    </div>
   </form>
 {/if}
 
@@ -739,7 +852,10 @@
       </div>
       <div class="row-actions form-actions">
         <button type="submit">儲存車輛</button>
-        <button type="button" onclick={() => { selectedId = null; vehicleForm = emptyVehicleForm(); }}>清空</button>
+        <button type="button" onclick={resetVehicleForm}>清空</button>
+        {#if selectedId}
+          <button type="button" onclick={() => { const cur = vehicles.find((v) => v.id === selectedId); if (cur) duplicateVehicle(cur); }}>複製為新車</button>
+        {/if}
       </div>
     </form>
     <div class="admin-list-toolbar">
