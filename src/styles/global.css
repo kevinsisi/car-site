@@ -315,11 +315,14 @@ img.image-error::after { content: attr(alt); }
 .copyright { color: color-mix(in srgb, var(--muted) 78%, transparent); font-size: 0.74rem; letter-spacing: 0.04em; }
 .social-icons { display: flex !important; grid-auto-flow: column; gap: 0.55rem !important; justify-content: end; align-items: center; }
 .social-icon { width: 2.25rem; height: 2.25rem; display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--line) 80%, transparent); border-radius: 999px; color: var(--muted); background: var(--surface); box-shadow: 0 0.4rem 0.9rem rgba(0, 0, 0, 0.06); }
-.social-icon svg { width: 1.45rem; height: 1.45rem; fill: currentColor; stroke: none; display: block; }
-.social-icon--line svg { transform: translateY(0.04rem); }
+.social-icon svg { width: 1.6rem; height: 1.6rem; fill: currentColor; stroke: none; display: block; }
+.social-icon--line { color: #06c755; }
+.social-icon--line svg .line-badge { fill: currentColor; }
+.social-icon--line svg .line-bubble { fill: #ffffff; }
+.social-icon--line svg .line-text { fill: currentColor; }
 .social-cutout { fill: var(--surface); }
 .social-icon:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); box-shadow: 0 0.6rem 1.2rem rgba(0, 0, 0, 0.12); }
-.social-icon--line:hover { color: #06c755; }
+.social-icon--line:hover { color: #05b34a; }
 .social-icon--instagram:hover { color: #e4405f; }
 .social-icon--facebook:hover { color: #1877f2; }
 .social-icon--threads:hover { color: var(--text); }
