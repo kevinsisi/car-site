@@ -461,15 +461,147 @@
   let vehicleSearch = $state('');
   let lightboxImage = $state<string | null>(null);
 
-  function vehiclesMatching(query: string): VehicleView[] {
-    const q = query.trim().toLowerCase();
-    if (!q) return vehicles;
-    return vehicles.filter((v) =>
-      v.title.toLowerCase().includes(q) ||
-      v.brand.toLowerCase().includes(q) ||
-      v.model.toLowerCase().includes(q) ||
-      v.slug.toLowerCase().includes(q),
-    );
+  type StatusFilter = 'all' | VehicleView['status'];
+  type AdminSort = 'recent' | 'oldest' | 'title' | 'year-desc' | 'year-asc' | 'mileage-asc';
+  const PAGE_SIZE = 20;
+  let statusFilter = $state<StatusFilter>('all');
+  let adminSort = $state<AdminSort>('recent');
+  let currentPage = $state(1);
+  let selectedIds = $state<Set<string>>(new Set());
+
+  function adminNumericValue(raw: string): number {
+    const match = String(raw || '').replace(/[^\d.]/g, '');
+    const n = Number.parseFloat(match);
+    return Number.isFinite(n) ? n : Number.NaN;
+  }
+
+  const filteredVehicles = $derived(() => {
+    const q = vehicleSearch.trim().toLowerCase();
+    let list = vehicles.filter((v) => {
+      if (statusFilter !== 'all' && v.status !== statusFilter) return false;
+      if (!q) return true;
+      return v.title.toLowerCase().includes(q)
+        || v.brand.toLowerCase().includes(q)
+        || v.model.toLowerCase().includes(q)
+        || v.slug.toLowerCase().includes(q);
+    });
+    list = [...list];
+    if (adminSort === 'recent') list.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    else if (adminSort === 'oldest') list.sort((a, b) => a.updatedAt.localeCompare(b.updatedAt));
+    else if (adminSort === 'title') list.sort((a, b) => a.title.localeCompare(b.title));
+    else if (adminSort === 'year-desc') list.sort((a, b) => (adminNumericValue(b.year) || 0) - (adminNumericValue(a.year) || 0));
+    else if (adminSort === 'year-asc') list.sort((a, b) => (adminNumericValue(a.year) || 9999) - (adminNumericValue(b.year) || 9999));
+    else if (adminSort === 'mileage-asc') list.sort((a, b) => (adminNumericValue(a.mileage) || Infinity) - (adminNumericValue(b.mileage) || Infinity));
+    return list;
+  });
+
+  const totalPages = $derived(Math.max(1, Math.ceil(filteredVehicles().length / PAGE_SIZE)));
+  const visibleVehicles = $derived(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredVehicles().slice(start, start + PAGE_SIZE);
+  });
+
+  $effect(() => {
+    // reset page when filters change
+    statusFilter; vehicleSearch; adminSort;
+    currentPage = 1;
+  });
+
+  function toggleSelect(id: string) {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    selectedIds = next;
+  }
+  function toggleSelectAllVisible() {
+    const visibleIds = visibleVehicles().map((v) => v.id);
+    const allSelected = visibleIds.every((id) => selectedIds.has(id));
+    const next = new Set(selectedIds);
+    if (allSelected) visibleIds.forEach((id) => next.delete(id));
+    else visibleIds.forEach((id) => next.add(id));
+    selectedIds = next;
+  }
+  function clearSelection() { selectedIds = new Set(); }
+
+  async function batchSetStatus(status: VehicleView['status']) {
+    if (selectedIds.size === 0) return;
+    if (destructiveStatuses.has(status)) {
+      if (!window.confirm(`確定要將 ${selectedIds.size} 台車設為「${statusLabels[status]}」？此操作無法復原。`)) return;
+    }
+    const tid = notifyProgress(`正在更新 ${selectedIds.size} 台車...`);
+    const ids = Array.from(selectedIds);
+    let ok = 0;
+    let fail = 0;
+    for (const id of ids) {
+      const response = await adminFetch(`/api/admin/vehicles/${id}/status`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      if (response.ok) {
+        ok += 1;
+        vehicles = vehicles.map((v) => v.id === id ? { ...v, status } : v);
+      } else {
+        fail += 1;
+      }
+    }
+    if (fail === 0) {
+      updateToast(tid, `已將 ${ok} 台車設為「${statusLabels[status]}」`, 'success');
+    } else {
+      updateToast(tid, `${ok} 台成功、${fail} 台失敗`, 'error');
+    }
+    clearSelection();
+  }
+
+  function exportCsv() {
+    const rows = filteredVehicles();
+    if (rows.length === 0) {
+      notifyError('沒有可匯出的資料');
+      return;
+    }
+    const headers = ['網址代號', '標題', '品牌', '型號', '規格', '年份', '里程', '外觀色', '內裝色', '車況', '狀態', '本月推薦', '更新時間', '網址'];
+    const escape = (v: string) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const lines = [headers.join(',')];
+    for (const v of rows) {
+      lines.push([
+        v.slug, v.title, v.brand, v.model, v.subModel, v.year, v.mileage,
+        v.exteriorColor, v.interiorColor, v.condition,
+        statusLabels[v.status], v.monthlyRecommended ? '是' : '否',
+        v.updatedAt, `/cars/${v.slug}`,
+      ].map(escape).join(','));
+    }
+    const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `vehicles-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    notifySuccess(`已匯出 ${rows.length} 筆車輛資料`);
+  }
+
+  function formatUpdatedAt(raw: string): string {
+    if (!raw) return '—';
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return raw;
+    const diff = Date.now() - d.getTime();
+    if (diff < 60_000) return '剛剛';
+    if (diff < 3_600_000) return `${Math.floor(diff / 60_000)} 分鐘前`;
+    if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)} 小時前`;
+    if (diff < 7 * 86_400_000) return `${Math.floor(diff / 86_400_000)} 天前`;
+    return d.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  }
+
+  const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
+    { value: 'all', label: '全部' },
+    { value: 'draft', label: '草稿' },
+    { value: 'published', label: '上架中' },
+    { value: 'unpublished', label: '已下架' },
+    { value: 'sold', label: '已售出' },
+    { value: 'archived', label: '已封存' },
+  ];
+  function statusFilterCount(s: StatusFilter): number {
+    if (s === 'all') return vehicles.length;
+    return vehicles.filter((v) => v.status === s).length;
   }
 
   function previewUrl(vehicle: VehicleView): string {
@@ -863,17 +995,63 @@
         <span>搜尋車輛</span>
         <input type="search" bind:value={vehicleSearch} placeholder="輸入標題、品牌、型號或網址代號" />
       </label>
-      <span class="admin-search__count">{vehiclesMatching(vehicleSearch).length} / {vehicles.length}</span>
+      <label class="admin-sort">
+        <span>排序</span>
+        <select bind:value={adminSort}>
+          <option value="recent">最近更新</option>
+          <option value="oldest">最早更新</option>
+          <option value="title">標題 A→Z</option>
+          <option value="year-desc">年份新→舊</option>
+          <option value="year-asc">年份舊→新</option>
+          <option value="mileage-asc">里程少→多</option>
+        </select>
+      </label>
+      <button type="button" class="secondary-button" onclick={exportCsv}>匯出 CSV</button>
     </div>
-    {#each vehiclesMatching(vehicleSearch) as vehicle}
-      <article class="admin-car-row">
+
+    <div class="status-filter-chips" role="tablist" aria-label="狀態篩選">
+      {#each STATUS_FILTERS as f}
+        <button type="button" role="tab" aria-selected={statusFilter === f.value} class:is-active={statusFilter === f.value} onclick={() => { statusFilter = f.value; }}>
+          {f.label} <span>{statusFilterCount(f.value)}</span>
+        </button>
+      {/each}
+      <span class="status-filter-summary">顯示 {filteredVehicles().length} / 總共 {vehicles.length}</span>
+    </div>
+
+    {#if selectedIds.size > 0}
+      <div class="batch-bar" role="region" aria-label="批次操作">
+        <span>已選 <strong>{selectedIds.size}</strong> 台</span>
+        <div class="batch-bar__actions">
+          <button type="button" onclick={() => batchSetStatus('published')}>批次上架</button>
+          <button type="button" onclick={() => batchSetStatus('unpublished')}>批次下架</button>
+          <button type="button" class="row-button--warn" onclick={() => batchSetStatus('sold')}>批次已售</button>
+          <button type="button" class="row-button--danger" onclick={() => batchSetStatus('archived')}>批次封存</button>
+          <button type="button" class="secondary-button" onclick={clearSelection}>清除選擇</button>
+        </div>
+      </div>
+    {/if}
+
+    {#if visibleVehicles().length > 0}
+      <div class="batch-toggle-all">
+        <label class="checkbox-row">
+          <input type="checkbox" checked={visibleVehicles().every((v) => selectedIds.has(v.id))} onchange={toggleSelectAllVisible} />
+          全選目前頁面
+        </label>
+      </div>
+    {/if}
+
+    {#each visibleVehicles() as vehicle}
+      <article class="admin-car-row" class:is-selected={selectedIds.has(vehicle.id)}>
+        <input type="checkbox" class="batch-checkbox" checked={selectedIds.has(vehicle.id)} onchange={() => toggleSelect(vehicle.id)} aria-label={`選擇 ${vehicle.title}`} />
         <img src={vehicle.coverImage?.url || ''} alt={vehicle.title} />
-        <div>
+        <div class="admin-car-row__info">
           <strong>{vehicle.cardTitle}</strong>
           <span>{adminCarMetaLine(vehicle)}</span>
+          <small class="admin-car-row__updated">更新於 {formatUpdatedAt(vehicle.updatedAt)}</small>
         </div>
         <div class="row-actions">
           <button onclick={() => editVehicle(vehicle)}>編輯</button>
+          <button type="button" onclick={() => duplicateVehicle(vehicle)}>複製</button>
           <a class="row-button-link" href={`/cars/${vehicle.slug}`} target="_blank" rel="noopener">預覽</a>
           <button onclick={() => setStatus(vehicle.id, 'published')}>上架</button>
           <button onclick={() => setStatus(vehicle.id, 'unpublished')}>下架</button>
@@ -882,8 +1060,21 @@
         </div>
       </article>
     {/each}
-    {#if vehiclesMatching(vehicleSearch).length === 0}
-      <p class="admin-empty">沒有符合條件的車輛。</p>
+
+    {#if filteredVehicles().length === 0}
+      <p class="admin-empty">
+        {vehicles.length === 0
+          ? '目前還沒有任何車輛，先用上方表單新增第一台車吧。'
+          : '沒有符合目前篩選條件的車輛。'}
+      </p>
+    {/if}
+
+    {#if totalPages > 1}
+      <div class="admin-pagination" role="navigation" aria-label="分頁">
+        <button type="button" disabled={currentPage === 1} onclick={() => { currentPage -= 1; }}>‹ 上一頁</button>
+        <span>第 {currentPage} / {totalPages} 頁</span>
+        <button type="button" disabled={currentPage === totalPages} onclick={() => { currentPage += 1; }}>下一頁 ›</button>
+      </div>
     {/if}
   </section>
 {/if}

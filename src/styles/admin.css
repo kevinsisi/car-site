@@ -175,6 +175,32 @@ textarea { width: 100%; min-height: 7rem; border-radius: 0.8rem; border: 1px sol
 .admin-search input { min-height: 2.55rem; }
 .admin-search__count { color: #c9bda6; font-weight: 700; font-size: 0.86rem; white-space: nowrap; }
 .admin-empty { padding: 1.6rem; text-align: center; color: #a99b83; border: 1px dashed rgba(210, 174, 101, 0.24); border-radius: 1rem; }
+.admin-list-toolbar { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; padding: 0.85rem; border: 1px solid rgba(210, 174, 101, 0.18); border-radius: 1rem; background: #110e0b; }
+.admin-list-toolbar .admin-search { flex: 1; min-width: 16rem; }
+.admin-sort { display: grid; grid-template-columns: auto auto; align-items: center; gap: 0.55rem; color: #c9bda6; font-size: 0.92rem; }
+.admin-sort select { min-height: 2.55rem; min-width: 9rem; }
+.status-filter-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; padding: 0.5rem 0.15rem; }
+.status-filter-chips button { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 2.1rem; padding: 0 0.85rem; border-radius: 999px; border: 1px solid rgba(210, 174, 101, 0.28); background: transparent; color: #c9bda6; font: inherit; font-size: 0.9rem; font-weight: 700; cursor: pointer; }
+.status-filter-chips button span { display: inline-grid; place-items: center; min-width: 1.5rem; height: 1.3rem; padding: 0 0.35rem; border-radius: 999px; background: rgba(210, 174, 101, 0.14); color: #c9bda6; font-size: 0.78rem; }
+.status-filter-chips button:hover { color: #d6b06a; border-color: #d6b06a; }
+.status-filter-chips button.is-active { background: #d6b06a; color: #0b0a09; border-color: #d6b06a; }
+.status-filter-chips button.is-active span { background: rgba(11, 10, 9, 0.18); color: #0b0a09; }
+.status-filter-summary { margin-left: auto; color: #a99b83; font-size: 0.86rem; }
+.batch-bar { position: sticky; top: 0.6rem; z-index: 6; display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; flex-wrap: wrap; padding: 0.7rem 0.95rem; border: 1px solid rgba(214, 176, 106, 0.45); border-radius: 0.9rem; background: rgba(35, 28, 20, 0.94); backdrop-filter: blur(14px); color: #f0d28b; }
+.batch-bar strong { color: #f8efe1; font-size: 1.05rem; }
+.batch-bar__actions { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.batch-bar__actions button { min-height: 2.15rem; padding: 0 0.7rem; border-radius: 999px; border: 1px solid rgba(210, 174, 101, 0.3); background: transparent; color: #f8efe1; font: inherit; font-size: 0.88rem; cursor: pointer; }
+.batch-bar__actions button:hover { border-color: #d6b06a; color: #d6b06a; }
+.batch-toggle-all { padding: 0.35rem 0.5rem 0; }
+.admin-car-row { grid-template-columns: auto 7rem 1fr auto; }
+.admin-car-row.is-selected { border-color: #d6b06a; background: rgba(210, 174, 101, 0.05); }
+.batch-checkbox { width: 1.15rem; height: 1.15rem; accent-color: #d6b06a; cursor: pointer; }
+.admin-car-row__info strong { display: block; }
+.admin-car-row__updated { display: block; color: #75695a; font-size: 0.78rem; margin-top: 0.18rem; }
+.admin-pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; padding: 1rem 0; color: #c9bda6; }
+.admin-pagination button { min-height: 2.3rem; padding: 0 0.95rem; border-radius: 999px; border: 1px solid rgba(210, 174, 101, 0.3); background: transparent; color: #f8efe1; font: inherit; font-size: 0.9rem; cursor: pointer; }
+.admin-pagination button:disabled { opacity: 0.35; cursor: not-allowed; }
+.admin-pagination button:not(:disabled):hover { border-color: #d6b06a; color: #d6b06a; }
 .image-sort-item__thumb { padding: 0; border: 0; background: transparent; cursor: zoom-in; display: block; }
 .image-sort-item__thumb:hover img { opacity: 0.88; }
 .admin-image-lightbox { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 2rem; border: 0; background: rgba(5, 4, 3, 0.92); cursor: zoom-out; }

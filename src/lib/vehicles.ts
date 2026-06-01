@@ -39,6 +39,9 @@ export interface VehicleView {
   externalId: string | null;
   images: VehicleImageView[];
   coverImage: VehicleImageView | null;
+  createdAt: string;
+  updatedAt: string;
+  soldAt: string | null;
 }
 
 function parseFeatures(value: string): string[] {
@@ -139,6 +142,9 @@ async function attachImages(rows: (typeof vehicles.$inferSelect)[]): Promise<Veh
       externalId: row.externalId,
       images: rowImages,
       coverImage: rowImages.find((image) => image.isCover) || rowImages[0] || null,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      soldAt: row.soldAt,
     };
   });
 }
