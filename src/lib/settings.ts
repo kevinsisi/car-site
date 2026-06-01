@@ -48,6 +48,12 @@ export function parseSocialIcons(raw: string | undefined | null): SocialIconsMap
   }
 }
 
+export function socialIconCropStyle(cfg: SocialIconConfig | undefined): string {
+  if (!cfg?.url) return '';
+  const zoom = cfg.zoom || 1;
+  return `width: ${zoom * 100}%; height: ${zoom * 100}%; object-position: ${cfg.offsetX ?? 50}% ${cfg.offsetY ?? 50}%;`;
+}
+
 export function serializeSocialIcons(map: SocialIconsMap): string {
   const clean: SocialIconsMap = {};
   for (const platform of SOCIAL_PLATFORMS) {

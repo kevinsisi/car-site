@@ -318,6 +318,8 @@ img.image-error::after { content: attr(alt); }
 .social-icon svg { width: 1.6rem; height: 1.6rem; fill: currentColor; stroke: none; display: block; }
 .social-icon__custom-img { display: block; min-width: 100%; min-height: 100%; object-fit: cover; }
 .social-icon--custom { padding: 0; }
+.brand-custom-img { display: block; min-width: 100%; min-height: 100%; object-fit: cover; border-radius: inherit; }
+.detail-contact-button .brand-custom-img { display: none; }
 .social-icon--line svg .line-badge { fill: currentColor; }
 .social-icon--line svg .line-bubble { fill: var(--surface); }
 .social-icon--line svg .line-letters { fill: currentColor; }
@@ -473,6 +475,9 @@ img.image-error::after { content: attr(alt); }
   .mobile-action { font-size: 0; line-height: 0; }
   .mobile-action--line { background: color-mix(in srgb, var(--accent) 72%, var(--surface)); color: color-mix(in srgb, var(--surface) 86%, transparent); box-shadow: 0 0.25rem 0.65rem rgba(0, 0, 0, 0.12); }
   .mobile-action--line .social-cutout { fill: color-mix(in srgb, var(--accent) 72%, var(--surface)); }
+  .mobile-action--custom { overflow: hidden; padding: 0; }
+  .detail-contact-button--custom { overflow: hidden; padding: 0; }
+  .detail-contact-button .brand-custom-img { display: block; }
   .mobile-action svg,
   .mobile-action svg,
   .back-to-top svg { width: 1.48rem; height: 1.48rem; fill: none; stroke: currentColor; stroke-width: 0.95; stroke-linecap: round; stroke-linejoin: round; opacity: 0.88; }

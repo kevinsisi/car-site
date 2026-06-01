@@ -1,7 +1,7 @@
 ---
 import PublicLayout from '@/layouts/PublicLayout.astro';
 import ShareButton from '@/components/ShareButton.astro';
-import { getSettings } from '@/lib/settings';
+import { getSettings, socialIconCropStyle } from '@/lib/settings';
 import { formatVehicleShareText, shareOriginFromRequest, vehicleShareUrl } from '@/lib/vehicle-share';
 import { getVehicleBySlug, listPublicVehicles } from '@/lib/vehicles';
 import { devPlaceholderSpecs } from '@/lib/dev-placeholder-vehicle-specs';
@@ -79,11 +79,15 @@ const specRows = [
         <h1>{vehicle.title}</h1>
         <p class="detail-headline">{vehicle.headline || vehicle.condition}</p>
         <div class="detail-actions">
-          <a class="button button--primary detail-contact-button" href={settings.lineUrl} aria-label="LINE 洽詢此車">
-            <svg class="brand-glyph" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
-              <path d="M24 6C13.5 6 5 12.9 5 21.4c0 7.6 6.7 14 15.8 15.2.6.1 1.4.4 1.6.9.2.5.1 1.2.1 1.7l-.3 2c-.1.6-.5 2.3 1.7 1.3 2.2-1 11.7-6.9 16-11.8 3-3.3 4.1-6.4 4.1-9.3C43 12.9 34.5 6 24 6Z" />
-              <text class="social-cutout" x="24" y="19" text-anchor="middle" dominant-baseline="central" font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="900" font-size="13" letter-spacing="-0.6">LINE</text>
-            </svg>
+          <a class={`button button--primary detail-contact-button${settings.socialIcons.line ? ' detail-contact-button--custom' : ''}`} href={settings.lineUrl} aria-label="LINE 洽詢此車">
+            {settings.socialIcons.line ? (
+              <img class="brand-custom-img" src={settings.socialIcons.line.url} alt="LINE" style={socialIconCropStyle(settings.socialIcons.line)} loading="lazy" decoding="async" />
+            ) : (
+              <svg class="brand-glyph" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+                <path d="M24 6C13.5 6 5 12.9 5 21.4c0 7.6 6.7 14 15.8 15.2.6.1 1.4.4 1.6.9.2.5.1 1.2.1 1.7l-.3 2c-.1.6-.5 2.3 1.7 1.3 2.2-1 11.7-6.9 16-11.8 3-3.3 4.1-6.4 4.1-9.3C43 12.9 34.5 6 24 6Z" />
+                <text class="social-cutout" x="24" y="19" text-anchor="middle" dominant-baseline="central" font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="900" font-size="13" letter-spacing="-0.6">LINE</text>
+              </svg>
+            )}
             <span>LINE 洽詢此車</span>
           </a>
           <a class="button button--ghost detail-contact-button" href={`tel:${settings.phoneNumber}`} aria-label="電話聯絡">
