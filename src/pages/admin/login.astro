@@ -1,5 +1,17 @@
 ---
 import '@/styles/admin.css';
+
+const params = Astro.url.searchParams;
+const hasError = params.get('error') === '1';
+const isExpired = params.get('expired') === '1';
+const isLimited = params.get('limited') === '1';
+const errorMessage = isExpired
+  ? '登入逾時，請重新登入'
+  : isLimited
+    ? '嘗試次數過多，請稍後再試'
+    : hasError
+      ? '帳號或密碼錯誤'
+      : '';
 ---
 
 <!doctype html>
@@ -13,6 +25,9 @@ import '@/styles/admin.css';
     <form class="login-card" method="post" action="/api/admin/login">
       <p class="admin-eyebrow">私人精品車展</p>
       <h1>後台登入</h1>
+      {errorMessage && (
+        <p class="login-error" role="alert">{errorMessage}</p>
+      )}
       <label>帳號 <input name="username" autocomplete="username" required /></label>
       <label>密碼 <input name="password" type="password" autocomplete="current-password" required /></label>
       <button class="admin-button" type="submit">登入</button>

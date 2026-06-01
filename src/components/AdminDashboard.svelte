@@ -15,11 +15,43 @@
   type BrandAliasRow = { sourceBrand: string; displayName: string; urlSlug: string };
 
   let { vehicles, settings, brandAliases, mode = 'overview' }: Props = $props();
-  let message = $state('');
+
+  type ToastLevel = 'info' | 'success' | 'error' | 'progress';
+  interface Toast { id: number; text: string; level: ToastLevel; sticky: boolean; }
+  let toasts = $state<Toast[]>([]);
+  let toastCounter = 0;
+
+  function pushToast(text: string, level: ToastLevel = 'info', sticky = false): number {
+    const id = ++toastCounter;
+    toasts = [...toasts, { id, text, level, sticky }];
+    if (!sticky) window.setTimeout(() => dismissToast(id), level === 'error' ? 6500 : 3200);
+    return id;
+  }
+  function dismissToast(id: number) { toasts = toasts.filter((t) => t.id !== id); }
+  function notify(text: string) { return pushToast(text, 'info'); }
+  function notifySuccess(text: string) { return pushToast(text, 'success'); }
+  function notifyError(text: string) { return pushToast(text, 'error'); }
+  function notifyProgress(text: string) { return pushToast(text, 'progress', true); }
+  function updateToast(id: number, text: string, level: ToastLevel) {
+    toasts = toasts.map((t) => t.id === id ? { ...t, text, level, sticky: false } : t);
+    window.setTimeout(() => dismissToast(id), level === 'error' ? 6500 : 3200);
+  }
+
+  async function adminFetch(input: RequestInfo, init?: RequestInit): Promise<Response> {
+    const response = await fetch(input, init);
+    if (response.status === 401) {
+      window.location.href = '/admin/login?expired=1';
+      throw new Error('session expired');
+    }
+    return response;
+  }
+
   let selectedId = $state<string | null>(null);
   let vehicleForm = $state(emptyVehicleForm());
+  let vehicleFormDirty = $state(false);
   let draggedImageIndex = $state<number | null>(null);
   let isUploadingImages = $state(false);
+  let uploadProgress = $state<{ current: number; total: number }>({ current: 0, total: 0 });
   const shareTemplatePlaceholder = '憶文豪車，推薦給您\n{車名}\n年份：{年份}\n品牌：{品牌}\n里程：{里程}\n實拍現車，專人介紹車況與配備\n{網址}';
   const cardTitleTemplatePlaceholder = '{年份} {品牌} {型號} {規格}\n{補充}';
   const cardTitleTokens = ['車名', '年份', '品牌', '顯示品牌', '型號', '規格', '補充', '里程', '車況'];
@@ -61,6 +93,8 @@
     showSoldVehicles: settings.showSoldVehicles,
     socialIcons: { ...settings.socialIcons } as Record<SocialPlatform, SocialIconConfig | undefined>,
   });
+  let originalSettingsForm = $state(JSON.stringify(settingsForm));
+  let settingsFormDirty = $derived(JSON.stringify(settingsForm) !== originalSettingsForm);
 
   const socialPlatformList: { key: SocialPlatform; label: string }[] = [
     { key: 'line', label: 'LINE' },
@@ -86,10 +120,10 @@
     const file = input.files?.[0];
     if (!file) return;
     uploadingPlatform = platform;
-    message = `${platform.toUpperCase()} 圖示上傳中...`;
+    const tid = notifyProgress(`${platform.toUpperCase()} 圖示上傳中...`);
     const formData = new FormData();
     formData.append('files', file);
-    const response = await fetch('/api/admin/media', { method: 'POST', body: formData });
+    const response = await adminFetch('/api/admin/media', { method: 'POST', body: formData });
     const result = await response.json().catch(() => ({}));
     if (response.ok && Array.isArray(result.urls) && result.urls[0]) {
       const cfg = ensureIconConfig(platform);
@@ -98,9 +132,9 @@
       cfg.offsetX = cfg.offsetX ?? 50;
       cfg.offsetY = cfg.offsetY ?? 50;
       settingsForm.socialIcons = { ...settingsForm.socialIcons };
-      message = `${platform.toUpperCase()} 圖示上傳完成，記得按下方「儲存聯絡資訊」`;
+      updateToast(tid, `${platform.toUpperCase()} 圖示上傳完成，記得按下方「儲存聯絡資訊」`, 'success');
     } else {
-      message = result.error || `${platform.toUpperCase()} 圖示上傳失敗`;
+      updateToast(tid, result.error || `${platform.toUpperCase()} 圖示上傳失敗`, 'error');
     }
     input.value = '';
     uploadingPlatform = null;
@@ -124,26 +158,31 @@
   }
 
   async function saveSettings() {
-    message = '儲存中...';
-    const response = await fetch('/api/admin/settings', {
+    const tid = notifyProgress('儲存中...');
+    const response = await adminFetch('/api/admin/settings', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(settingsForm),
     });
-    message = response.ok ? '設定已更新' : '設定更新失敗';
+    if (response.ok) {
+      originalSettingsForm = JSON.stringify(settingsForm);
+      updateToast(tid, '設定已更新', 'success');
+    } else {
+      updateToast(tid, '設定更新失敗', 'error');
+    }
   }
 
   async function saveBrandAliases() {
-    message = '儲存品牌對照中...';
+    const tid = notifyProgress('儲存品牌對照中...');
     const aliases = brandAliasRows
       .map((item) => ({ sourceBrand: item.sourceBrand.trim(), displayName: item.displayName.trim(), urlSlug: item.urlSlug.trim() }))
       .filter((item) => item.sourceBrand && item.displayName);
-    const response = await fetch('/api/admin/brand-aliases', {
+    const response = await adminFetch('/api/admin/brand-aliases', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ aliases }),
     });
-    message = response.ok ? '品牌對照已更新' : '品牌對照更新失敗';
+    updateToast(tid, response.ok ? '品牌對照已更新' : '品牌對照更新失敗', response.ok ? 'success' : 'error');
   }
 
   const destructiveStatuses = new Set(['sold', 'archived']);
@@ -157,16 +196,16 @@
       const ok = window.confirm(statusConfirmTexts[status] || '確定要執行此操作嗎？');
       if (!ok) return;
     }
-    const response = await fetch(`/api/admin/vehicles/${id}/status`, {
+    const response = await adminFetch(`/api/admin/vehicles/${id}/status`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ status }),
     });
     if (response.ok) {
       vehicles = vehicles.map((vehicle) => (vehicle.id === id ? { ...vehicle, status: status as VehicleView['status'] } : vehicle));
-      message = '車輛狀態已更新';
+      notifySuccess(`已將「${vehicles.find((v) => v.id === id)?.title || '車輛'}」設為${statusLabels[status as VehicleView['status']] || status}`);
     } else {
-      message = '車輛狀態更新失敗';
+      notifyError('車輛狀態更新失敗');
     }
   }
 
@@ -222,19 +261,21 @@
     const files = Array.from(input.files || []);
     if (!files.length) return;
     isUploadingImages = true;
-    message = '圖片上傳中...';
+    uploadProgress = { current: 0, total: files.length };
+    const tid = notifyProgress(`圖片上傳中 (${files.length} 張)...`);
     const formData = new FormData();
     for (const file of files) formData.append('files', file);
-    const response = await fetch('/api/admin/media', { method: 'POST', body: formData });
+    const response = await adminFetch('/api/admin/media', { method: 'POST', body: formData });
     const result = await response.json().catch(() => ({}));
     if (response.ok && Array.isArray(result.urls)) {
       setImageUrls([...imageUrls(), ...result.urls]);
-      message = `已上傳 ${result.urls.length} 張圖片`;
+      updateToast(tid, `已上傳 ${result.urls.length} 張圖片`, 'success');
     } else {
-      message = result.error || '圖片上傳失敗';
+      updateToast(tid, result.error || '圖片上傳失敗', 'error');
     }
     input.value = '';
     isUploadingImages = false;
+    uploadProgress = { current: 0, total: 0 };
   }
 
   function moveImage(fromIndex: number, toIndex: number) {
@@ -309,8 +350,8 @@
   }
 
   async function saveVehicle() {
-    message = '儲存車輛中...';
-    const response = await fetch('/api/admin/vehicles', {
+    const tid = notifyProgress('儲存車輛中...');
+    const response = await adminFetch('/api/admin/vehicles', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -321,12 +362,13 @@
       }),
     });
     if (response.ok) {
-      message = '車輛已儲存，正在重新載入最新資料...';
+      updateToast(tid, '車輛已儲存，正在重新載入最新資料...', 'success');
       selectedId = null;
       vehicleForm = emptyVehicleForm();
-      window.setTimeout(() => window.location.reload(), 600);
+      vehicleFormDirty = false;
+      window.setTimeout(() => window.location.reload(), 700);
     } else {
-      message = '車輛儲存失敗，請確認標題、品牌、型號與圖片';
+      updateToast(tid, '車輛儲存失敗，請確認標題、品牌、型號與圖片', 'error');
     }
   }
 
@@ -360,8 +402,18 @@
   <a class="admin-button" href="/cars">前往公開網頁</a>
 </section>
 
-{#if message}
-  <p class="admin-message">{message}</p>
+{#if toasts.length > 0}
+  <div class="toast-stack" role="status" aria-live="polite">
+    {#each toasts as toast (toast.id)}
+      <div class={`toast toast--${toast.level}`}>
+        {#if toast.level === 'progress'}
+          <span class="toast__spinner" aria-hidden="true"></span>
+        {/if}
+        <span class="toast__text">{toast.text}</span>
+        <button type="button" class="toast__close" aria-label="關閉訊息" onclick={() => dismissToast(toast.id)}>×</button>
+      </div>
+    {/each}
+  </div>
 {/if}
 
 {#if mode === 'overview'}

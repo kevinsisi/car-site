@@ -1,0 +1,89 @@
+---
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import { getSession } from '@/lib/auth';
+
+const admin = await getSession(Astro.cookies);
+if (!admin) {
+  return Astro.redirect('/admin/login');
+}
+---
+
+<AdminLayout>
+  <section class="admin-panel hero-panel">
+    <div>
+      <p class="admin-eyebrow">帳號設定</p>
+      <h1>帳號設定</h1>
+      <p>更改登入帳號密碼。</p>
+    </div>
+    <span class="account-current">目前帳號：<strong>{admin.username}</strong></span>
+  </section>
+
+  <section class="admin-panel">
+    <h2>變更密碼</h2>
+    <form id="change-password-form" class="settings-form" autocomplete="off">
+      <label>目前密碼 <input name="currentPassword" type="password" autocomplete="current-password" required minlength="4" /></label>
+      <label>新密碼 <input name="newPassword" type="password" autocomplete="new-password" required minlength="8" /></label>
+      <label>新密碼再次確認 <input name="confirmPassword" type="password" autocomplete="new-password" required minlength="8" /></label>
+      <p class="form-hint">新密碼至少 8 個字元。建議混用英文字母、數字、符號。</p>
+      <button class="admin-button" type="submit">儲存新密碼</button>
+    </form>
+  </section>
+
+  <div id="account-toast-root"></div>
+
+  <script>
+    const form = document.getElementById('change-password-form') as HTMLFormElement | null;
+    const toastRoot = document.getElementById('account-toast-root');
+    function showToast(text: string, level: 'success' | 'error' = 'success') {
+      if (!toastRoot) return;
+      const stack = toastRoot.querySelector('.toast-stack') || (() => {
+        const el = document.createElement('div');
+        el.className = 'toast-stack';
+        el.setAttribute('role', 'status');
+        el.setAttribute('aria-live', 'polite');
+        toastRoot.appendChild(el);
+        return el;
+      })();
+      const t = document.createElement('div');
+      t.className = `toast toast--${level}`;
+      t.innerHTML = `<span class="toast__text"></span><button class="toast__close" aria-label="關閉訊息">×</button>`;
+      (t.querySelector('.toast__text') as HTMLElement).textContent = text;
+      stack.appendChild(t);
+      const close = () => t.remove();
+      (t.querySelector('.toast__close') as HTMLElement).addEventListener('click', close);
+      window.setTimeout(close, level === 'error' ? 6000 : 3000);
+    }
+    form?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const formData = new FormData(form);
+      const currentPassword = String(formData.get('currentPassword') || '');
+      const newPassword = String(formData.get('newPassword') || '');
+      const confirmPassword = String(formData.get('confirmPassword') || '');
+      if (newPassword !== confirmPassword) {
+        showToast('新密碼兩次輸入不一致', 'error');
+        return;
+      }
+      const response = await fetch('/api/admin/change-password', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      if (response.status === 401) {
+        window.location.href = '/admin/login?expired=1';
+        return;
+      }
+      const result = await response.json().catch(() => ({}));
+      if (response.ok) {
+        showToast('密碼已更新');
+        form.reset();
+      } else {
+        showToast(result.error || '密碼更新失敗', 'error');
+      }
+    });
+  </script>
+</AdminLayout>
+
+<style>
+  .account-current { color: #c9bda6; font-size: 0.92rem; }
+  .account-current strong { color: #d6b06a; }
+</style>

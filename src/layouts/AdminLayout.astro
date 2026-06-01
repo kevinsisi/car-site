@@ -1,5 +1,11 @@
 ---
 import '@/styles/admin.css';
+
+const pathname = Astro.url.pathname;
+const isActive = (href: string) => {
+  if (href === '/admin') return pathname === '/admin' || pathname === '/admin/';
+  return pathname === href || pathname.startsWith(href + '/');
+};
 ---
 
 <!doctype html>
@@ -12,14 +18,19 @@ import '@/styles/admin.css';
   <body>
     <aside class="admin-sidebar">
       <a href="/admin" class="admin-logo">後台管理</a>
-      <a href="/admin">總覽</a>
-      <a href="/admin/vehicles">車輛管理</a>
-      <a href="/admin/settings">網站設定</a>
-      <a href="/admin/contact">聯絡與品牌</a>
-      <a href="/">查看公開網頁</a>
-      <form method="post" action="/api/admin/logout">
-        <button type="submit">登出</button>
-      </form>
+      <nav class="admin-sidebar__nav" aria-label="後台導覽">
+        <a href="/admin" aria-current={isActive('/admin') ? 'page' : undefined}>總覽</a>
+        <a href="/admin/vehicles" aria-current={isActive('/admin/vehicles') ? 'page' : undefined}>車輛管理</a>
+        <a href="/admin/settings" aria-current={isActive('/admin/settings') ? 'page' : undefined}>網站設定</a>
+        <a href="/admin/contact" aria-current={isActive('/admin/contact') ? 'page' : undefined}>聯絡與品牌</a>
+        <a href="/admin/account" aria-current={isActive('/admin/account') ? 'page' : undefined}>帳號設定</a>
+      </nav>
+      <div class="admin-sidebar__footer">
+        <a href="/" target="_blank" rel="noopener" class="admin-sidebar__external">查看公開網頁 ↗</a>
+        <form method="post" action="/api/admin/logout">
+          <button type="submit" class="admin-sidebar__logout">登出</button>
+        </form>
+      </div>
     </aside>
     <main class="admin-main"><slot /></main>
   </body>
