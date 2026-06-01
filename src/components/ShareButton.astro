@@ -1,4 +1,6 @@
 ---
+import { getSettings, socialIconChipStyle, socialIconCropStyle } from '@/lib/settings';
+
 interface Props {
   title: string;
   url: string;
@@ -9,10 +11,16 @@ interface Props {
 
 const { title, url, text = '價格請洽，歡迎預約賞車。', label = '分享車款' } = Astro.props;
 const className = Astro.props.class || '';
+const settings = await getSettings();
+const shareIcon = settings.socialIcons.share;
 ---
 
-<button class={`icon-button share-button ${className}`} type="button" data-share-title={title} data-share-text={text} data-share-url={url} aria-label={label}>
-  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-    <path d="M7.5 12.5 16 8M7.5 11.5 16 16M6.5 15.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6ZM17.5 9.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6ZM17.5 20.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z" />
-  </svg>
+<button class={`icon-button share-button ${className}${shareIcon ? ' share-button--custom' : ''}`} type="button" data-share-title={title} data-share-text={text} data-share-url={url} aria-label={label} style={shareIcon ? socialIconChipStyle(shareIcon) : ''}>
+  {shareIcon ? (
+    <img class="brand-custom-img" src={shareIcon.url} alt="" style={socialIconCropStyle(shareIcon)} loading="lazy" decoding="async" />
+  ) : (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M7.5 12.5 16 8M7.5 11.5 16 16M6.5 15.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6ZM17.5 9.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6ZM17.5 20.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z" />
+    </svg>
+  )}
 </button>

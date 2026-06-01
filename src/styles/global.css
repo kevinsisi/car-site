@@ -316,23 +316,27 @@ img.image-error::after { content: attr(alt); }
 .social-icons { display: flex !important; grid-auto-flow: column; gap: 0.55rem !important; justify-content: end; align-items: center; }
 .social-icon { position: relative; width: 2.25rem; height: 2.25rem; display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--line) 80%, transparent); border-radius: 999px; color: var(--muted); background: var(--surface); box-shadow: 0 0.4rem 0.9rem rgba(0, 0, 0, 0.06); overflow: hidden; }
 .social-icon svg { width: 1.6rem; height: 1.6rem; fill: currentColor; stroke: none; display: block; }
-/* Custom social icon chips — let each context's chip size stand so that
-   custom icons match the size of other chips (share / back-to-top etc.)
-   in the same row. */
-.social-icon__custom-img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.social-icon--custom { padding: 0; background: transparent; }
-.brand-custom-img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+/* Custom social/contact icon chips — every render location locked to the
+   footer chip dimensions (2.25rem ⌀, 1px line border) so the operator's
+   uploaded icon looks identical at footer, header, mobile bar, detail
+   hero, and contact card. The footer LINE / Instagram already render
+   correctly with this size; phone/share now match exactly. */
+.social-icon__custom-img,
+.brand-custom-img { display: block; width: 100%; height: 100%; object-fit: contain; border-radius: inherit; }
+.social-icon--custom { width: 2.25rem; height: 2.25rem; padding: 0; background: transparent; border: 1px solid color-mix(in srgb, var(--line) 80%, transparent); }
 .detail-contact-button .brand-custom-img { display: none; }
-.site-cta__link--custom { padding: 0; overflow: hidden; background: transparent; }
+.site-cta__link--custom { width: 2.25rem; height: 2.25rem; padding: 0; overflow: hidden; background: transparent; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--line) 80%, transparent); }
 .site-cta__link--custom .brand-custom-img { display: block; }
 .site-cta__link--with-thumb { padding: 0 0.95rem 0 0.3rem; gap: 0.5rem; background: transparent; color: var(--text); border: 1px solid var(--line); font-weight: 700; }
 .site-cta__link--with-thumb:hover { background: color-mix(in srgb, var(--surface) 86%, transparent); border-color: color-mix(in srgb, var(--accent) 60%, var(--line)); }
 .site-cta__thumb { width: 1.75rem; height: 1.75rem; border-radius: 999px; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: transparent; }
-.site-cta__thumb img { display: block; object-fit: cover; }
-.detail-contact-button--custom { background: transparent !important; padding: 0 !important; overflow: hidden !important; }
+.site-cta__thumb img { display: block; object-fit: contain; }
+.detail-contact-button--custom { width: 2.25rem !important; height: 2.25rem !important; min-height: 2.25rem !important; padding: 0 !important; overflow: hidden !important; background: transparent !important; border: 1px solid color-mix(in srgb, var(--line) 80%, transparent) !important; }
 .promise-icon { overflow: hidden; }
-.promise-icon:has(> .brand-custom-img) { padding: 0; border: 1px solid var(--line); background: transparent; }
+.promise-icon:has(> .brand-custom-img) { width: 2.25rem; height: 2.25rem; padding: 0; border: 1px solid color-mix(in srgb, var(--line) 80%, transparent); background: transparent; border-radius: 999px; }
 .promise-icon .brand-custom-img { width: 100%; height: 100%; }
+.vehicle-share--custom { padding: 0; background: transparent; overflow: hidden; }
+.vehicle-share--custom .brand-custom-img { width: 100%; height: 100%; }
 .social-icon--line svg .line-badge { fill: currentColor; }
 .social-icon--line svg .line-bubble { fill: var(--surface); }
 .social-icon--line svg .line-letters { fill: currentColor; }
@@ -488,8 +492,8 @@ img.image-error::after { content: attr(alt); }
   .mobile-action { font-size: 0; line-height: 0; }
   .mobile-action--line { background: color-mix(in srgb, var(--accent) 72%, var(--surface)); color: color-mix(in srgb, var(--surface) 86%, transparent); box-shadow: 0 0.25rem 0.65rem rgba(0, 0, 0, 0.12); }
   .mobile-action--line .social-cutout { fill: color-mix(in srgb, var(--accent) 72%, var(--surface)); }
-  .mobile-action--custom { overflow: hidden; padding: 0; background: transparent !important; }
-  .detail-contact-button--custom { overflow: hidden; padding: 0; background: transparent !important; }
+  .mobile-action--custom { width: 2.25rem !important; height: 2.25rem !important; min-width: 2.25rem !important; min-height: 2.25rem !important; overflow: hidden; padding: 0; background: transparent !important; border: 1px solid color-mix(in srgb, var(--line) 80%, transparent) !important; }
+  .detail-contact-button--custom { width: 2.25rem !important; height: 2.25rem !important; min-height: 2.25rem !important; overflow: hidden; padding: 0; background: transparent !important; }
   .mobile-action--custom .social-cutout,
   .detail-contact-button--custom .social-cutout { fill: transparent; }
   .detail-contact-button .brand-custom-img { display: block; }

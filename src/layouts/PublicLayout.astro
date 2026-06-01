@@ -143,8 +143,12 @@ const socialIcons = settings.socialIcons || {};
     )}
     {showMobileActions && (
       <div class="mobile-contact-bar" aria-label="快速聯絡">
-        <button class="mobile-action mobile-action--share" type="button" data-share-title={title} data-share-text={pageShareText} data-share-url={pageShareUrl} aria-label="分享目前頁面">
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7.5 12.5 16 8M7.5 11.5 16 16M6.5 15.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6ZM17.5 9.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6ZM17.5 20.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z" /></svg>
+        <button class={`mobile-action mobile-action--share${socialIcons.share ? ' mobile-action--custom' : ''}`} type="button" data-share-title={title} data-share-text={pageShareText} data-share-url={pageShareUrl} aria-label="分享目前頁面" style={socialIconChipStyle(socialIcons.share)}>
+          {socialIcons.share ? (
+            <img class="brand-custom-img" src={socialIcons.share.url} alt="" style={socialIconCropStyle(socialIcons.share)} loading="lazy" decoding="async" />
+          ) : (
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7.5 12.5 16 8M7.5 11.5 16 16M6.5 15.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6ZM17.5 9.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6ZM17.5 20.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z" /></svg>
+          )}
         </button>
         <a class={`mobile-action mobile-action--line${socialIcons.line ? ' mobile-action--custom' : ''}`} href={settings.lineUrl} aria-label="LINE 洽詢" style={socialIconChipStyle(socialIcons.line)}>
           {socialIcons.line ? (
