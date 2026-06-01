@@ -154,8 +154,7 @@
 
   function iconPreviewStyle(cfg: SocialIconConfig | undefined): string {
     if (!cfg?.url) return '';
-    const baseScale = 70;
-    const w = (cfg.zoom || 1) * baseScale;
+    const w = (cfg.zoom || 1) * 100;
     return `width: ${w}%; height: ${w}%; object-position: ${cfg.offsetX ?? 50}% ${cfg.offsetY ?? 50}%;`;
   }
 
@@ -1113,8 +1112,8 @@
             {#if cfg?.url}
               <div class="social-icon-card__controls">
                 <label class="slider-row">
-                  <span>縮放 {(cfg.zoom || 1).toFixed(2)}x</span>
-                  <input type="range" min="1" max="3" step="0.05" value={cfg.zoom || 1} oninput={(e) => updateIconField(platform.key, 'zoom', Number.parseFloat((e.currentTarget as HTMLInputElement).value))} />
+                  <span>縮放 {(cfg.zoom || 1).toFixed(2)}x（0.5x 縮到一半、1.0x 填滿邊緣）</span>
+                  <input type="range" min="0.5" max="3" step="0.05" value={cfg.zoom || 1} oninput={(e) => updateIconField(platform.key, 'zoom', Number.parseFloat((e.currentTarget as HTMLInputElement).value))} />
                 </label>
                 <label class="slider-row">
                   <span>水平位置 {cfg.offsetX ?? 50}%</span>

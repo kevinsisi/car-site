@@ -23,6 +23,9 @@ function clampNumber(value: unknown, min: number, max: number, fallback: number)
   return Math.min(max, Math.max(min, n));
 }
 
+const ZOOM_MIN = 0.5;
+const ZOOM_MAX = 3;
+
 export function parseSocialIcons(raw: string | undefined | null): SocialIconsMap {
   if (!raw) return {};
   try {
@@ -37,7 +40,7 @@ export function parseSocialIcons(raw: string | undefined | null): SocialIconsMap
       if (!url) continue;
       result[platform] = {
         url,
-        zoom: clampNumber(cfg.zoom, 1, 3, 1),
+        zoom: clampNumber(cfg.zoom, ZOOM_MIN, ZOOM_MAX, 1),
         offsetX: clampNumber(cfg.offsetX, 0, 100, 50),
         offsetY: clampNumber(cfg.offsetY, 0, 100, 50),
       };
@@ -51,11 +54,7 @@ export function parseSocialIcons(raw: string | undefined | null): SocialIconsMap
 export function socialIconCropStyle(cfg: SocialIconConfig | undefined): string {
   if (!cfg?.url) return '';
   const zoom = cfg.zoom || 1;
-  // base 70% = inscribed-circle scale so square images at zoom 1 fit inside the circular chip
-  // without their corners being clipped by border-radius. zoom 1.43 ≈ fills the chip,
-  // zoom >1.43 starts cropping.
-  const baseScale = 70;
-  return `width: ${zoom * baseScale}%; height: ${zoom * baseScale}%; object-position: ${cfg.offsetX ?? 50}% ${cfg.offsetY ?? 50}%;`;
+  return `width: ${zoom * 100}%; height: ${zoom * 100}%; object-position: ${cfg.offsetX ?? 50}% ${cfg.offsetY ?? 50}%;`;
 }
 
 export function serializeSocialIcons(map: SocialIconsMap): string {
@@ -65,7 +64,7 @@ export function serializeSocialIcons(map: SocialIconsMap): string {
     if (!cfg?.url) continue;
     clean[platform] = {
       url: cfg.url,
-      zoom: clampNumber(cfg.zoom, 1, 3, 1),
+      zoom: clampNumber(cfg.zoom, ZOOM_MIN, ZOOM_MAX, 1),
       offsetX: clampNumber(cfg.offsetX, 0, 100, 50),
       offsetY: clampNumber(cfg.offsetY, 0, 100, 50),
     };
