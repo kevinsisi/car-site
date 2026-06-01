@@ -92,9 +92,9 @@ const socialIcons = settings.socialIcons || {};
         <a href="/contact" aria-current={isCurrentPath('/contact') ? 'page' : undefined}>聯絡</a>
       </nav>
       <div class="site-cta">
-        <a class={`site-cta__link site-cta__link--line${socialIcons.line ? ' site-cta__link--with-thumb' : ''}`} href={settings.lineUrl}>
+        <a class={`site-cta__link site-cta__link--line${socialIcons.line ? ' site-cta__link--with-thumb' : ''}`} href={settings.lineUrl} style={socialIcons.line ? socialIconChipStyle(socialIcons.line) : ''}>
           {socialIcons.line ? (
-            <span class="site-cta__thumb" style={socialIconChipStyle(socialIcons.line)}>
+            <span class="site-cta__thumb">
               <img src={socialIcons.line.url} alt="" style={socialIconCropStyle(socialIcons.line)} loading="lazy" decoding="async" />
             </span>
           ) : (
