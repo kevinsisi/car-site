@@ -28,13 +28,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const files = formData.getAll('files').filter((file): file is File => file instanceof File);
 
   if (!files.length) {
-    return Response.json({ error: 'No files uploaded' }, { status: 400 });
+    return Response.json({ error: '請先選擇要上傳的圖片' }, { status: 400 });
   }
 
   const today = new Date().toISOString().slice(0, 10);
   const uploadDir = path.resolve(mediaRoot, 'uploads', today);
   if (!uploadDir.startsWith(mediaRoot + path.sep)) {
-    return Response.json({ error: 'Invalid upload path' }, { status: 400 });
+    return Response.json({ error: '上傳路徑無效，請聯繫管理員' }, { status: 400 });
   }
   await fs.promises.mkdir(uploadDir, { recursive: true });
 
@@ -42,10 +42,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   for (const file of files) {
     const ext = allowedTypes[file.type];
     if (!ext) {
-      return Response.json({ error: `Unsupported image type: ${file.type || file.name}` }, { status: 400 });
+      return Response.json({ error: `不支援的圖片格式：${file.type || file.name}` }, { status: 400 });
     }
     if (file.size > maxFileSize) {
-      return Response.json({ error: `${file.name} is larger than 12MB` }, { status: 400 });
+      return Response.json({ error: `${file.name} 檔案大小超過 12MB` }, { status: 400 });
     }
 
     const id = crypto.randomUUID().slice(0, 8);

@@ -116,6 +116,23 @@
     return vehicles.filter((vehicle) => vehicle.status === status).length;
   }
 
+  const statusLabels: Record<VehicleView['status'], string> = {
+    draft: '草稿',
+    published: '上架中',
+    unpublished: '已下架',
+    sold: '已售出',
+    archived: '已封存',
+  };
+
+  function adminCarMetaLine(vehicle: VehicleView): string {
+    const parts: string[] = [statusLabels[vehicle.status]];
+    if (vehicle.slug) parts.push(`網址代號 ${vehicle.slug}`);
+    if (vehicle.year) parts.push(vehicle.year);
+    if (vehicle.mileage) parts.push(vehicle.mileage);
+    if (vehicle.monthlyRecommended) parts.push('本月推薦');
+    return parts.join('｜');
+  }
+
   function imageUrls() {
     return vehicleForm.imagesText.split('\n').map((item) => item.trim()).filter(Boolean);
   }
@@ -239,11 +256,11 @@
 
 <section class="admin-panel hero-panel">
   <div>
-    <p class="admin-eyebrow">Personal Premium Car Site</p>
+    <p class="admin-eyebrow">私人精品車展</p>
     <h1>{mode === 'overview' ? '管理後台' : mode === 'settings' ? '網站設定' : mode === 'contact' ? '聯絡與品牌' : '車輛管理'}</h1>
     <p>{mode === 'overview' ? '查看目前上架概況，並進入各管理區調整內容。' : mode === 'settings' ? '調整首頁、列表、詳情頁文案與網站外觀。' : mode === 'contact' ? '管理電話、LINE、社群連結與品牌英文顯示對照。' : '新增車輛、修改顧問描述、調整上架狀態。'}</p>
   </div>
-  <a class="admin-button" href="/cars">查看前台車輛</a>
+  <a class="admin-button" href="/cars">前往公開網頁</a>
 </section>
 
 {#if message}
@@ -259,8 +276,8 @@
     </a>
     <a class="admin-panel admin-link-card" href="/admin/settings">
       <span>網站設定</span>
-      <strong>{settings.activeTemplate}</strong>
-      <small>文案、模板、風格與匯入預設</small>
+      <strong>{templates[settings.activeTemplate].label}</strong>
+      <small>首頁文案、版面、配色與外部資料匯入預設</small>
     </a>
     <a class="admin-panel admin-link-card" href="/admin/contact">
       <span>聯絡與品牌</span>
@@ -297,7 +314,7 @@
         {/each}
         <button type="button" onclick={() => insertTemplateLineBreak('cardTitleTemplate')}>換行</button>
       </div>
-      <p class="form-hint">用上方按鈕插入變數，換行會保留，空白行會自動移除。</p>
+      <p class="form-hint">按上方按鈕就會自動把對應項目插入內容中，換行會保留，空白行會自動移除。</p>
     </div>
     <label>詳情備註小標 <input bind:value={settingsForm.detailNotesEyebrow} /></label>
     <label>詳情備註標題 <input bind:value={settingsForm.detailNotesTitle} /></label>
@@ -309,7 +326,7 @@
         {/each}
         <button type="button" onclick={() => insertTemplateLineBreak('shareMessageTemplate')}>換行</button>
       </div>
-      <p class="form-hint">用上方按鈕插入變數，不需要手打大括號。</p>
+      <p class="form-hint">按上方按鈕就會自動把對應項目加入訊息中，不需要自己打括號。</p>
     </div>
     <div class="field-checklist">
       <strong>詳情頁資訊欄位</strong>
@@ -365,7 +382,7 @@
       </div>
       <div class="theme-preview__hero">
         <div>
-          <p>PRIVATE MOTOR SALON</p>
+          <p>私人精品車展</p>
           <h4>{settingsForm.homepageTitle || '嚴選值得收藏的高級座駕'}</h4>
           <small>{templates[settingsForm.activeTemplate].description}</small>
         </div>
@@ -374,28 +391,28 @@
       <div class="theme-preview__content">
         <article>
           <span>2023</span>
-          <strong>Continental GT V8 Mulliner</strong>
-          <small>26000km / 價格請洽</small>
+          <strong>示範車款 Continental GT V8 Mulliner</strong>
+          <small>26,000 km ／ 價格請洽</small>
         </article>
         <div class="theme-preview__specs">
           <div><span>年份</span><strong>2023</strong></div>
-          <div><span>里程</span><strong>26000km</strong></div>
-          <div><span>車型</span><strong>GT Coupe</strong></div>
+          <div><span>里程</span><strong>26,000 km</strong></div>
+          <div><span>車型</span><strong>雙門 GT 跑車</strong></div>
           <div><span>價格</span><strong>價格請洽</strong></div>
         </div>
       </div>
       <button type="button" class="theme-preview__cta">LINE 洽詢</button>
     </div>
 
-    <h3>匯入與公開狀態</h3>
-    <label>API 匯入預設
+    <h3>外部匯入與公開狀態</h3>
+    <label>外部來源新車輛預設
       <select bind:value={settingsForm.importBehavior}>
-        <option value="draft_first">匯入為草稿</option>
-        <option value="auto_publish">匯入後自動上架</option>
-        <option value="import_only">只匯入不上架</option>
+        <option value="draft_first">先存為草稿，需手動上架</option>
+        <option value="auto_publish">自動上架到公開網頁</option>
+        <option value="import_only">只匯入但不顯示在公開網頁</option>
       </select>
     </label>
-    <label class="checkbox-row"><input type="checkbox" bind:checked={settingsForm.showSoldVehicles} /> 前台顯示已售車輛</label>
+    <label class="checkbox-row"><input type="checkbox" bind:checked={settingsForm.showSoldVehicles} /> 公開網頁顯示已售出車輛</label>
     <button class="admin-button" type="submit">儲存設定</button>
   </form>
 {/if}
@@ -404,19 +421,19 @@
   <section class="admin-grid admin-grid--single">
     <form class="admin-panel settings-form" onsubmit={(event) => { event.preventDefault(); saveSettings(); }}>
       <h2>聯絡與社群</h2>
-      <label>LINE URL <input bind:value={settingsForm.lineUrl} /></label>
+      <label>LINE 網址 <input bind:value={settingsForm.lineUrl} /></label>
       <label>電話 <input bind:value={settingsForm.phoneNumber} /></label>
-      <label>Instagram URL <input bind:value={settingsForm.instagramUrl} /></label>
-      <label>Facebook URL <input bind:value={settingsForm.facebookUrl} /></label>
-      <label>Threads URL <input bind:value={settingsForm.threadsUrl} /></label>
-      <label>TikTok URL <input bind:value={settingsForm.tiktokUrl} /></label>
-      <p class="form-hint">社群 URL 留空時，前台頁尾不顯示該平台。</p>
+      <label>Instagram 網址 <input bind:value={settingsForm.instagramUrl} /></label>
+      <label>Facebook 網址 <input bind:value={settingsForm.facebookUrl} /></label>
+      <label>Threads 網址 <input bind:value={settingsForm.threadsUrl} /></label>
+      <label>TikTok 網址 <input bind:value={settingsForm.tiktokUrl} /></label>
+      <p class="form-hint">社群網址留空時，公開網頁的頁尾就不會顯示該平台。</p>
       <button class="admin-button" type="submit">儲存聯絡資訊</button>
     </form>
 
     <form class="admin-panel vehicle-edit-form" onsubmit={(event) => { event.preventDefault(); saveBrandAliases(); }}>
       <h2>品牌英文顯示對照</h2>
-      <p>來源品牌用選的，前台顯示名稱與英文網址再手動補。網址只允許英文小寫、數字與連字號。</p>
+      <p>來源品牌用選的，公開網頁顯示名稱與英文網址再手動補。網址只能用英文小寫字母、數字、與短橫線 -。</p>
       <div class="alias-editor">
         {#each brandAliasRows as row, index}
           <div class="alias-row">
@@ -427,7 +444,7 @@
                 {/each}
               </select>
             </label>
-            <label>前台顯示名稱 <input bind:value={row.displayName} placeholder="例如 Bentley" /></label>
+            <label>公開網頁顯示名稱 <input bind:value={row.displayName} placeholder="例如 Bentley" /></label>
             <label>英文網址 <input bind:value={row.urlSlug} placeholder="例如 bentley" /></label>
             <button type="button" onclick={() => removeBrandAliasRow(index)}>移除</button>
           </div>
@@ -447,7 +464,7 @@
       <div class="form-grid">
         <label>標題 <input bind:value={vehicleForm.title} required /></label>
         <label>卡片標題補充 <input bind:value={vehicleForm.cardTitleSupplement} placeholder="例如 總代、稀有配色、Mulliner" /></label>
-        <label>路由編號 <input bind:value={vehicleForm.slug} placeholder="例如 B181" /></label>
+        <label>網址代號 <input bind:value={vehicleForm.slug} placeholder="例如 B181" /></label>
         <label>品牌 <input bind:value={vehicleForm.brand} required /></label>
         <label>型號 <input bind:value={vehicleForm.model} required /></label>
         <label>規格 <input bind:value={vehicleForm.subModel} /></label>
@@ -499,7 +516,7 @@
             {/each}
           </div>
         {/if}
-        <label>圖片 URL（進階，每行一張） <textarea bind:value={vehicleForm.imagesText}></textarea></label>
+        <label>圖片網址（進階，一行一張） <textarea bind:value={vehicleForm.imagesText}></textarea></label>
       </div>
       <div class="row-actions form-actions">
         <button type="submit">儲存車輛</button>
@@ -511,7 +528,7 @@
         <img src={vehicle.coverImage?.url || ''} alt={vehicle.title} />
         <div>
           <strong>{vehicle.cardTitle}</strong>
-          <span>{vehicle.status} / /cars/{vehicle.slug} / {vehicle.year} / {vehicle.mileage}{vehicle.monthlyRecommended ? ' / 本月推薦' : ''}</span>
+          <span>{adminCarMetaLine(vehicle)}</span>
         </div>
         <div class="row-actions">
           <button onclick={() => editVehicle(vehicle)}>編輯</button>

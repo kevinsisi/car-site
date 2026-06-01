@@ -4,6 +4,7 @@ import ShareButton from '@/components/ShareButton.astro';
 import { getSettings } from '@/lib/settings';
 import { formatVehicleShareText, shareOriginFromRequest, vehicleShareUrl } from '@/lib/vehicle-share';
 import { getVehicleBySlug } from '@/lib/vehicles';
+import { devPlaceholderSpecs } from '@/lib/dev-placeholder-vehicle-specs';
 
 const vehicle = await getVehicleBySlug(Astro.params.slug || '');
 if (!vehicle || !['published', 'sold'].includes(vehicle.status)) {
@@ -12,16 +13,7 @@ if (!vehicle || !['published', 'sold'].includes(vehicle.status)) {
 const settings = await getSettings();
 const shareUrl = vehicleShareUrl(vehicle, shareOriginFromRequest(Astro.request, Astro.url));
 const shareText = formatVehicleShareText(vehicle, settings.shareMessageTemplate, shareUrl);
-const knownSpecs: Record<string, Record<string, string>> = {
-  B181: { warranty: '總代理車源', spec: 'Continental GT V8 Mulliner', body: 'GT Coupe', fuel: '汽油', doorsSeats: '2門 / 4座', cylinders: 'V8', horsepower: '550 hp' },
-  B176: { warranty: '總代理車源', spec: 'Phantom Tranquillity', body: 'Luxury Saloon', fuel: '汽油', doorsSeats: '4門 / 5座', cylinders: 'V12', horsepower: '571 hp' },
-  B175: { warranty: '性能車況確認', spec: 'Huracan EVO', body: 'Supercar Coupe', fuel: '汽油', doorsSeats: '2門 / 2座', cylinders: 'V10', horsepower: '640 hp' },
-  B174: { warranty: '總代理車源', spec: 'Flying Spur V8 S', body: 'Luxury Saloon', fuel: '汽油', doorsSeats: '4門 / 5座', cylinders: 'V8', horsepower: '528 hp' },
-  B173: { warranty: '新世代車源', spec: '718 Cayman', body: 'Sports Coupe', fuel: '汽油', doorsSeats: '2門 / 2座', cylinders: '水平對臥4缸', horsepower: '300 hp' },
-  B171: { warranty: '新世代旗艦車源', spec: 'Maybach GLS600', body: 'Luxury SUV', fuel: '汽油', doorsSeats: '5門 / 4座', cylinders: 'V8', horsepower: '557 hp' },
-  B180: { warranty: '頂級性能車源', spec: 'Purosangue', body: 'Ferrari 4-door GT', fuel: '汽油', doorsSeats: '4門 / 4座', cylinders: 'V12', horsepower: '725 hp' },
-};
-const known = knownSpecs[vehicle.slug] || {};
+const known = devPlaceholderSpecs[vehicle.slug] || {};
 const advisorDescription = vehicle.description
   .replace(/此車由\s*(?:carsmeet|既有庫存)\s*現有庫存匯入，?\s*/gi, '此車已完成實拍照片整理，')
   .replace(/carsmeet/gi, '既有庫存');
@@ -66,7 +58,7 @@ const specRows = [
     </section>
     <section class="detail-section reveal-section">
       <div class="section-kicker">
-        <p class="eyebrow">Vehicle Information</p>
+        <p class="eyebrow">車輛資訊</p>
         <h2>完整規格</h2>
       </div>
       <div class="spec-panel spec-panel--detail">

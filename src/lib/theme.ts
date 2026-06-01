@@ -3,17 +3,17 @@ export type StyleId = 'carsmeet-blue' | 'champagne-black' | 'warm-gallery' | 'ex
 
 export const templates: Record<TemplateId, { label: string; description: string; layoutClass: string }> = {
   'private-salon': {
-    label: 'Private Salon',
+    label: '私人會所',
     description: '私人會所感，大圖與直接洽詢路徑。',
     layoutClass: 'template-private-salon',
   },
   'heritage-gallery': {
-    label: 'Heritage Gallery',
+    label: '典藏藝廊',
     description: '藝廊式留白，適合典藏車與稀有車。',
     layoutClass: 'template-heritage-gallery',
   },
   'executive-showroom': {
-    label: 'Executive Showroom',
+    label: '行政展廳',
     description: '清楚穩重，適合快速查看與成交導向。',
     layoutClass: 'template-executive-showroom',
   },
@@ -21,7 +21,7 @@ export const templates: Record<TemplateId, { label: string; description: string;
 
 export const styles: Record<StyleId, { label: string; className: string; tokens: Record<string, string> }> = {
   'carsmeet-blue': {
-    label: 'Carsmeet Blue',
+    label: '都會藍',
     className: 'style-carsmeet-blue',
     tokens: {
       '--bg': '#f7f8fa',
@@ -35,7 +35,7 @@ export const styles: Record<StyleId, { label: string; className: string; tokens:
     },
   },
   'champagne-black': {
-    label: 'Champagne Black',
+    label: '香檳黑',
     className: 'style-champagne-black',
     tokens: {
       '--bg': '#070605',
@@ -49,7 +49,7 @@ export const styles: Record<StyleId, { label: string; className: string; tokens:
     },
   },
   'warm-gallery': {
-    label: 'Warm Gallery',
+    label: '暖光藝廊',
     className: 'style-warm-gallery',
     tokens: {
       '--bg': '#f4efe6',
@@ -63,7 +63,7 @@ export const styles: Record<StyleId, { label: string; className: string; tokens:
     },
   },
   'executive-slate': {
-    label: 'Executive Slate',
+    label: '行政石墨',
     className: 'style-executive-slate',
     tokens: {
       '--bg': '#10151a',
@@ -77,7 +77,7 @@ export const styles: Record<StyleId, { label: string; className: string; tokens:
     },
   },
   'classic-burgundy': {
-    label: 'Classic Burgundy',
+    label: '經典酒紅',
     className: 'style-classic-burgundy',
     tokens: {
       '--bg': '#120609',
