@@ -319,7 +319,7 @@ img.image-error::after { content: attr(alt); }
 .social-icon--line { color: #06c755; }
 .social-icon--line svg .line-badge { fill: currentColor; }
 .social-icon--line svg .line-bubble { fill: #ffffff; }
-.social-icon--line svg .line-text { fill: currentColor; }
+.social-icon--line svg .line-letters { fill: currentColor; }
 .social-cutout { fill: var(--surface); }
 .social-icon:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); box-shadow: 0 0.6rem 1.2rem rgba(0, 0, 0, 0.12); }
 .social-icon--line:hover { color: #05b34a; }
