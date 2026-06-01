@@ -600,7 +600,7 @@
     return Number.isFinite(n) ? n : Number.NaN;
   }
 
-  const filteredVehicles = $derived(() => {
+  const filteredVehicles = $derived.by(() => {
     const q = vehicleSearch.trim().toLowerCase();
     let list = vehicles.filter((v) => {
       if (statusFilter !== 'all' && v.status !== statusFilter) return false;
@@ -620,10 +620,10 @@
     return list;
   });
 
-  const totalPages = $derived(Math.max(1, Math.ceil(filteredVehicles().length / PAGE_SIZE)));
-  const visibleVehicles = $derived(() => {
+  const totalPages = $derived(Math.max(1, Math.ceil(filteredVehicles.length / PAGE_SIZE)));
+  const visibleVehicles = $derived.by(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
-    return filteredVehicles().slice(start, start + PAGE_SIZE);
+    return filteredVehicles.slice(start, start + PAGE_SIZE);
   });
 
   $effect(() => {
@@ -638,7 +638,7 @@
     selectedIds = next;
   }
   function toggleSelectAllVisible() {
-    const visibleIds = visibleVehicles().map((v) => v.id);
+    const visibleIds = visibleVehicles.map((v) => v.id);
     const allSelected = visibleIds.every((id) => selectedIds.has(id));
     const next = new Set(selectedIds);
     if (allSelected) visibleIds.forEach((id) => next.delete(id));
@@ -678,7 +678,7 @@
   }
 
   function exportCsv() {
-    const rows = filteredVehicles();
+    const rows = filteredVehicles;
     if (rows.length === 0) {
       notifyError('沒有可匯出的資料');
       return;
@@ -1274,7 +1274,7 @@
           {f.label} <span>{statusFilterCount(f.value)}</span>
         </button>
       {/each}
-      <span class="status-filter-summary">顯示 {filteredVehicles().length} / 總共 {vehicles.length}</span>
+      <span class="status-filter-summary">顯示 {filteredVehicles.length} / 總共 {vehicles.length}</span>
     </div>
 
     {#if selectedIds.size > 0}
@@ -1290,16 +1290,16 @@
       </div>
     {/if}
 
-    {#if visibleVehicles().length > 0}
+    {#if visibleVehicles.length > 0}
       <div class="batch-toggle-all">
         <label class="checkbox-row">
-          <input type="checkbox" checked={visibleVehicles().every((v) => selectedIds.has(v.id))} onchange={toggleSelectAllVisible} />
+          <input type="checkbox" checked={visibleVehicles.every((v) => selectedIds.has(v.id))} onchange={toggleSelectAllVisible} />
           全選目前頁面
         </label>
       </div>
     {/if}
 
-    {#each visibleVehicles() as vehicle}
+    {#each visibleVehicles as vehicle}
       <article class="admin-car-row" class:is-selected={selectedIds.has(vehicle.id)}>
         <input type="checkbox" class="batch-checkbox" checked={selectedIds.has(vehicle.id)} onchange={() => toggleSelect(vehicle.id)} aria-label={`選擇 ${vehicle.title}`} />
         <img src={vehicle.coverImage?.url || ''} alt={vehicle.title} />
@@ -1320,7 +1320,7 @@
       </article>
     {/each}
 
-    {#if filteredVehicles().length === 0}
+    {#if filteredVehicles.length === 0}
       <p class="admin-empty">
         {vehicles.length === 0
           ? '目前還沒有任何車輛，先用上方表單新增第一台車吧。'
