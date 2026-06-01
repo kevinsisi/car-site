@@ -304,13 +304,11 @@
     vehicleForm.imagesText = urls.filter(Boolean).join('\n');
   }
 
-  async function uploadVehicleImages(event: Event) {
-    const input = event.currentTarget as HTMLInputElement;
-    const files = Array.from(input.files || []);
+  async function uploadFiles(files: File[]) {
     if (!files.length) return;
     isUploadingImages = true;
     uploadProgress = { current: 0, total: files.length };
-    const tid = notifyProgress(`圖片上傳中 (${files.length} 張)...`);
+    const tid = notifyProgress(`圖片上傳中 (0/${files.length})...`);
     const formData = new FormData();
     for (const file of files) formData.append('files', file);
     const response = await adminFetch('/api/admin/media', { method: 'POST', body: formData });
@@ -321,9 +319,71 @@
     } else {
       updateToast(tid, result.error || '圖片上傳失敗', 'error');
     }
-    input.value = '';
     isUploadingImages = false;
     uploadProgress = { current: 0, total: 0 };
+  }
+
+  async function uploadVehicleImages(event: Event) {
+    const input = event.currentTarget as HTMLInputElement;
+    const files = Array.from(input.files || []);
+    input.value = '';
+    await uploadFiles(files);
+  }
+
+  let isDragOver = $state(false);
+  function handleImageDrop(event: DragEvent) {
+    event.preventDefault();
+    isDragOver = false;
+    const files = Array.from(event.dataTransfer?.files || []).filter((f) => f.type.startsWith('image/'));
+    if (files.length) uploadFiles(files);
+  }
+  function handleImageDragOver(event: DragEvent) {
+    if (!event.dataTransfer?.types.includes('Files')) return;
+    event.preventDefault();
+    isDragOver = true;
+  }
+  function handleImageDragLeave() { isDragOver = false; }
+
+  function handleImagePaste(event: ClipboardEvent) {
+    const items = Array.from(event.clipboardData?.items || []);
+    const imageFiles = items
+      .filter((it) => it.kind === 'file' && it.type.startsWith('image/'))
+      .map((it) => it.getAsFile())
+      .filter((f): f is File => !!f);
+    if (imageFiles.length) {
+      event.preventDefault();
+      uploadFiles(imageFiles);
+    }
+  }
+
+  function setAsCover(index: number) {
+    if (index === 0) return;
+    const urls = imageUrls();
+    const [item] = urls.splice(index, 1);
+    urls.unshift(item);
+    setImageUrls(urls);
+    notify('已設為封面');
+  }
+
+  function addFeature(value: string) {
+    const v = value.trim();
+    if (!v) return;
+    const existing = vehicleForm.featuresText.split('\n').map((s) => s.trim()).filter(Boolean);
+    if (existing.includes(v)) return;
+    existing.push(v);
+    vehicleForm.featuresText = existing.join('\n');
+  }
+  function removeFeature(idx: number) {
+    const existing = vehicleForm.featuresText.split('\n').map((s) => s.trim()).filter(Boolean);
+    existing.splice(idx, 1);
+    vehicleForm.featuresText = existing.join('\n');
+  }
+  const currentFeatures = $derived(vehicleForm.featuresText.split('\n').map((s) => s.trim()).filter(Boolean));
+  let featureDraft = $state('');
+  function commitFeatureDraft() {
+    if (!featureDraft.trim()) return;
+    addFeature(featureDraft);
+    featureDraft = '';
   }
 
   function moveImage(fromIndex: number, toIndex: number) {
@@ -947,31 +1007,54 @@
       </label>
       <label class="checkbox-row"><input type="checkbox" bind:checked={vehicleForm.monthlyRecommended} /> 本月推薦</label>
       <label>顧問標題 <input bind:value={vehicleForm.headline} /></label>
-      <label>顧問描述 <textarea bind:value={vehicleForm.description}></textarea></label>
-      <label>配備亮點（每行一項） <textarea bind:value={vehicleForm.featuresText}></textarea></label>
-      <div class="image-manager">
+      <label>顧問描述 <textarea data-autoresize bind:value={vehicleForm.description}></textarea></label>
+
+      <div class="feature-editor">
+        <strong>配備亮點</strong>
+        <p class="form-hint">輸入後按 Enter 加入，點 × 移除。每項顯示為一個 chip。</p>
+        {#if currentFeatures.length > 0}
+          <div class="feature-chips">
+            {#each currentFeatures as feat, i}
+              <span class="feature-chip">{feat}<button type="button" aria-label={`移除 ${feat}`} onclick={() => removeFeature(i)}>×</button></span>
+            {/each}
+          </div>
+        {/if}
+        <div class="feature-input">
+          <input bind:value={featureDraft} placeholder="例如 Black Badge 套件" onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commitFeatureDraft(); } }} />
+          <button type="button" class="secondary-button" onclick={commitFeatureDraft} disabled={!featureDraft.trim()}>加入</button>
+        </div>
+      </div>
+
+      <div class="image-manager" class:is-drag-over={isDragOver}
+        ondragover={handleImageDragOver} ondragleave={handleImageDragLeave} ondrop={handleImageDrop} onpaste={handleImagePaste}>
         <div class="image-manager__header">
           <div>
             <strong>車輛圖片</strong>
-            <p class="form-hint">可上傳多張圖片，拖曳或用上下按鈕調整順序；第一張作封面。</p>
+            <p class="form-hint">可上傳多張圖片、拖曳區塊內、或剪貼簿貼上（Ctrl/Cmd+V）。第一張作封面。</p>
           </div>
           <label class="upload-button">
-            {isUploadingImages ? '上傳中...' : '上傳圖片'}
+            {isUploadingImages ? `上傳中... (${uploadProgress.total} 張)` : '上傳圖片'}
             <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onchange={uploadVehicleImages} disabled={isUploadingImages} />
           </label>
         </div>
+        {#if isDragOver}
+          <div class="image-dropzone-hint">放開即可上傳檔案</div>
+        {/if}
         {#if imageUrls().length}
           <div class="image-sort-list">
             {#each imageUrls() as url, index}
-              <article class="image-sort-item" class:is-dragging={draggedImageIndex === index} draggable="true" ondragstart={() => { draggedImageIndex = index; }} ondragover={(event) => event.preventDefault()} ondrop={() => dropImage(index)} ondragend={() => { draggedImageIndex = null; }}>
+              <article class="image-sort-item" class:is-cover={index === 0} class:is-dragging={draggedImageIndex === index} draggable="true" ondragstart={() => { draggedImageIndex = index; }} ondragover={(event) => event.preventDefault()} ondrop={() => dropImage(index)} ondragend={() => { draggedImageIndex = null; }}>
                 <button type="button" class="image-sort-item__thumb" onclick={() => { lightboxImage = url; }} aria-label={`預覽圖片 ${index + 1}`}>
                   <img src={url} alt={`車輛圖片 ${index + 1}`} />
                 </button>
                 <div>
-                  <strong>{index === 0 ? '封面' : `第 ${index + 1} 張`}</strong>
+                  <strong>{index === 0 ? '★ 封面' : `第 ${index + 1} 張`}</strong>
                   <span>{url}</span>
                 </div>
                 <div class="image-sort-actions">
+                  {#if index !== 0}
+                    <button type="button" onclick={() => setAsCover(index)}>設為封面</button>
+                  {/if}
                   <button type="button" onclick={() => moveImage(index, index - 1)} disabled={index === 0}>上移</button>
                   <button type="button" onclick={() => moveImage(index, index + 1)} disabled={index === imageUrls().length - 1}>下移</button>
                   <button type="button" class="row-button--danger" onclick={() => removeImage(index)}>移除</button>
@@ -980,7 +1063,7 @@
             {/each}
           </div>
         {/if}
-        <label>圖片網址（進階，一行一張） <textarea bind:value={vehicleForm.imagesText}></textarea></label>
+        <label>圖片網址（進階，一行一張） <textarea data-autoresize bind:value={vehicleForm.imagesText}></textarea></label>
       </div>
       <div class="row-actions form-actions">
         <button type="submit">儲存車輛</button>
