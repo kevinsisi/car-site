@@ -4,7 +4,7 @@ import { siteSettings, type ImportBehavior } from '@/db/schema';
 import { defaultDetailSpecFields } from './detail-spec-fields';
 import { resolveStyle, resolveTemplate, type StyleId, type TemplateId } from './theme';
 
-export type SocialPlatform = 'line' | 'instagram' | 'facebook' | 'threads' | 'tiktok';
+export type SocialPlatform = 'line' | 'instagram' | 'facebook' | 'threads' | 'tiktok' | 'phone';
 
 export interface SocialIconConfig {
   url: string;
@@ -15,7 +15,7 @@ export interface SocialIconConfig {
 
 export type SocialIconsMap = Partial<Record<SocialPlatform, SocialIconConfig>>;
 
-const SOCIAL_PLATFORMS: SocialPlatform[] = ['line', 'instagram', 'facebook', 'threads', 'tiktok'];
+const SOCIAL_PLATFORMS: SocialPlatform[] = ['line', 'instagram', 'facebook', 'threads', 'tiktok', 'phone'];
 
 function clampNumber(value: unknown, min: number, max: number, fallback: number): number {
   const n = typeof value === 'number' ? value : Number.parseFloat(String(value ?? ''));

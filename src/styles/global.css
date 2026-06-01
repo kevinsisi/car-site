@@ -320,6 +320,10 @@ img.image-error::after { content: attr(alt); }
 .social-icon--custom { padding: 0; }
 .brand-custom-img { display: block; min-width: 100%; min-height: 100%; object-fit: cover; border-radius: inherit; }
 .detail-contact-button .brand-custom-img { display: none; }
+.site-cta__link--custom { overflow: hidden; padding: 0; border-color: transparent; }
+.site-cta__link--custom .brand-custom-img { display: block; }
+.promise-icon { overflow: hidden; }
+.promise-icon .brand-custom-img { width: 100%; height: 100%; }
 .social-icon--line svg .line-badge { fill: currentColor; }
 .social-icon--line svg .line-bubble { fill: var(--surface); }
 .social-icon--line svg .line-letters { fill: currentColor; }

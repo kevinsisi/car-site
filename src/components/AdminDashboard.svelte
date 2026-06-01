@@ -68,6 +68,7 @@
     { key: 'facebook', label: 'Facebook' },
     { key: 'threads', label: 'Threads' },
     { key: 'tiktok', label: 'TikTok' },
+    { key: 'phone', label: '電話' },
   ];
 
   let uploadingPlatform = $state<SocialPlatform | null>(null);
