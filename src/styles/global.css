@@ -320,10 +320,11 @@ img.image-error::after { content: attr(alt); }
 .social-icon--custom { padding: 0; border-color: transparent; background: transparent; }
 .brand-custom-img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
 .detail-contact-button .brand-custom-img { display: none; }
-.site-cta__link--custom { width: 2.4rem; padding: 0; border-color: transparent; background: transparent; overflow: hidden; border-radius: 999px; }
+.site-cta__link--custom { width: 2.4rem; padding: 0; border-color: transparent; overflow: hidden; border-radius: 999px; }
 .site-cta__link--custom .brand-custom-img { display: block; }
-.site-cta__link--custom-line { padding: 0 0.95rem 0 0.3rem; gap: 0.4rem; }
-.site-cta__link--custom-line .brand-custom-img { width: 1.7rem; height: 1.7rem; border-radius: 999px; flex-shrink: 0; }
+.site-cta__link--with-thumb { padding: 0 0.95rem 0 0.3rem; gap: 0.5rem; }
+.site-cta__thumb { width: 1.75rem; height: 1.75rem; border-radius: 999px; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--surface); }
+.site-cta__thumb img { display: block; object-fit: cover; }
 .mobile-action--custom { background: transparent; }
 .detail-contact-button--custom { background: transparent; }
 .promise-icon { overflow: hidden; }

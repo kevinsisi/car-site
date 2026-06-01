@@ -11,6 +11,7 @@ export interface SocialIconConfig {
   zoom: number;
   offsetX: number;
   offsetY: number;
+  bgColor: string;
 }
 
 export type SocialIconsMap = Partial<Record<SocialPlatform, SocialIconConfig>>;
@@ -38,11 +39,13 @@ export function parseSocialIcons(raw: string | undefined | null): SocialIconsMap
       const cfg = entry as Record<string, unknown>;
       const url = typeof cfg.url === 'string' ? cfg.url.trim() : '';
       if (!url) continue;
+      const bgColor = typeof cfg.bgColor === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(cfg.bgColor.trim()) ? cfg.bgColor.trim() : '';
       result[platform] = {
         url,
         zoom: clampNumber(cfg.zoom, ZOOM_MIN, ZOOM_MAX, 1),
         offsetX: clampNumber(cfg.offsetX, 0, 100, 50),
         offsetY: clampNumber(cfg.offsetY, 0, 100, 50),
+        bgColor,
       };
     }
     return result;
@@ -57,6 +60,11 @@ export function socialIconCropStyle(cfg: SocialIconConfig | undefined): string {
   return `width: ${zoom * 100}%; height: ${zoom * 100}%; object-position: ${cfg.offsetX ?? 50}% ${cfg.offsetY ?? 50}%;`;
 }
 
+export function socialIconChipStyle(cfg: SocialIconConfig | undefined): string {
+  if (!cfg?.url || !cfg.bgColor) return '';
+  return `background: ${cfg.bgColor}; border-color: transparent;`;
+}
+
 export function serializeSocialIcons(map: SocialIconsMap): string {
   const clean: SocialIconsMap = {};
   for (const platform of SOCIAL_PLATFORMS) {
@@ -67,6 +75,7 @@ export function serializeSocialIcons(map: SocialIconsMap): string {
       zoom: clampNumber(cfg.zoom, ZOOM_MIN, ZOOM_MAX, 1),
       offsetX: clampNumber(cfg.offsetX, 0, 100, 50),
       offsetY: clampNumber(cfg.offsetY, 0, 100, 50),
+      bgColor: cfg.bgColor || '',
     };
   }
   return JSON.stringify(clean);

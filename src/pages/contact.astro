@@ -1,6 +1,6 @@
 ---
 import PublicLayout from '@/layouts/PublicLayout.astro';
-import { getSettings, socialIconCropStyle } from '@/lib/settings';
+import { getSettings, socialIconChipStyle, socialIconCropStyle } from '@/lib/settings';
 
 const settings = await getSettings();
 const contactItems = [
@@ -40,7 +40,7 @@ const contactItems = [
   <section class="contact-card-grid reveal-section">
     {contactItems.map(({ title, body, href, icon }) => (
       <a href={href} class="contact-card">
-        <span class="promise-icon" aria-hidden="true">
+        <span class="promise-icon" aria-hidden="true" style={icon === 'phone' ? socialIconChipStyle(settings.socialIcons.phone) : ''}>
           {icon === 'store' && (
             <svg viewBox="0 0 24 24"><path d="M4 9.5 5.5 5h13L20 9.5v1.5a2.5 2.5 0 0 1-4.5 1.5 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-4 0 2.5 2.5 0 0 1-3.5-1.5v-1.5Z" /><path d="M5 11.5V20h14v-8.5" /><path d="M10 20v-5h4v5" /></svg>
           )}

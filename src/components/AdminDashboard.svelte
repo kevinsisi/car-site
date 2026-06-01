@@ -111,9 +111,23 @@
   function ensureIconConfig(platform: SocialPlatform): SocialIconConfig {
     const existing = settingsForm.socialIcons[platform];
     if (existing) return existing;
-    const fresh: SocialIconConfig = { url: '', zoom: 1, offsetX: 50, offsetY: 50 };
+    const fresh: SocialIconConfig = { url: '', zoom: 1, offsetX: 50, offsetY: 50, bgColor: '' };
     settingsForm.socialIcons[platform] = fresh;
     return fresh;
+  }
+
+  function setIconBgColor(platform: SocialPlatform, color: string) {
+    const cfg = ensureIconConfig(platform);
+    cfg.bgColor = color;
+    settingsForm.socialIcons = { ...settingsForm.socialIcons };
+  }
+
+  function applyBgToAll(color: string) {
+    for (const p of socialPlatformList) {
+      const cfg = settingsForm.socialIcons[p.key];
+      if (cfg?.url) cfg.bgColor = color;
+    }
+    settingsForm.socialIcons = { ...settingsForm.socialIcons };
   }
 
   async function uploadSocialIcon(platform: SocialPlatform, event: Event) {
@@ -1083,7 +1097,15 @@
       <p class="form-hint">社群網址留空時，公開網頁的頁尾就不會顯示該平台。</p>
 
       <h3>社群平台自訂圖示</h3>
-      <p class="form-hint">每個社群可上傳專屬圖示，並調整顯示範圍（縮放與位置）。不上傳則使用預設圖示。</p>
+      <p class="form-hint">每個平台可上傳專屬圖示、調整縮放/位置、設定底色（讓圖片的方形邊界與圓 chip 同色，視覺上看不到裁切）。</p>
+      <div class="bg-all-row">
+        <span>批次套用底色到所有已上傳的 icon：</span>
+        <button type="button" onclick={() => applyBgToAll('#ffffff')} style="background:#fff;color:#000;">白色</button>
+        <button type="button" onclick={() => applyBgToAll('#0b0a09')} style="background:#0b0a09;color:#fff;">黑色</button>
+        <button type="button" onclick={() => applyBgToAll('#2f66ad')} style="background:#2f66ad;color:#fff;">主題藍</button>
+        <button type="button" onclick={() => applyBgToAll('#06c755')} style="background:#06c755;color:#fff;">LINE 綠</button>
+        <button type="button" onclick={() => applyBgToAll('')}>移除底色</button>
+      </div>
       <div class="social-icon-editor">
         {#each socialPlatformList as platform}
           {@const cfg = settingsForm.socialIcons[platform.key]}
@@ -1096,7 +1118,7 @@
             </div>
             <div class="social-icon-card__preview">
               {#if cfg?.url}
-                <div class="social-icon-card__circle">
+                <div class="social-icon-card__circle" style={cfg.bgColor ? `background: ${cfg.bgColor}; border-color: transparent;` : ''}>
                   <img src={cfg.url} alt={`${platform.label} 圖示預覽`} style={iconPreviewStyle(cfg)} />
                 </div>
               {:else}
@@ -1122,6 +1144,12 @@
                 <label class="slider-row">
                   <span>垂直位置 {cfg.offsetY ?? 50}%</span>
                   <input type="range" min="0" max="100" step="1" value={cfg.offsetY ?? 50} oninput={(e) => updateIconField(platform.key, 'offsetY', Number.parseInt((e.currentTarget as HTMLInputElement).value, 10))} />
+                </label>
+                <label class="bg-row">
+                  <span>底色</span>
+                  <input type="color" value={cfg.bgColor || '#1a1612'} oninput={(e) => setIconBgColor(platform.key, (e.currentTarget as HTMLInputElement).value)} />
+                  <button type="button" class="bg-clear" onclick={() => setIconBgColor(platform.key, '')} disabled={!cfg.bgColor}>清除</button>
+                  {#if cfg.bgColor}<code>{cfg.bgColor}</code>{/if}
                 </label>
               </div>
             {/if}

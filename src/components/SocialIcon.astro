@@ -6,6 +6,7 @@ interface CustomIcon {
   zoom: number;
   offsetX: number;
   offsetY: number;
+  bgColor: string;
 }
 
 interface Props {
@@ -27,6 +28,7 @@ const customStyle = customIcon
   aria-label={label}
   target="_blank"
   rel="noopener noreferrer"
+  style={customIcon?.bgColor ? `background: ${customIcon.bgColor}; border-color: transparent;` : ''}
 >
   {customIcon && (
     <img class="social-icon__custom-img" src={customIcon.url} alt={label} style={customStyle} loading="lazy" decoding="async" />
