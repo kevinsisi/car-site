@@ -56,6 +56,7 @@ function parseFeatures(value: string): string[] {
 
 function slugify(input: string): string {
   return input
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 0xfee0))
     .toLowerCase()
     .normalize('NFKD')
     .replace(/[^a-z0-9]+/g, '-')
@@ -66,6 +67,7 @@ function slugify(input: string): string {
 function normalizeRouteSlug(input: string | undefined | null): string {
   return String(input || '')
     .trim()
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 0xfee0))
     .replace(/^https?:\/\/[^/]+\/cars\//i, '')
     .replace(/^\/?cars\//i, '')
     .replace(/^\/+|\/+$/g, '')
