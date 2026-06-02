@@ -190,6 +190,7 @@ img.image-error::after { content: attr(alt); }
 .brand-list a { min-height: 2.75rem; width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; border: 1px solid color-mix(in srgb, var(--line) 58%, transparent); border-radius: 0.95rem; padding: 0 0.85rem; background: color-mix(in srgb, var(--surface) 52%, transparent); color: var(--muted); font-size: 0.96rem; font-weight: 650; }
 .brand-list a + a { border-top: 1px solid color-mix(in srgb, var(--line) 58%, transparent); }
 .brand-list a.is-active { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent-strong); }
+.brand-list .brand-list__sold { position: sticky; bottom: calc(0.85rem + env(safe-area-inset-bottom)); margin-top: 1rem; background: color-mix(in srgb, var(--accent) 18%, var(--surface)); border-color: color-mix(in srgb, var(--accent) 46%, var(--line)); color: var(--accent-strong); box-shadow: 0 0.85rem 1.8rem rgba(0, 0, 0, 0.22); }
 .brand-list a:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--accent-strong); }
 .brand-list a:active { transform: scale(0.985); }
 .brand-list strong { min-width: 1.75rem; height: 1.75rem; display: inline-grid; place-items: center; border-radius: 999px; background: color-mix(in srgb, var(--surface-soft) 80%, transparent); color: color-mix(in srgb, var(--muted) 70%, transparent); font-size: 0.82rem; }

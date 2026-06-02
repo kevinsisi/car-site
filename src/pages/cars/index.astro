@@ -3,15 +3,17 @@ import VehicleCard from '@/components/VehicleCard.astro';
 import PublicLayout from '@/layouts/PublicLayout.astro';
 import { getSettings } from '@/lib/settings';
 import { formatVehicleShareText, shareOriginFromRequest, vehicleShareUrl } from '@/lib/vehicle-share';
-import { listMonthlyRecommendedVehicles, listPublicBrands, listPublicVehicles, listPublicVehiclesByBrand } from '@/lib/vehicles';
+import { listMonthlyRecommendedVehicles, listPublicBrands, listPublicInventoryVehicles, listPublicVehiclesByBrand, listSoldVehicles } from '@/lib/vehicles';
 
 const settings = await getSettings();
 const activeBrand = Astro.url.searchParams.get('brand') || '';
-const activeTab = activeBrand ? 'brand' : Astro.url.searchParams.get('tab') === 'recommended' ? 'recommended' : 'all';
-const allVehicles = await listPublicVehicles();
+const tabParam = Astro.url.searchParams.get('tab');
+const activeTab = activeBrand ? 'brand' : tabParam === 'recommended' ? 'recommended' : tabParam === 'sold' ? 'sold' : 'all';
+const allVehicles = await listPublicInventoryVehicles();
 const recommendedVehicles = await listMonthlyRecommendedVehicles();
+const soldVehicles = await listSoldVehicles();
 const brands = await listPublicBrands();
-const baseVehicles = activeTab === 'recommended' ? recommendedVehicles : activeBrand ? await listPublicVehiclesByBrand(activeBrand) : allVehicles;
+const baseVehicles = activeTab === 'recommended' ? recommendedVehicles : activeTab === 'sold' ? soldVehicles : activeBrand ? await listPublicVehiclesByBrand(activeBrand) : allVehicles;
 const activeBrandLabel = brands.find((brand) => brand.urlSlug === activeBrand)?.displayName;
 const shareOrigin = shareOriginFromRequest(Astro.request, Astro.url);
 
@@ -59,17 +61,18 @@ const vehicles = sortedVehicles;
         {brands.map((brand) => (
           <a class={activeBrand === brand.urlSlug ? 'is-active' : ''} href={`/cars?brand=${brand.urlSlug}`}><span>{brand.displayName}</span><strong>{brand.count}</strong></a>
         ))}
+        <a class={`brand-list__sold ${activeTab === 'sold' ? 'is-active' : ''}`} href="/cars?tab=sold"><span>成交實錄</span><strong>{soldVehicles.length}</strong></a>
       </nav>
     </aside>
     <div class="filter-scrim" aria-hidden="true"></div>
     <div class="inventory-content">
       <nav class="mobile-filter-strip" aria-label="車輛篩選">
-        <button class={`filter-toggle ${activeBrandLabel || activeTab === 'recommended' ? 'is-active' : ''}`} type="button" aria-expanded="false" aria-controls="brand-filter-panel">{activeBrandLabel || (activeTab === 'recommended' ? '本月精選' : '品牌列表')}</button>
+        <button class={`filter-toggle ${activeBrandLabel || activeTab === 'recommended' || activeTab === 'sold' ? 'is-active' : ''}`} type="button" aria-expanded="false" aria-controls="brand-filter-panel">{activeBrandLabel || (activeTab === 'recommended' ? '本月精選' : activeTab === 'sold' ? '成交實錄' : '品牌列表')}</button>
       </nav>
       <div class="inventory-toolbar">
         <div>
           <p class="eyebrow">選車</p>
-          <h2>{activeBrandLabel || (activeTab === 'recommended' ? '本月精選' : '全部車輛')}</h2>
+          <h2>{activeBrandLabel || (activeTab === 'recommended' ? '本月精選' : activeTab === 'sold' ? '成交實錄' : '全部車輛')}</h2>
         </div>
         <div class="inventory-toolbar__controls">
           <label class="sort-control">

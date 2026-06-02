@@ -155,7 +155,7 @@ async function attachImages(rows: (typeof vehicles.$inferSelect)[]): Promise<Veh
 }
 
 export async function listPublicBrands(): Promise<{ displayName: string; urlSlug: string; count: number }[]> {
-  const vehicles = await listPublicVehicles();
+  const vehicles = await listPublicInventoryVehicles();
   const countMap = new Map<string, { displayName: string; urlSlug: string; count: number }>();
   for (const vehicle of vehicles) {
     if (!vehicle.brandUrlSlug) continue;
@@ -179,13 +179,21 @@ export async function listPublicVehicles(): Promise<VehicleView[]> {
 }
 
 export async function listMonthlyRecommendedVehicles(): Promise<VehicleView[]> {
-  const settings = await getSettings();
-  const statusFilter = inArray(vehicles.status, settings.showSoldVehicles ? [...alwaysPublicVehicleStatuses, 'sold'] : alwaysPublicVehicleStatuses);
   const rows = await db
     .select()
     .from(vehicles)
-    .where(and(statusFilter, eq(vehicles.monthlyRecommended, true)))
+    .where(and(inArray(vehicles.status, alwaysPublicVehicleStatuses), eq(vehicles.monthlyRecommended, true)))
     .orderBy(desc(vehicles.updatedAt));
+  return attachImages(rows);
+}
+
+export async function listPublicInventoryVehicles(): Promise<VehicleView[]> {
+  const rows = await db.select().from(vehicles).where(inArray(vehicles.status, alwaysPublicVehicleStatuses)).orderBy(desc(vehicles.updatedAt));
+  return attachImages(rows);
+}
+
+export async function listSoldVehicles(): Promise<VehicleView[]> {
+  const rows = await db.select().from(vehicles).where(eq(vehicles.status, 'sold')).orderBy(desc(vehicles.soldAt), desc(vehicles.updatedAt));
   return attachImages(rows);
 }
 
