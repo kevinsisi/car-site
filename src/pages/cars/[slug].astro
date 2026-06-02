@@ -11,16 +11,20 @@ if (!vehicle || !['published', 'sold'].includes(vehicle.status)) {
   return new Response('Not found', { status: 404 });
 }
 const settings = await getSettings();
-const shareUrl = vehicleShareUrl(vehicle, shareOriginFromRequest(Astro.request, Astro.url));
+const publicOrigin = shareOriginFromRequest(Astro.request, Astro.url);
+const shareUrl = vehicleShareUrl(vehicle, publicOrigin);
 const shareText = formatVehicleShareText(vehicle, settings.shareMessageTemplate, shareUrl);
 const known = devPlaceholderSpecs[vehicle.slug] || {};
-const advisorDescription = vehicle.description;
+const legacyImportDescription = '此車由 carsmeet 現有庫存匯入，已附實拍照片。詳細來源、車況、保養與配備請直接 LINE 或電話洽詢。';
+const advisorDescription = vehicle.description === legacyImportDescription
+  ? `${vehicle.title} 實拍現車，專人介紹車況、配備與保養紀錄，歡迎透過 LINE 或電話預約賞車。`
+  : vehicle.description.replace(/carsmeet/gi, settings.siteName);
 const allVehicles = await listPublicVehicles();
 const currentIndex = allVehicles.findIndex((v) => v.id === vehicle.id);
 const prevVehicle = currentIndex > 0 ? allVehicles[currentIndex - 1] : null;
 const nextVehicle = currentIndex >= 0 && currentIndex < allVehicles.length - 1 ? allVehicles[currentIndex + 1] : null;
 
-const origin = `${Astro.url.protocol}//${Astro.url.host}`;
+const origin = publicOrigin;
 const vehicleJsonLd: Record<string, unknown> = {
   '@context': 'https://schema.org',
   '@type': 'Vehicle',
@@ -36,7 +40,7 @@ const vehicleJsonLd: Record<string, unknown> = {
   mileageFromOdometer: vehicle.mileage ? { '@type': 'QuantitativeValue', value: vehicle.mileage } : undefined,
   image: vehicle.images.map((image) => new URL(image.url, origin).toString()),
   url: new URL(`/cars/${vehicle.slug}`, origin).toString(),
-  description: vehicle.description || vehicle.headline,
+  description: advisorDescription || vehicle.headline,
   itemCondition: 'https://schema.org/UsedCondition',
   offers: {
     '@type': 'Offer',

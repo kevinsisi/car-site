@@ -2,6 +2,7 @@
 import SocialIcon from '@/components/SocialIcon.astro';
 import { getSettings, socialIconChipStyle, socialIconCropStyle } from '@/lib/settings';
 import { styleVars, styles, templates } from '@/lib/theme';
+import { shareOriginFromRequest } from '@/lib/vehicle-share';
 import '@/styles/global.css';
 
 interface Props {
@@ -21,9 +22,10 @@ const title = Astro.props.title || settings.siteName;
 const description = Astro.props.description || '私人高級車顧問，嚴選高端中古車款。';
 const pageShareText = Astro.props.shareText || description;
 const pageShareUrl = Astro.props.shareUrl || Astro.url.pathname;
-const canonicalUrl = new URL(Astro.url.pathname, Astro.site || Astro.url).toString();
+const publicOrigin = shareOriginFromRequest(Astro.request, Astro.url);
+const canonicalUrl = new URL(Astro.url.pathname, publicOrigin).toString();
 const absoluteOgImage = Astro.props.ogImage
-  ? new URL(Astro.props.ogImage, Astro.site || Astro.url).toString()
+  ? new URL(Astro.props.ogImage, publicOrigin).toString()
   : '';
 const ogType = Astro.props.ogType || 'website';
 const jsonLdArray = Array.isArray(Astro.props.jsonLd)
