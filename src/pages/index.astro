@@ -3,12 +3,14 @@ import PublicLayout from '@/layouts/PublicLayout.astro';
 import VehicleCard from '@/components/VehicleCard.astro';
 import { getSettings } from '@/lib/settings';
 import { formatVehicleShareText, shareOriginFromRequest, vehicleShareUrl } from '@/lib/vehicle-share';
-import { listPublicVehicles } from '@/lib/vehicles';
+import { listPublicVehicles, listSoldCaseVehicles } from '@/lib/vehicles';
 
 const settings = await getSettings();
 const vehicles = await listPublicVehicles();
-const heroBySlug = settings.heroVehicleSlug ? vehicles.find((v) => v.slug === settings.heroVehicleSlug) : null;
-const hero = heroBySlug || vehicles[0];
+const soldCaseVehicles = await listSoldCaseVehicles(6);
+const featuredVehicles = vehicles.filter((vehicle) => vehicle.status !== 'sold');
+const heroBySlug = settings.heroVehicleSlug ? featuredVehicles.find((v) => v.slug === settings.heroVehicleSlug) : null;
+const hero = heroBySlug || featuredVehicles[0] || soldCaseVehicles[0];
 const shareOrigin = shareOriginFromRequest(Astro.request, Astro.url);
 const featuredCount = Math.max(1, Math.min(12, settings.featuredCount ?? 3));
 ---
@@ -39,7 +41,22 @@ const featuredCount = Math.max(1, Math.min(12, settings.featuredCount ?? 3));
     <h2>{settings.featuredTitle}</h2>
     <a href="/cars">查看全部</a>
   </section>
-  <div class="vehicle-grid">
-    {vehicles.slice(0, featuredCount).map((vehicle) => <VehicleCard vehicle={vehicle} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
-  </div>
+  {featuredVehicles.length > 0 && (
+    <div class="vehicle-grid">
+      {featuredVehicles.slice(0, featuredCount).map((vehicle) => <VehicleCard vehicle={vehicle} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
+    </div>
+  )}
+
+  {soldCaseVehicles.length > 0 && (
+    <>
+      <section class="section-heading section-heading--sold reveal-section">
+        <p class="eyebrow">Delivered</p>
+        <h2>成交案例</h2>
+        <a href="/cars">瀏覽車庫</a>
+      </section>
+      <div class="vehicle-grid sold-case-grid">
+        {soldCaseVehicles.map((vehicle) => <VehicleCard vehicle={vehicle} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
+      </div>
+    </>
+  )}
 </PublicLayout>

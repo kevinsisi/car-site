@@ -1,0 +1,1 @@
+ALTER TABLE vehicles ADD COLUMN show_sold_case INTEGER NOT NULL DEFAULT 0;

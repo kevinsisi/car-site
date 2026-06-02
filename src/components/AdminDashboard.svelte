@@ -429,6 +429,7 @@
     if (vehicle.year) parts.push(vehicle.year);
     if (vehicle.mileage) parts.push(vehicle.mileage);
     if (vehicle.monthlyRecommended) parts.push('本月推薦');
+    if (vehicle.showSoldCase) parts.push('成交案例');
     return parts.join('｜');
   }
 
@@ -563,6 +564,7 @@
       condition: '嚴選車況',
       status: 'draft',
       monthlyRecommended: false,
+      showSoldCase: false,
       headline: '',
       description: '',
       featuresText: '',
@@ -587,6 +589,7 @@
       condition: vehicle.condition,
       status: vehicle.status,
       monthlyRecommended: vehicle.monthlyRecommended,
+      showSoldCase: vehicle.showSoldCase,
       headline: vehicle.headline,
       description: vehicle.description,
       featuresText: vehicle.features.join('\n'),
@@ -620,6 +623,7 @@
       condition: vehicle.condition,
       status: 'draft' as VehicleView['status'],
       monthlyRecommended: false,
+      showSoldCase: false,
       headline: vehicle.headline,
       description: vehicle.description,
       featuresText: vehicle.features.join('\n'),
@@ -754,14 +758,14 @@
       notifyError('沒有可匯出的資料');
       return;
     }
-    const headers = ['網址代號', '標題', '品牌', '型號', '規格', '年份', '里程', '外觀色', '內裝色', '車況', '狀態', '本月推薦', '更新時間', '網址'];
+    const headers = ['網址代號', '標題', '品牌', '型號', '規格', '年份', '里程', '外觀色', '內裝色', '車況', '狀態', '本月推薦', '成交案例', '更新時間', '網址'];
     const escape = (v: string) => `"${String(v ?? '').replace(/"/g, '""')}"`;
     const lines = [headers.join(',')];
     for (const v of rows) {
       lines.push([
         v.slug, v.title, v.brand, v.model, v.subModel, v.year, v.mileage,
         v.exteriorColor, v.interiorColor, v.condition,
-        statusLabels[v.status], v.monthlyRecommended ? '是' : '否',
+        statusLabels[v.status], v.monthlyRecommended ? '是' : '否', v.showSoldCase ? '是' : '否',
         v.updatedAt, `/cars/${v.slug}`,
       ].map(escape).join(','));
     }
@@ -1297,6 +1301,8 @@
         </select>
       </label>
       <label class="checkbox-row"><input type="checkbox" bind:checked={vehicleForm.monthlyRecommended} /> 本月推薦</label>
+      <label class="checkbox-row"><input type="checkbox" bind:checked={vehicleForm.showSoldCase} /> 顯示於成交案例</label>
+      <p class="form-hint">只有狀態為「已售」且勾選此項的車，才會出現在首頁成交案例。</p>
       <label>顧問標題 <input bind:value={vehicleForm.headline} /></label>
       <label>顧問描述 <textarea data-autoresize bind:value={vehicleForm.description}></textarea></label>
 

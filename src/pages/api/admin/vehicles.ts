@@ -28,6 +28,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     description: body.description ? String(body.description) : undefined,
     features: Array.isArray(body.features) ? body.features.map(String) : [],
     monthlyRecommended: body.monthlyRecommended === true,
+    showSoldCase: body.showSoldCase === true,
     images: Array.isArray(body.images) ? body.images.map(String) : [],
   });
   return Response.json({ ok: true, vehicleId });

@@ -35,6 +35,7 @@ export interface VehicleView {
   description: string;
   features: string[];
   monthlyRecommended: boolean;
+  showSoldCase: boolean;
   internalPrice: number | null;
   source: string;
   externalId: string | null;
@@ -140,6 +141,7 @@ async function attachImages(rows: (typeof vehicles.$inferSelect)[]): Promise<Veh
       description: row.description,
       features: parseFeatures(row.featuresJson),
       monthlyRecommended: row.monthlyRecommended,
+      showSoldCase: row.showSoldCase,
       internalPrice: row.internalPrice,
       source: row.source,
       externalId: row.externalId,
@@ -187,6 +189,16 @@ export async function listMonthlyRecommendedVehicles(): Promise<VehicleView[]> {
   return attachImages(rows);
 }
 
+export async function listSoldCaseVehicles(limit = 6): Promise<VehicleView[]> {
+  const rows = await db
+    .select()
+    .from(vehicles)
+    .where(and(eq(vehicles.status, 'sold'), eq(vehicles.showSoldCase, true)))
+    .orderBy(desc(vehicles.soldAt), desc(vehicles.updatedAt))
+    .limit(limit);
+  return attachImages(rows);
+}
+
 export async function listAdminVehicles(): Promise<VehicleView[]> {
   const rows = await db.select().from(vehicles).where(ne(vehicles.status, 'archived')).orderBy(desc(vehicles.updatedAt));
   return attachImages(rows);
@@ -216,6 +228,7 @@ export async function upsertVehicle(input: {
   description?: string;
   features?: string[];
   monthlyRecommended?: boolean;
+  showSoldCase?: boolean;
   internalPrice?: number | null;
   source?: string;
   externalId?: string | null;
@@ -228,6 +241,7 @@ export async function upsertVehicle(input: {
   const requestedSlug = normalizeRouteSlug(input.slug);
   const slug = requestedSlug || existing[0]?.slug || `${baseSlug}-${id.slice(0, 6)}`;
   const monthlyRecommended = input.monthlyRecommended ?? existing[0]?.monthlyRecommended ?? false;
+  const showSoldCase = input.showSoldCase ?? existing[0]?.showSoldCase ?? false;
   const values = {
     id,
     slug,
@@ -246,6 +260,7 @@ export async function upsertVehicle(input: {
     description: input.description || '',
     featuresJson: JSON.stringify(input.features || []),
     monthlyRecommended,
+    showSoldCase,
     internalPrice: input.internalPrice ?? null,
     source: input.source || 'manual',
     externalId: input.externalId || null,
