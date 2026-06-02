@@ -64,9 +64,7 @@ const vehicles = sortedVehicles;
     <div class="filter-scrim" aria-hidden="true"></div>
     <div class="inventory-content">
       <nav class="mobile-filter-strip" aria-label="車輛篩選">
-        <a class={activeTab === 'all' ? 'is-active' : ''} href="/cars">全部</a>
-        <a class={activeTab === 'recommended' ? 'is-active' : ''} href="/cars?tab=recommended">精選</a>
-        <button class={`filter-toggle ${activeBrandLabel ? 'is-active' : ''}`} type="button" aria-expanded="false" aria-controls="brand-filter-panel">{activeBrandLabel || '品牌'}</button>
+        <button class={`filter-toggle ${activeBrandLabel || activeTab === 'recommended' ? 'is-active' : ''}`} type="button" aria-expanded="false" aria-controls="brand-filter-panel">{activeBrandLabel || (activeTab === 'recommended' ? '本月精選' : '品牌列表')}</button>
       </nav>
       <div class="inventory-toolbar">
         <div>
