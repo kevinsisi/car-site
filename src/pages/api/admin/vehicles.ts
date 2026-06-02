@@ -1,9 +1,7 @@
 import type { APIRoute } from 'astro';
 import { requireAdmin } from '@/lib/auth';
 import { upsertVehicle } from '@/lib/vehicles';
-import type { VehicleStatus } from '@/db/schema';
-
-const statuses: VehicleStatus[] = ['draft', 'published', 'unpublished', 'sold', 'archived'];
+import { isVehicleStatus } from '@/lib/vehicle-status';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   await requireAdmin(cookies);
@@ -11,7 +9,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   if (!body.title || !body.brand || !body.model) {
     return Response.json({ error: 'title, brand, and model are required' }, { status: 400 });
   }
-  const status = statuses.includes(body.status) ? body.status : 'draft';
+  const status = isVehicleStatus(body.status) ? body.status : 'draft';
   const vehicleId = await upsertVehicle({
     id: body.id ? String(body.id) : undefined,
     slug: body.slug ? String(body.slug) : undefined,

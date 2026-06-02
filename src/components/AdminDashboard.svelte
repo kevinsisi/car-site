@@ -413,7 +413,11 @@
 
   const statusLabels: Record<VehicleView['status'], string> = {
     draft: '草稿',
-    published: '上架中',
+    published: '在庫',
+    incoming: '未到港',
+    reserved: '收訂',
+    special: '特殊',
+    unknown: '狀態未確認',
     unpublished: '已下架',
     sold: '已售出',
     archived: '已封存',
@@ -786,7 +790,11 @@
   const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
     { value: 'all', label: '全部' },
     { value: 'draft', label: '草稿' },
-    { value: 'published', label: '上架中' },
+    { value: 'published', label: '在庫' },
+    { value: 'incoming', label: '未到港' },
+    { value: 'reserved', label: '收訂' },
+    { value: 'special', label: '特殊' },
+    { value: 'unknown', label: '狀態未確認' },
     { value: 'unpublished', label: '已下架' },
     { value: 'sold', label: '已售出' },
     { value: 'archived', label: '已封存' },
@@ -1278,7 +1286,11 @@
       <label>狀態
         <select bind:value={vehicleForm.status}>
           <option value="draft">草稿</option>
-          <option value="published">上架</option>
+          <option value="published">在庫</option>
+          <option value="incoming">未到港</option>
+          <option value="reserved">收訂</option>
+          <option value="special">特殊</option>
+          <option value="unknown">狀態未確認</option>
           <option value="unpublished">下架</option>
           <option value="sold">已售</option>
           <option value="archived">封存</option>
@@ -1384,7 +1396,9 @@
       <div class="batch-bar" role="region" aria-label="批次操作">
         <span>已選 <strong>{selectedIds.size}</strong> 台</span>
         <div class="batch-bar__actions">
-          <button type="button" onclick={() => batchSetStatus('published')}>批次上架</button>
+          <button type="button" onclick={() => batchSetStatus('published')}>批次在庫</button>
+          <button type="button" onclick={() => batchSetStatus('incoming')}>批次未到港</button>
+          <button type="button" onclick={() => batchSetStatus('reserved')}>批次收訂</button>
           <button type="button" onclick={() => batchSetStatus('unpublished')}>批次下架</button>
           <button type="button" class="row-button--warn" onclick={() => batchSetStatus('sold')}>批次已售</button>
           <button type="button" class="row-button--danger" onclick={() => batchSetStatus('archived')}>批次封存</button>
@@ -1415,7 +1429,9 @@
           <button onclick={() => editVehicle(vehicle)}>編輯</button>
           <button type="button" onclick={() => duplicateVehicle(vehicle)}>複製</button>
           <a class="row-button-link" href={`/cars/${vehicle.slug}`} target="_blank" rel="noopener">預覽</a>
-          <button onclick={() => setStatus(vehicle.id, 'published')}>上架</button>
+          <button onclick={() => setStatus(vehicle.id, 'published')}>在庫</button>
+          <button onclick={() => setStatus(vehicle.id, 'incoming')}>未到港</button>
+          <button onclick={() => setStatus(vehicle.id, 'reserved')}>收訂</button>
           <button onclick={() => setStatus(vehicle.id, 'unpublished')}>下架</button>
           <button class="row-button--warn" onclick={() => setStatus(vehicle.id, 'sold')}>已售</button>
           <button class="row-button--danger" onclick={() => setStatus(vehicle.id, 'archived')}>封存</button>

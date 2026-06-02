@@ -1,9 +1,10 @@
-import { and, asc, desc, eq, inArray, ne, or } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, ne } from 'drizzle-orm';
 import { db } from '@/db/connection';
 import { importMappings, vehicleImages, vehicles, type PublishMode, type VehicleStatus } from '@/db/schema';
 import { getBrandAliasMap } from './brand-aliases';
 import { optimizedMediaUrl } from './media';
 import { getSettings } from './settings';
+import { alwaysPublicVehicleStatuses, isPublicVehicleStatus, mapSourceInventoryStatus } from './vehicle-status';
 
 export interface VehicleImageView {
   id: string;
@@ -168,18 +169,14 @@ export async function listPublicVehiclesByBrand(urlSlug: string): Promise<Vehicl
 
 export async function listPublicVehicles(): Promise<VehicleView[]> {
   const settings = await getSettings();
-  const statusFilter = settings.showSoldVehicles
-    ? or(eq(vehicles.status, 'published'), eq(vehicles.status, 'sold'))
-    : eq(vehicles.status, 'published');
+  const statusFilter = inArray(vehicles.status, settings.showSoldVehicles ? [...alwaysPublicVehicleStatuses, 'sold'] : alwaysPublicVehicleStatuses);
   const rows = await db.select().from(vehicles).where(statusFilter).orderBy(desc(vehicles.updatedAt));
   return attachImages(rows);
 }
 
 export async function listMonthlyRecommendedVehicles(): Promise<VehicleView[]> {
   const settings = await getSettings();
-  const statusFilter = settings.showSoldVehicles
-    ? or(eq(vehicles.status, 'published'), eq(vehicles.status, 'sold'))
-    : eq(vehicles.status, 'published');
+  const statusFilter = inArray(vehicles.status, settings.showSoldVehicles ? [...alwaysPublicVehicleStatuses, 'sold'] : alwaysPublicVehicleStatuses);
   const rows = await db
     .select()
     .from(vehicles)
@@ -279,6 +276,10 @@ export async function updateVehicleStatus(id: string, status: VehicleStatus) {
   await db.update(vehicles).set({ status, soldAt: status === 'sold' ? new Date().toISOString() : null, updatedAt: new Date().toISOString() }).where(eq(vehicles.id, id));
 }
 
+export function publicVehicleStatus(value: VehicleStatus, showSoldVehicles = false): boolean {
+  return isPublicVehicleStatus(value, showSoldVehicles);
+}
+
 export async function importVehicle(input: {
   source: string;
   externalId: string;
@@ -297,6 +298,8 @@ export async function importVehicle(input: {
   features?: string[];
   monthlyRecommended?: boolean;
   photos?: string[];
+  status?: VehicleStatus;
+  sourceStatus?: string;
   publishMode?: PublishMode;
 }) {
   const settings = await getSettings();
@@ -309,6 +312,8 @@ export async function importVehicle(input: {
   const hasPublicFields = Boolean(input.brand && input.model && (input.photos?.length || 0) > 0);
   const publishMode = input.publishMode || 'use_default';
   const status: VehicleStatus = (() => {
+    if (input.status) return input.status;
+    if (input.sourceStatus) return mapSourceInventoryStatus(input.sourceStatus);
     if (publishMode === 'draft') return 'draft';
     if (publishMode === 'publish') return hasPublicFields ? 'published' : 'draft';
     if (settings.importBehavior === 'auto_publish') return hasPublicFields ? 'published' : 'draft';

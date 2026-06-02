@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { appConfig } from '@/lib/config';
 import { importVehicle } from '@/lib/vehicles';
+import { isVehicleStatus } from '@/lib/vehicle-status';
 
 function bearerToken(request: Request): string {
   const value = request.headers.get('authorization') || '';
@@ -33,6 +34,8 @@ export const POST: APIRoute = async ({ request }) => {
     features: Array.isArray(body.features) ? body.features.map(String) : [],
     monthlyRecommended: body.monthlyRecommended === true ? true : undefined,
     photos: Array.isArray(body.photos) ? body.photos.map(String) : [],
+    status: isVehicleStatus(body.status) ? body.status : undefined,
+    sourceStatus: body.sourceStatus ? String(body.sourceStatus) : undefined,
     publishMode: ['use_default', 'draft', 'publish'].includes(body.publishMode) ? body.publishMode : 'use_default',
   });
   return Response.json({ ok: true, ...result });

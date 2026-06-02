@@ -84,6 +84,6 @@ export const adminSessions = sqliteTable('admin_sessions', {
   createdAt: text('created_at').notNull(),
 });
 
-export type VehicleStatus = 'draft' | 'published' | 'unpublished' | 'sold' | 'archived';
+export type VehicleStatus = 'draft' | 'published' | 'incoming' | 'reserved' | 'special' | 'unknown' | 'unpublished' | 'sold' | 'archived';
 export type ImportBehavior = 'draft_first' | 'auto_publish' | 'import_only';
 export type PublishMode = 'use_default' | 'draft' | 'publish';

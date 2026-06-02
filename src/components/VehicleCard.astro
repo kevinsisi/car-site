@@ -1,6 +1,7 @@
 ---
 import type { VehicleView } from '@/lib/vehicles';
 import ShareButton from './ShareButton.astro';
+import { vehicleStatusLabels } from '@/lib/vehicle-status';
 
 interface Props {
   vehicle: VehicleView;
@@ -9,6 +10,7 @@ interface Props {
 
 const { vehicle, shareText } = Astro.props;
 const image = vehicle.coverImage;
+const statusBadge = vehicle.status !== 'published' ? vehicleStatusLabels[vehicle.status] : '';
 const specs = [
   { label: '年份', value: vehicle.year, icon: 'calendar' },
   { label: '里程', value: vehicle.mileage, icon: 'gauge' },
@@ -20,8 +22,8 @@ const specs = [
   <a href={`/cars/${vehicle.slug}`} aria-label={`查看 ${vehicle.title}`} rel="prefetch">
     <div class="vehicle-card__media">
       {image ? <img src={image.url} alt={image.alt || `${vehicle.title} 封面照`} loading="lazy" decoding="async" /> : <div class="image-placeholder">相片整理中</div>}
-      {vehicle.status === 'sold' ? (
-        <span class="vehicle-badge vehicle-badge--sold">已售出</span>
+      {statusBadge ? (
+        <span class={`vehicle-badge${vehicle.status === 'sold' ? ' vehicle-badge--sold' : ''}`}>{statusBadge}</span>
       ) : vehicle.monthlyRecommended ? (
         <span class="vehicle-badge">本月推薦</span>
       ) : null}

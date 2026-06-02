@@ -4,14 +4,14 @@ import PremiumIcon from '@/components/PremiumIcon.astro';
 import ShareButton from '@/components/ShareButton.astro';
 import { getSettings } from '@/lib/settings';
 import { formatVehicleShareText, shareOriginFromRequest, vehicleShareUrl } from '@/lib/vehicle-share';
-import { getVehicleBySlug, listPublicVehicles } from '@/lib/vehicles';
+import { getVehicleBySlug, listPublicVehicles, publicVehicleStatus } from '@/lib/vehicles';
 import { devPlaceholderSpecs } from '@/lib/dev-placeholder-vehicle-specs';
 
 const vehicle = await getVehicleBySlug(Astro.params.slug || '');
-if (!vehicle || !['published', 'sold'].includes(vehicle.status)) {
+const settings = await getSettings();
+if (!vehicle || !publicVehicleStatus(vehicle.status, settings.showSoldVehicles)) {
   return new Response('Not found', { status: 404 });
 }
-const settings = await getSettings();
 const publicOrigin = shareOriginFromRequest(Astro.request, Astro.url);
 const shareUrl = vehicleShareUrl(vehicle, publicOrigin);
 const shareText = formatVehicleShareText(vehicle, settings.shareMessageTemplate, shareUrl);
