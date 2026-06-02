@@ -1,7 +1,8 @@
 ---
 import PublicLayout from '@/layouts/PublicLayout.astro';
+import PremiumIcon from '@/components/PremiumIcon.astro';
 import ShareButton from '@/components/ShareButton.astro';
-import { getSettings, socialIconChipStyle, socialIconCropStyle } from '@/lib/settings';
+import { getSettings } from '@/lib/settings';
 import { formatVehicleShareText, shareOriginFromRequest, vehicleShareUrl } from '@/lib/vehicle-share';
 import { getVehicleBySlug, listPublicVehicles } from '@/lib/vehicles';
 import { devPlaceholderSpecs } from '@/lib/dev-placeholder-vehicle-specs';
@@ -83,27 +84,12 @@ const specRows = [
         <h1>{vehicle.title}</h1>
         <p class="detail-headline">{vehicle.headline || vehicle.condition}</p>
         <div class="detail-actions">
-          <a class={`button button--primary detail-contact-button${settings.socialIcons.line ? ' detail-contact-button--custom' : ''}`} href={settings.lineUrl} aria-label="LINE 洽詢此車" style={socialIconChipStyle(settings.socialIcons.line)}>
-            {settings.socialIcons.line ? (
-              <span class="cta-thumb">
-                <img src={settings.socialIcons.line.url} alt="" style={socialIconCropStyle(settings.socialIcons.line)} loading="lazy" decoding="async" />
-              </span>
-            ) : (
-              <svg class="brand-glyph" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
-                <path d="M24 6C13.5 6 5 12.9 5 21.4c0 7.6 6.7 14 15.8 15.2.6.1 1.4.4 1.6.9.2.5.1 1.2.1 1.7l-.3 2c-.1.6-.5 2.3 1.7 1.3 2.2-1 11.7-6.9 16-11.8 3-3.3 4.1-6.4 4.1-9.3C43 12.9 34.5 6 24 6Z" />
-                <text class="social-cutout" x="24" y="19" text-anchor="middle" dominant-baseline="central" font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="900" font-size="13" letter-spacing="-0.6">LINE</text>
-              </svg>
-            )}
+          <a class="button button--primary detail-contact-button" href={settings.lineUrl} aria-label="LINE 洽詢此車">
+            <PremiumIcon platform="line" label="LINE" customIcon={settings.socialIcons.line} />
             <span>LINE 洽詢此車</span>
           </a>
-          <a class={`button button--ghost detail-contact-button${settings.socialIcons.phone ? ' detail-contact-button--custom' : ''}`} href={`tel:${settings.phoneNumber}`} aria-label="電話聯絡" style={socialIconChipStyle(settings.socialIcons.phone)}>
-            {settings.socialIcons.phone ? (
-              <span class="cta-thumb">
-                <img src={settings.socialIcons.phone.url} alt="" style={socialIconCropStyle(settings.socialIcons.phone)} loading="lazy" decoding="async" />
-              </span>
-            ) : (
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.33 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z" /></svg>
-            )}
+          <a class="button button--ghost detail-contact-button" href={`tel:${settings.phoneNumber}`} aria-label="電話聯絡">
+            <PremiumIcon platform="phone" label="電話" customIcon={settings.socialIcons.phone} />
             <span>電話聯絡</span>
           </a>
           <ShareButton class="detail-share-button" title={vehicle.title} url={shareUrl} text={shareText} />

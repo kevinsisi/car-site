@@ -90,13 +90,12 @@ img.image-error::after { content: attr(alt); }
 .site-nav a[aria-current="page"] { color: var(--accent-strong); }
 .site-nav a[aria-current="page"]::after { content: ''; position: absolute; left: 0; right: 0; bottom: -0.32rem; height: 2px; border-radius: 2px; background: var(--accent); }
 
-.site-cta { display: flex; gap: 0.5rem; align-items: center; }
-.site-cta__link { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 2.4rem; padding: 0 0.95rem; border-radius: 999px; font-size: 0.95rem; font-weight: 700; transition: transform 180ms ease, background-color 180ms ease, color 180ms ease, border-color 180ms ease; }
-.site-cta__link svg { width: 1.1rem; height: 1.1rem; }
-.site-cta__link--line { background: var(--accent); color: var(--bg); }
-.site-cta__link--line:hover { transform: translateY(-1px); background: var(--accent-strong); }
-.site-cta__link--phone { width: 2.4rem; padding: 0; justify-content: center; border: 1px solid var(--line); color: var(--accent-strong); }
-.site-cta__link--phone:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--accent) 60%, var(--line)); background: color-mix(in srgb, var(--surface) 86%, transparent); }
+.site-cta { display: flex; gap: 0.55rem; align-items: center; }
+.site-cta__link { min-height: 2.55rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.55rem; padding: 0 1rem 0 0.42rem; border: 1px solid var(--line); border-radius: 999px; background: color-mix(in srgb, var(--surface) 84%, transparent); color: var(--text); font-size: 0.95rem; font-weight: 760; letter-spacing: 0.01em; transition: transform 180ms ease, background-color 180ms ease, color 180ms ease, border-color 180ms ease; }
+.site-cta__link--line { background: var(--accent); color: var(--bg); border-color: transparent; font-weight: 850; }
+.site-cta__link--phone { color: var(--accent-strong); }
+.site-cta__link:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--accent) 58%, var(--line)); background: color-mix(in srgb, var(--surface) 92%, transparent); }
+.site-cta__link--line:hover { background: var(--accent-strong); color: var(--bg); border-color: transparent; }
 
 .hero,
 .detail-hero {
@@ -142,14 +141,10 @@ img.image-error::after { content: attr(alt); }
 .button:active { transform: translateY(0) scale(0.985); filter: saturate(0.96); }
 
 .button--primary { background: var(--accent); color: var(--bg); font-weight: 800; }
-.detail-contact-button svg { display: none; }
-.cta-thumb { width: 1.75rem; height: 1.75rem; border-radius: 999px; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: transparent; }
-.cta-thumb img { display: block; width: 100%; height: 100%; object-fit: contain; }
 
 .button--ghost { border: 1px solid var(--line); color: var(--text); }
 .button--ghost:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); background: color-mix(in srgb, var(--surface) 88%, transparent); }
 .icon-button { width: 2.75rem; height: 2.75rem; display: inline-grid; place-items: center; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--surface) 82%, transparent); color: var(--accent-strong); backdrop-filter: blur(16px); box-shadow: 0 0.55rem 1.25rem rgba(0, 0, 0, 0.12); }
-.icon-button svg { width: 1.925rem; height: 1.925rem; fill: none; stroke: currentColor; stroke-width: 0.95; stroke-linecap: round; stroke-linejoin: round; }
 .icon-button:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--accent) 48%, var(--line)); background: var(--surface); }
 .icon-button:active { transform: scale(0.96); }
 
@@ -316,38 +311,26 @@ img.image-error::after { content: attr(alt); }
 .footer-links a:hover { color: var(--accent-strong); }
 .copyright { color: color-mix(in srgb, var(--muted) 78%, transparent); font-size: 0.74rem; letter-spacing: 0.04em; }
 .social-icons { display: flex !important; grid-auto-flow: column; gap: 0.55rem !important; justify-content: end; align-items: center; }
-.social-icon { position: relative; width: 2.25rem; height: 2.25rem; display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--line) 80%, transparent); border-radius: 999px; color: var(--muted); background: var(--surface); box-shadow: 0 0.4rem 0.9rem rgba(0, 0, 0, 0.06); overflow: hidden; }
-.social-icon svg { width: 1.6rem; height: 1.6rem; fill: currentColor; stroke: none; display: block; }
-/* Custom social/contact icon chips — every render location locked to the
-   footer chip dimensions (2.25rem ⌀, 1px line border) so the operator's
-   uploaded icon looks identical at footer, header, mobile bar, detail
-   hero, and contact card. The footer LINE / Instagram already render
-   correctly with this size; phone/share now match exactly. */
-.social-icon__custom-img,
+.social-icon { position: relative; width: 2.25rem; height: 2.25rem; display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--line) 80%, transparent); border-radius: 999px; color: var(--muted); background: color-mix(in srgb, var(--surface) 88%, transparent); box-shadow: 0 0.4rem 0.9rem rgba(0, 0, 0, 0.06); overflow: hidden; }
+.premium-icon { --premium-icon-size: 1.78rem; --premium-icon-glyph: 1.16rem; width: var(--premium-icon-size); height: var(--premium-icon-size); display: inline-grid; place-items: center; flex-shrink: 0; border: 1px solid color-mix(in srgb, currentColor 20%, transparent); border-radius: 999px; background: color-mix(in srgb, currentColor 8%, transparent); color: currentColor; overflow: hidden; }
+.premium-icon svg { width: var(--premium-icon-glyph); height: var(--premium-icon-glyph); display: block; fill: none; stroke: currentColor; stroke-width: 1.72; stroke-linecap: round; stroke-linejoin: round; }
+.premium-icon__line-logo { fill: currentColor; stroke: none; }
+.premium-icon__line-bubble { fill: currentColor; }
+.premium-icon__line-text { fill: var(--surface); stroke: none; }
+.premium-icon--facebook svg,
+.premium-icon--tiktok svg { fill: currentColor; stroke: none; }
+.premium-icon__custom-img,
 .brand-custom-img { display: block; width: 100%; height: 100%; object-fit: contain; border-radius: inherit; }
-.social-icon--custom { width: 2.25rem; height: 2.25rem; padding: 0; background: transparent; border: 1px solid color-mix(in srgb, var(--line) 80%, transparent); }
-.site-cta__link--custom { width: 2.25rem; height: 2.25rem; padding: 0; overflow: hidden; background: transparent; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--line) 80%, transparent); }
-.site-cta__link--custom .brand-custom-img { display: block; }
-.site-cta__link--with-thumb { padding: 0 0.95rem 0 0.3rem; gap: 0.5rem; background: transparent; color: var(--text); border: 1px solid var(--line); font-weight: 700; }
-.site-cta__link--with-thumb:hover { background: color-mix(in srgb, var(--surface) 86%, transparent); border-color: color-mix(in srgb, var(--accent) 60%, var(--line)); }
-.site-cta__thumb { width: 1.75rem; height: 1.75rem; border-radius: 999px; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: transparent; }
-.site-cta__thumb img { display: block; width: 100%; height: 100%; object-fit: contain; }
-.detail-contact-button--custom { padding-left: 0.45rem; gap: 0.5rem; }
-.promise-icon { overflow: hidden; }
-.promise-icon:has(> .brand-custom-img) { padding: 0; border: 1px solid color-mix(in srgb, var(--line) 80%, transparent); background: transparent; }
-.promise-icon .brand-custom-img { width: 100%; height: 100%; }
-.vehicle-share--custom { padding: 0; background: transparent; overflow: hidden; }
-.vehicle-share--custom .brand-custom-img { width: 100%; height: 100%; }
-.social-icon--line svg .line-badge { fill: currentColor; }
-.social-icon--line svg .line-bubble { fill: var(--surface); }
-.social-icon--line svg .line-letters { fill: currentColor; }
-.social-cutout { fill: var(--surface); }
-.social-icon:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); box-shadow: 0 0.6rem 1.2rem rgba(0, 0, 0, 0.12); }
-.social-icon--line:hover { color: #05b34a; }
-.social-icon--instagram:hover { color: #e4405f; }
-.social-icon--facebook:hover { color: #1877f2; }
-.social-icon--threads:hover { color: var(--text); }
-.social-icon--tiktok:hover { color: #111111; }
+.premium-icon--custom { background: color-mix(in srgb, var(--surface) 86%, transparent); }
+.site-cta__link .premium-icon { --premium-icon-size: 1.8rem; --premium-icon-glyph: 1.2rem; }
+.site-cta__link--line .premium-icon { --premium-icon-size: 1.62rem; --premium-icon-glyph: 1.62rem; background: transparent; border-color: transparent; }
+.site-cta__link--line .premium-icon__line-text { fill: var(--accent); }
+.site-cta__link--phone .premium-icon { background: color-mix(in srgb, var(--accent) 9%, transparent); border-color: color-mix(in srgb, var(--accent) 22%, transparent); }
+.detail-contact-button .premium-icon { --premium-icon-size: 2rem; --premium-icon-glyph: 1.18rem; }
+.icon-button .premium-icon,
+.social-icon .premium-icon { --premium-icon-size: 100%; --premium-icon-glyph: 1.36rem; border: 0; background: transparent; }
+.promise-icon .premium-icon { --premium-icon-size: 100%; --premium-icon-glyph: 1.42rem; border: 0; background: transparent; }
+.social-icon:hover { transform: translateY(-1px); color: var(--accent-strong); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); box-shadow: 0 0.6rem 1.2rem rgba(0, 0, 0, 0.12); }
 .share-toast { position: fixed; left: 50%; bottom: max(1rem, env(safe-area-inset-bottom)); z-index: 80; border: 1px solid var(--line); border-radius: 999px; padding: 0.75rem 1rem; background: color-mix(in srgb, var(--surface) 92%, transparent); color: var(--text); box-shadow: 0 1rem 2.8rem rgba(0, 0, 0, 0.18); opacity: 0; pointer-events: none; transform: translate(-50%, 0.6rem); transition: opacity 180ms ease, transform 180ms ease; }
 .share-toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
 .promise-grid,
@@ -406,9 +389,10 @@ img.image-error::after { content: attr(alt); }
   .site-header { grid-template-columns: 1fr auto; grid-template-rows: auto auto; gap: 0.6rem 0.75rem; padding-bottom: 0.8rem; }
   .brand-mark { font-size: 0.95rem; grid-column: 1; grid-row: 1; }
   .site-cta { grid-column: 2; grid-row: 1; gap: 0.4rem; }
-  .site-cta__link { min-height: 2.15rem; padding: 0 0.8rem; font-size: 0.88rem; }
-  .site-cta__link--phone { width: 2.15rem; }
-  .site-cta__link svg { width: 1.05rem; height: 1.05rem; }
+  .site-cta__link { min-height: 2.25rem; padding: 0 0.7rem 0 0.32rem; font-size: 0.88rem; gap: 0.42rem; }
+  .site-cta__link--phone { width: 2.25rem; padding: 0; }
+  .site-cta__link--phone > span:not(.premium-icon) { display: none; }
+  .site-cta__link .premium-icon { --premium-icon-size: 1.7rem; --premium-icon-glyph: 1rem; }
   .site-nav { grid-column: 1 / -1; grid-row: 2; width: 100%; font-size: 0.95rem; gap: 1rem; flex-wrap: wrap; justify-content: flex-start; }
   .hero,
   .detail-hero { grid-template-columns: 1fr; min-height: auto; padding-top: 2rem; }
@@ -430,10 +414,8 @@ img.image-error::after { content: attr(alt); }
   .detail-contact-button.button--primary { background: color-mix(in srgb, var(--accent) 72%, var(--surface)); color: color-mix(in srgb, var(--surface) 86%, transparent); }
   .detail-contact-button.button--ghost,
   .detail-share-button { background: color-mix(in srgb, var(--surface) 58%, transparent); }
-  .detail-contact-button svg { width: 2.1rem; height: 2.1rem; display: block; fill: none; stroke: currentColor; stroke-width: 0.95; stroke-linecap: round; stroke-linejoin: round; opacity: 0.88; }
-  .detail-contact-button svg.brand-glyph { width: 2.1rem; height: 2.1rem; fill: currentColor; stroke: none; opacity: 0.84; transform: translateY(0.025rem); }
-  .detail-contact-button .social-cutout { fill: color-mix(in srgb, var(--accent) 72%, var(--surface)); }
-  .detail-contact-button span { display: none; }
+  .detail-contact-button .premium-icon { --premium-icon-size: 2.12rem; --premium-icon-glyph: 1.32rem; display: inline-grid; border: 0; background: transparent; }
+  .detail-contact-button > span:not(.premium-icon) { display: none; }
   .inventory-shell { display: block; padding: 0 clamp(1.25rem, 5vw, 6rem) 5rem; }
   .mobile-filter-strip { position: sticky; top: calc(0.65rem + env(safe-area-inset-top)); z-index: 15; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.35rem; margin: -0.35rem 0 1.4rem; padding: 0.3rem; border: 1px solid color-mix(in srgb, var(--line) 65%, transparent); border-radius: 1rem; background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: blur(18px); }
   .mobile-filter-strip a,
@@ -490,18 +472,10 @@ img.image-error::after { content: attr(alt); }
   .mobile-action { width: 2.25rem; height: 2.25rem; min-width: 2.25rem; min-height: 2.25rem; box-shadow: 0 0.35rem 0.85rem rgba(0, 0, 0, 0.12); display: grid; place-items: center; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--surface) 58%, transparent); color: color-mix(in srgb, var(--accent-strong) 72%, transparent); backdrop-filter: blur(18px); font-size: 0; line-height: 0; }
   .back-to-top { width: 2.12rem; height: 2.12rem; box-shadow: 0 0.35rem 0.85rem rgba(0, 0, 0, 0.12); }
   .mobile-action--line { background: color-mix(in srgb, var(--accent) 72%, var(--surface)); color: color-mix(in srgb, var(--surface) 86%, transparent); box-shadow: 0 0.25rem 0.65rem rgba(0, 0, 0, 0.12); }
-  .mobile-action--line .social-cutout { fill: color-mix(in srgb, var(--accent) 72%, var(--surface)); }
-  .mobile-action--custom { overflow: hidden; padding: 0; background: transparent !important; border: 1px solid color-mix(in srgb, var(--line) 80%, transparent) !important; }
-  .detail-contact-button--custom { width: 2.25rem !important; height: 2.25rem !important; min-height: 2.25rem !important; overflow: hidden; padding: 0 !important; background: transparent !important; gap: 0; }
-  .detail-contact-button--custom .cta-thumb { width: 100%; height: 100%; border-radius: inherit; }
-  .mobile-action--custom .social-cutout,
-  .detail-contact-button--custom .social-cutout { fill: transparent; }
-  .mobile-action svg,
-  .mobile-action svg,
+  .mobile-action .premium-icon { --premium-icon-size: 100%; --premium-icon-glyph: 1.32rem; border: 0; background: transparent; }
   .back-to-top svg { width: 1.48rem; height: 1.48rem; fill: none; stroke: currentColor; stroke-width: 0.95; stroke-linecap: round; stroke-linejoin: round; opacity: 0.88; }
-  .mobile-action svg.brand-glyph { width: 1.48rem; height: 1.48rem; fill: currentColor; stroke: none; opacity: 0.84; transform: translateY(0.025rem); }
   .detail-share-button { width: 3rem; height: 3rem; min-height: 3rem; box-shadow: 0 0.25rem 0.65rem rgba(0, 0, 0, 0.1); }
-  .detail-share-button svg { width: 2.1rem; height: 2.1rem; stroke-width: 0.95; opacity: 0.88; }
+  .detail-share-button .premium-icon { --premium-icon-size: 100%; --premium-icon-glyph: 1.32rem; border: 0; background: transparent; }
   .mobile-action:hover { transform: translateY(-2px); box-shadow: 0 0.7rem 1.4rem rgba(0, 0, 0, 0.12); }
   .mobile-action:active { transform: translateY(0) scale(0.96); }
   .back-to-top { right: max(0.85rem, env(safe-area-inset-right)); bottom: calc(max(5.25rem, env(safe-area-inset-bottom) + 4.75rem) + 9.5rem); }

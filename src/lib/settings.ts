@@ -54,17 +54,6 @@ export function parseSocialIcons(raw: string | undefined | null): SocialIconsMap
   }
 }
 
-export function socialIconCropStyle(cfg: SocialIconConfig | undefined): string {
-  if (!cfg?.url) return '';
-  const zoom = cfg.zoom || 1;
-  return `width: ${zoom * 100}%; height: ${zoom * 100}%; object-position: ${cfg.offsetX ?? 50}% ${cfg.offsetY ?? 50}%;`;
-}
-
-export function socialIconChipStyle(cfg: SocialIconConfig | undefined): string {
-  if (!cfg?.url || !cfg.bgColor) return '';
-  return `background: ${cfg.bgColor}; border-color: transparent;`;
-}
-
 export function serializeSocialIcons(map: SocialIconsMap): string {
   const clean: SocialIconsMap = {};
   for (const platform of SOCIAL_PLATFORMS) {
@@ -83,6 +72,7 @@ export function serializeSocialIcons(map: SocialIconsMap): string {
 
 export interface SiteSettings {
   siteName: string;
+  siteIconUrl: string;
   salespersonName: string;
   lineUrl: string;
   instagramUrl: string;
@@ -119,6 +109,7 @@ export interface SiteSettings {
 
 const defaults: SiteSettings = {
   siteName: '私人精品車展',
+  siteIconUrl: '',
   salespersonName: '私人車庫顧問',
   lineUrl: '#',
   instagramUrl: 'https://www.instagram.com/',
@@ -173,6 +164,7 @@ export async function getSettings(): Promise<SiteSettings> {
   const settingValue = (key: keyof SiteSettings, fallback: string) => (map.has(key) ? map.get(key) || '' : fallback);
   return {
     siteName: map.get('siteName') || defaults.siteName,
+    siteIconUrl: settingValue('siteIconUrl', defaults.siteIconUrl),
     salespersonName: map.get('salespersonName') || defaults.salespersonName,
     lineUrl: map.get('lineUrl') || defaults.lineUrl,
     instagramUrl: settingValue('instagramUrl', defaults.instagramUrl),

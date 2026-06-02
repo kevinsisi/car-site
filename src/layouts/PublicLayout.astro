@@ -1,6 +1,8 @@
 ---
 import SocialIcon from '@/components/SocialIcon.astro';
-import { getSettings, socialIconChipStyle, socialIconCropStyle } from '@/lib/settings';
+import PremiumIcon from '@/components/PremiumIcon.astro';
+import { getSettings } from '@/lib/settings';
+import { siteIconHref } from '@/lib/site-icon';
 import { styleVars, styles, templates } from '@/lib/theme';
 import { shareOriginFromRequest } from '@/lib/vehicle-share';
 import '@/styles/global.css';
@@ -27,6 +29,7 @@ const canonicalUrl = new URL(Astro.url.pathname, publicOrigin).toString();
 const absoluteOgImage = Astro.props.ogImage
   ? new URL(Astro.props.ogImage, publicOrigin).toString()
   : '';
+const siteIconUrl = siteIconHref(settings);
 const ogType = Astro.props.ogType || 'website';
 const jsonLdArray = Array.isArray(Astro.props.jsonLd)
   ? Astro.props.jsonLd
@@ -69,6 +72,8 @@ const socialIcons = settings.socialIcons || {};
     <meta name="description" content={description} />
     <meta name="theme-color" content={themeColor} />
     <link rel="canonical" href={canonicalUrl} />
+    {settings.siteIconUrl ? <link rel="icon" href={siteIconUrl} /> : <link rel="icon" type="image/svg+xml" href={siteIconUrl} />}
+    {settings.siteIconUrl && <link rel="apple-touch-icon" href={siteIconUrl} />}
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content={ogType} />
@@ -94,22 +99,13 @@ const socialIcons = settings.socialIcons || {};
         <a href="/contact" aria-current={isCurrentPath('/contact') ? 'page' : undefined}>聯絡</a>
       </nav>
       <div class="site-cta">
-        <a class={`site-cta__link site-cta__link--line${socialIcons.line ? ' site-cta__link--with-thumb' : ''}`} href={settings.lineUrl} style={socialIcons.line ? socialIconChipStyle(socialIcons.line) : ''}>
-          {socialIcons.line ? (
-            <span class="site-cta__thumb">
-              <img src={socialIcons.line.url} alt="" style={socialIconCropStyle(socialIcons.line)} loading="lazy" decoding="async" />
-            </span>
-          ) : (
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 11c0 4-4 7.2-9 7.2-.7 0-1.4-.05-2.05-.15L5.4 21l1.45-3.4C4.7 16.3 3 13.8 3 11c0-4 4-7.2 9-7.2s9 3.2 9 7.2Z" fill="currentColor" /></svg>
-          )}
+        <a class="site-cta__link site-cta__link--line" href={settings.lineUrl}>
+          <PremiumIcon platform="line" label="LINE" customIcon={socialIcons.line} />
           <span>LINE 洽詢</span>
         </a>
-        <a class={`site-cta__link site-cta__link--phone${socialIcons.phone ? ' site-cta__link--custom' : ''}`} href={`tel:${settings.phoneNumber}`} aria-label="電話聯絡" style={socialIconChipStyle(socialIcons.phone)}>
-          {socialIcons.phone ? (
-            <img class="brand-custom-img" src={socialIcons.phone.url} alt="電話" style={socialIconCropStyle(socialIcons.phone)} loading="lazy" decoding="async" />
-          ) : (
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.33 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z" /></svg>
-          )}
+        <a class="site-cta__link site-cta__link--phone" href={`tel:${settings.phoneNumber}`} aria-label="電話聯絡">
+          <PremiumIcon platform="phone" label="電話" customIcon={socialIcons.phone} />
+          <span>電話</span>
         </a>
       </div>
     </header>
@@ -145,29 +141,14 @@ const socialIcons = settings.socialIcons || {};
     )}
     {showMobileActions && (
       <div class="mobile-contact-bar" aria-label="快速聯絡">
-        <button class={`mobile-action mobile-action--share${socialIcons.share ? ' mobile-action--custom' : ''}`} type="button" data-share-title={title} data-share-text={pageShareText} data-share-url={pageShareUrl} aria-label="分享目前頁面" style={socialIconChipStyle(socialIcons.share)}>
-          {socialIcons.share ? (
-            <img class="brand-custom-img" src={socialIcons.share.url} alt="" style={socialIconCropStyle(socialIcons.share)} loading="lazy" decoding="async" />
-          ) : (
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7.5 12.5 16 8M7.5 11.5 16 16M6.5 15.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6ZM17.5 9.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6ZM17.5 20.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z" /></svg>
-          )}
+        <button class="mobile-action mobile-action--share" type="button" data-share-title={title} data-share-text={pageShareText} data-share-url={pageShareUrl} aria-label="分享目前頁面">
+          <PremiumIcon platform="share" label="分享" customIcon={socialIcons.share} />
         </button>
-        <a class={`mobile-action mobile-action--line${socialIcons.line ? ' mobile-action--custom' : ''}`} href={settings.lineUrl} aria-label="LINE 洽詢" style={socialIconChipStyle(socialIcons.line)}>
-          {socialIcons.line ? (
-            <img class="brand-custom-img" src={socialIcons.line.url} alt="LINE" style={socialIconCropStyle(socialIcons.line)} loading="lazy" decoding="async" />
-          ) : (
-            <svg class="brand-glyph" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
-              <path d="M24 6C13.5 6 5 12.9 5 21.4c0 7.6 6.7 14 15.8 15.2.6.1 1.4.4 1.6.9.2.5.1 1.2.1 1.7l-.3 2c-.1.6-.5 2.3 1.7 1.3 2.2-1 11.7-6.9 16-11.8 3-3.3 4.1-6.4 4.1-9.3C43 12.9 34.5 6 24 6Z" />
-              <text class="social-cutout" x="24" y="19" text-anchor="middle" dominant-baseline="central" font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="900" font-size="13" letter-spacing="-0.6">LINE</text>
-            </svg>
-          )}
+        <a class="mobile-action mobile-action--line" href={settings.lineUrl} aria-label="LINE 洽詢">
+          <PremiumIcon platform="line" label="LINE" customIcon={socialIcons.line} />
         </a>
-        <a class={`mobile-action mobile-action--phone${socialIcons.phone ? ' mobile-action--custom' : ''}`} href={`tel:${settings.phoneNumber}`} aria-label="立即來電" style={socialIconChipStyle(socialIcons.phone)}>
-          {socialIcons.phone ? (
-            <img class="brand-custom-img" src={socialIcons.phone.url} alt="電話" style={socialIconCropStyle(socialIcons.phone)} loading="lazy" decoding="async" />
-          ) : (
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.33 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z" /></svg>
-          )}
+        <a class="mobile-action mobile-action--phone" href={`tel:${settings.phoneNumber}`} aria-label="立即來電">
+          <PremiumIcon platform="phone" label="電話" customIcon={socialIcons.phone} />
         </a>
       </div>
     )}

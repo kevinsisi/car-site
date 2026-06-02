@@ -61,6 +61,7 @@
   let brandAliasRows = $state<BrandAliasRow[]>(brandAliases.length ? brandAliases.map((item) => ({ ...item })) : sourceBrandOptions.map((sourceBrand) => ({ sourceBrand, displayName: '', urlSlug: '' })));
   let settingsForm = $state({
     siteName: settings.siteName,
+    siteIconUrl: settings.siteIconUrl,
     salespersonName: settings.salespersonName,
     lineUrl: settings.lineUrl,
     instagramUrl: settings.instagramUrl,
@@ -163,6 +164,30 @@
     await saveSettings();
   }
 
+  async function uploadSiteIcon(event: Event) {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    const tid = notifyProgress('網站 icon 上傳中...');
+    const formData = new FormData();
+    formData.append('files', file);
+    const response = await adminFetch('/api/admin/media', { method: 'POST', body: formData });
+    const result = await response.json().catch(() => ({}));
+    if (response.ok && Array.isArray(result.urls) && result.urls[0]) {
+      settingsForm.siteIconUrl = result.urls[0];
+      const saved = await saveSettings();
+      updateToast(tid, saved ? '網站 icon 已更新' : '網站 icon 已上傳，但設定儲存失敗', saved ? 'success' : 'error');
+    } else {
+      updateToast(tid, result.error || '網站 icon 上傳失敗', 'error');
+    }
+    input.value = '';
+  }
+
+  async function clearSiteIcon() {
+    settingsForm.siteIconUrl = '';
+    await saveSettings();
+  }
+
   function updateIconField(platform: SocialPlatform, field: 'zoom' | 'offsetX' | 'offsetY', value: number) {
     const cfg = ensureIconConfig(platform);
     cfg[field] = value;
@@ -175,6 +200,19 @@
     return `width: ${w}%; height: ${w}%; object-position: ${cfg.offsetX ?? 50}% ${cfg.offsetY ?? 50}%;`;
   }
 
+  function defaultIconSvg(platform: SocialPlatform): string {
+    const icons: Record<SocialPlatform, string> = {
+      line: '<svg class="is-line-logo" viewBox="0 0 48 48"><path d="M24 6C13.5 6 5 12.9 5 21.4c0 7.6 6.7 14 15.8 15.2.6.1 1.4.4 1.6.9.2.5.1 1.2.1 1.7l-.3 2c-.1.6-.5 2.3 1.7 1.3 2.2-1 11.7-6.9 16-11.8 3-3.3 4.1-6.4 4.1-9.3C43 12.9 34.5 6 24 6Z"/><text x="24" y="20.6" text-anchor="middle" dominant-baseline="central" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="10.5" letter-spacing="-0.35">LINE</text></svg>',
+      instagram: '<svg viewBox="0 0 24 24"><rect x="4.4" y="4.4" width="15.2" height="15.2" rx="4.4"/><circle cx="12" cy="12" r="3.7"/><circle cx="16.75" cy="7.25" r="0.85"/></svg>',
+      facebook: '<svg class="is-filled" viewBox="0 0 24 24"><path d="M14.05 8.25h2.15V4.8h-2.6c-3.05 0-4.55 1.82-4.55 4.35v2.1H6.7v3.55h2.35v6.05h3.75V14.8h2.9l.45-3.55H12.8V9.42c0-.82.33-1.17 1.25-1.17Z"/></svg>',
+      threads: '<svg viewBox="0 0 24 24"><path d="M18.9 8.45c-.85-3.25-3.1-4.75-6.67-4.78-5.05.04-7.56 3.13-7.6 8.33.04 5.2 2.55 8.3 7.6 8.33 2.95-.02 5.02-.84 6.38-2.52 1.58-1.95 1.06-4.42-.62-5.6-1.17-.82-2.73-1.2-4.72-1.1-2.3.12-3.62 1.12-3.55 2.72.07 1.46 1.45 2.35 3.34 2.2 2.16-.18 3.25-1.58 3.25-4.15 0-2.72-1.35-4.18-3.9-4.2-1.75 0-2.95.78-3.45 2.22"/></svg>',
+      tiktok: '<svg class="is-filled" viewBox="0 0 24 24"><path d="M14.65 4.5c.38 3.1 2.1 5.05 5.05 5.25v3.35c-1.72.05-3.35-.48-4.92-1.47v6.28c0 3.55-2.38 5.92-5.65 5.92-3.05 0-5.35-2.22-5.35-5.15 0-3.3 2.7-5.55 6.1-5.02v3.48c-1.45-.35-2.65.45-2.65 1.62 0 1.05.82 1.82 1.9 1.82 1.25 0 2.05-.82 2.05-2.32V4.5h3.47Z"/></svg>',
+      phone: '<svg viewBox="0 0 24 24"><path d="M6.55 4.85c.58-.36 1.3-.18 1.64.42l1.12 1.95c.3.52.22 1.17-.2 1.6l-.88.92a12.35 12.35 0 0 0 6.02 6.02l.92-.88c.43-.42 1.08-.5 1.6-.2l1.95 1.12c.6.34.78 1.06.42 1.64l-.78 1.24c-.4.64-1.18.94-1.92.76A17.35 17.35 0 0 1 4.56 7.56c-.18-.74.12-1.52.76-1.92l1.23-.79Z"/></svg>',
+      share: '<svg viewBox="0 0 24 24"><circle cx="6.5" cy="12" r="2.7"/><circle cx="17.5" cy="6.6" r="2.7"/><circle cx="17.5" cy="17.4" r="2.7"/><path d="M8.9 10.8 15.1 7.7M8.9 13.2l6.2 3.1"/></svg>',
+    };
+    return icons[platform];
+  }
+
   async function saveSettings() {
     const tid = notifyProgress('儲存中...');
     const response = await adminFetch('/api/admin/settings', {
@@ -185,8 +223,10 @@
     if (response.ok) {
       originalSettingsForm = JSON.stringify(settingsForm);
       updateToast(tid, '設定已更新', 'success');
+      return true;
     } else {
       updateToast(tid, '設定更新失敗', 'error');
+      return false;
     }
   }
 
@@ -902,6 +942,28 @@
       <div class="settings-section__body">
         <label>網站名稱 <input bind:value={settingsForm.siteName} /></label>
         <label>業務顯示名稱 <input bind:value={settingsForm.salespersonName} /></label>
+        <div class="site-icon-editor">
+          <div class="site-icon-editor__preview" aria-label="網站 icon 預覽">
+            {#if settingsForm.siteIconUrl}
+              <img src={settingsForm.siteIconUrl} alt="網站 icon 預覽" />
+            {:else}
+              <span>{(settingsForm.siteName || '車').slice(0, 1)}</span>
+            {/if}
+          </div>
+          <div class="site-icon-editor__body">
+            <strong>瀏覽器分頁 icon</strong>
+            <p class="form-hint">建議上傳正方形 PNG/WebP，至少 256×256。會套用到公開頁、後台與登入頁。</p>
+            <div class="site-icon-editor__actions">
+              <label class="upload-button">
+                {settingsForm.siteIconUrl ? '更換網站 icon' : '上傳網站 icon'}
+                <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onchange={uploadSiteIcon} />
+              </label>
+              {#if settingsForm.siteIconUrl}
+                <button type="button" class="secondary-button" onclick={clearSiteIcon}>清除 icon</button>
+              {/if}
+            </div>
+          </div>
+        </div>
       </div>
     </details>
 
@@ -1125,8 +1187,8 @@
                   <img src={cfg.url} alt={`${platform.label} 圖示預覽`} style={iconPreviewStyle(cfg)} />
                 </div>
               {:else}
-                <div class="social-icon-card__circle social-icon-card__circle--empty">
-                  <span>未自訂</span>
+                <div class="social-icon-card__circle social-icon-card__circle--default" aria-label={`${platform.label} 主題預設圖示`}>
+                  {@html defaultIconSvg(platform.key)}
                 </div>
               {/if}
               <label class="upload-button">

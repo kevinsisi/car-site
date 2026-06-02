@@ -1,7 +1,11 @@
 ---
 import '@/styles/admin.css';
+import { getSettings } from '@/lib/settings';
+import { siteIconHref } from '@/lib/site-icon';
 
 const pathname = Astro.url.pathname;
+const settings = await getSettings();
+const siteIconUrl = siteIconHref(settings);
 const isActive = (href: string) => {
   if (href === '/admin') return pathname === '/admin' || pathname === '/admin/';
   return pathname === href || pathname.startsWith(href + '/');
@@ -13,6 +17,8 @@ const isActive = (href: string) => {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {settings.siteIconUrl ? <link rel="icon" href={siteIconUrl} /> : <link rel="icon" type="image/svg+xml" href={siteIconUrl} />}
+    {settings.siteIconUrl && <link rel="apple-touch-icon" href={siteIconUrl} />}
     <title>後台管理</title>
   </head>
   <body>

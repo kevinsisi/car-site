@@ -1,10 +1,14 @@
 ---
 import '@/styles/admin.css';
+import { getSettings } from '@/lib/settings';
+import { siteIconHref } from '@/lib/site-icon';
 
 const params = Astro.url.searchParams;
 const hasError = params.get('error') === '1';
 const isExpired = params.get('expired') === '1';
 const isLimited = params.get('limited') === '1';
+const settings = await getSettings();
+const siteIconUrl = siteIconHref(settings);
 const errorMessage = isExpired
   ? '登入逾時，請重新登入'
   : isLimited
@@ -19,6 +23,8 @@ const errorMessage = isExpired
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {settings.siteIconUrl ? <link rel="icon" href={siteIconUrl} /> : <link rel="icon" type="image/svg+xml" href={siteIconUrl} />}
+    {settings.siteIconUrl && <link rel="apple-touch-icon" href={siteIconUrl} />}
     <title>登入後台</title>
   </head>
   <body class="login-body">

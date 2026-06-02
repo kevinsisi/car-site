@@ -11,6 +11,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const body = await request.json();
   await setSettings({
     siteName: String(body.siteName || ''),
+    siteIconUrl: String(body.siteIconUrl || ''),
     salespersonName: String(body.salespersonName || ''),
     lineUrl: String(body.lineUrl || ''),
     instagramUrl: String(body.instagramUrl || ''),
