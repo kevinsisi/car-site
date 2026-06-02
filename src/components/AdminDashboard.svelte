@@ -156,9 +156,11 @@
     uploadingPlatform = null;
   }
 
-  function clearSocialIcon(platform: SocialPlatform) {
-    settingsForm.socialIcons[platform] = undefined;
-    settingsForm.socialIcons = { ...settingsForm.socialIcons };
+  async function clearSocialIcon(platform: SocialPlatform) {
+    settingsForm.socialIcons = Object.fromEntries(
+      Object.entries(settingsForm.socialIcons).filter(([k, v]) => k !== platform && v != null)
+    ) as Record<SocialPlatform, SocialIconConfig | undefined>;
+    await saveSettings();
   }
 
   function updateIconField(platform: SocialPlatform, field: 'zoom' | 'offsetX' | 'offsetY', value: number) {
