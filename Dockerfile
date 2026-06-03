@@ -1,15 +1,23 @@
-FROM node:22-bookworm AS build
+FROM node:20-bookworm AS build
+
+ARG ALLOW_INSECURE_TLS=0
+ENV NODE_OPTIONS=--max-old-space-size=4096
+ENV NPM_CONFIG_FETCH_RETRIES=5
+ENV NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=120000
 
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+# Stage 1: install JS deps only, skip postinstall (avoids native build OOM during ci)
+RUN if [ "$ALLOW_INSECURE_TLS" = "1" ]; then export NODE_TLS_REJECT_UNAUTHORIZED=0; npm config set strict-ssl false; fi; npm ci --ignore-scripts --no-audit --no-fund
+# Stage 2: build native binding for better-sqlite3 separately
+RUN if [ "$ALLOW_INSECURE_TLS" = "1" ]; then export NODE_TLS_REJECT_UNAUTHORIZED=0; fi; npm rebuild better-sqlite3
 
 COPY . .
-RUN npm run build
-RUN npm prune --omit=dev
+RUN if [ "$ALLOW_INSECURE_TLS" = "1" ]; then export NODE_TLS_REJECT_UNAUTHORIZED=0; fi; npm run build
+RUN if [ "$ALLOW_INSECURE_TLS" = "1" ]; then export NODE_TLS_REJECT_UNAUTHORIZED=0; fi; npm prune --omit=dev
 
-FROM node:22-bookworm-slim AS runtime
+FROM node:20-bookworm-slim AS runtime
 
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
@@ -26,10 +34,11 @@ COPY --from=build /app/src/db/seed.ts ./src/db/seed.ts
 COPY --from=build /app/src/db/schema.ts ./src/db/schema.ts
 COPY --from=build /app/src/db/connection.ts ./src/db/connection.ts
 COPY --from=build /app/src/lib ./src/lib
+COPY --from=build /app/scripts ./scripts
 COPY --from=build /app/tsconfig.json ./tsconfig.json
 
 RUN mkdir -p /app/data
 
 EXPOSE 3000
 
-CMD ["node", "./dist/server/entry.mjs"]
+CMD ["node", "./scripts/docker-entrypoint.mjs"]

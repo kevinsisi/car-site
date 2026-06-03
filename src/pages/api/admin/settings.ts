@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { requireAdmin } from '@/lib/auth';
 import { detailSpecFieldOptions } from '@/lib/detail-spec-fields';
+import { sanitizeImageUrl, sanitizePublicHref } from '@/lib/safe-url';
 import { parseSocialIcons, setSettings } from '@/lib/settings';
 import { resolveStyle, resolveTemplate } from '@/lib/theme';
 
@@ -11,13 +12,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const body = await request.json();
   await setSettings({
     siteName: String(body.siteName || ''),
-    siteIconUrl: String(body.siteIconUrl || ''),
+    siteIconUrl: sanitizeImageUrl(body.siteIconUrl),
     salespersonName: String(body.salespersonName || ''),
-    lineUrl: String(body.lineUrl || ''),
-    instagramUrl: String(body.instagramUrl || ''),
-    facebookUrl: String(body.facebookUrl || ''),
-    threadsUrl: String(body.threadsUrl || ''),
-    tiktokUrl: String(body.tiktokUrl || ''),
+    lineUrl: sanitizePublicHref(body.lineUrl),
+    instagramUrl: sanitizePublicHref(body.instagramUrl),
+    facebookUrl: sanitizePublicHref(body.facebookUrl),
+    threadsUrl: sanitizePublicHref(body.threadsUrl),
+    tiktokUrl: sanitizePublicHref(body.tiktokUrl),
     phoneNumber: String(body.phoneNumber || ''),
     storeAddress: String(body.storeAddress || ''),
     businessHours: String(body.businessHours || ''),

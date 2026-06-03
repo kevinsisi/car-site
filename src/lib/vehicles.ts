@@ -168,7 +168,7 @@ export async function listPublicBrands(): Promise<{ displayName: string; urlSlug
 }
 
 export async function listPublicVehiclesByBrand(urlSlug: string): Promise<VehicleView[]> {
-  return (await listPublicVehicles()).filter((vehicle) => vehicle.brandUrlSlug === urlSlug);
+  return (await listPublicInventoryVehicles()).filter((vehicle) => vehicle.brandUrlSlug === urlSlug);
 }
 
 export async function listPublicVehicles(): Promise<VehicleView[]> {
@@ -193,11 +193,15 @@ export async function listPublicInventoryVehicles(): Promise<VehicleView[]> {
 }
 
 export async function listSoldVehicles(): Promise<VehicleView[]> {
+  const settings = await getSettings();
+  if (!settings.showSoldVehicles) return [];
   const rows = await db.select().from(vehicles).where(eq(vehicles.status, 'sold')).orderBy(desc(vehicles.soldAt), desc(vehicles.updatedAt));
   return attachImages(rows);
 }
 
 export async function listSoldCaseVehicles(limit = 6): Promise<VehicleView[]> {
+  const settings = await getSettings();
+  if (!settings.showSoldVehicles) return [];
   const rows = await db
     .select()
     .from(vehicles)

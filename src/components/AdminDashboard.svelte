@@ -249,6 +249,15 @@
     archived: '確定要封存此車嗎？封存後不會顯示在後台列表，僅能透過資料庫還原。',
   };
 
+  function syncSelectedVehicleStatus(id: string, status: VehicleView['status']) {
+    vehicles = vehicles.map((vehicle) => (vehicle.id === id ? { ...vehicle, status } : vehicle));
+    if (selectedId !== id) return;
+    vehicleForm.status = status;
+    const baseline = JSON.parse(vehicleFormBaseline || '{}');
+    baseline.status = status;
+    vehicleFormBaseline = JSON.stringify(baseline);
+  }
+
   async function setStatus(id: string, status: string) {
     if (destructiveStatuses.has(status)) {
       const ok = await confirmDialog('請確認狀態變更', statusConfirmTexts[status] || '確定要執行此操作嗎？', true);
@@ -260,7 +269,7 @@
       body: JSON.stringify({ status }),
     });
     if (response.ok) {
-      vehicles = vehicles.map((vehicle) => (vehicle.id === id ? { ...vehicle, status: status as VehicleView['status'] } : vehicle));
+      syncSelectedVehicleStatus(id, status as VehicleView['status']);
       notifySuccess(`已將「${vehicles.find((v) => v.id === id)?.title || '車輛'}」設為${statusLabels[status as VehicleView['status']] || status}`);
     } else {
       notifyError('車輛狀態更新失敗');
@@ -668,6 +677,7 @@
   let adminSort = $state<AdminSort>('recent');
   let currentPage = $state(1);
   let selectedIds = $state<Set<string>>(new Set());
+  let focusApplied = $state(false);
 
   function adminNumericValue(raw: string): number {
     const match = String(raw || '').replace(/[^\d.]/g, '');
@@ -707,6 +717,21 @@
     currentPage = 1;
   });
 
+  $effect(() => {
+    if (mode !== 'vehicles' || focusApplied) return;
+    const focusId = new URLSearchParams(window.location.search).get('focus');
+    focusApplied = true;
+    if (!focusId) return;
+    const vehicle = vehicles.find((v) => v.id === focusId);
+    if (!vehicle) return;
+    const index = filteredVehicles.findIndex((v) => v.id === focusId);
+    if (index >= 0) currentPage = Math.floor(index / PAGE_SIZE) + 1;
+    window.setTimeout(() => {
+      editVehicle(vehicle);
+      document.querySelector('.vehicle-edit-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
+  });
+
   function toggleSelect(id: string) {
     const next = new Set(selectedIds);
     if (next.has(id)) next.delete(id); else next.add(id);
@@ -739,7 +764,7 @@
       });
       if (response.ok) {
         ok += 1;
-        vehicles = vehicles.map((v) => v.id === id ? { ...v, status } : v);
+        syncSelectedVehicleStatus(id, status);
       } else {
         fail += 1;
       }
@@ -1425,7 +1450,11 @@
     {#each visibleVehicles as vehicle}
       <article class="admin-car-row" class:is-selected={selectedIds.has(vehicle.id)}>
         <input type="checkbox" class="batch-checkbox" checked={selectedIds.has(vehicle.id)} onchange={() => toggleSelect(vehicle.id)} aria-label={`選擇 ${vehicle.title}`} />
-        <img src={vehicle.coverImage?.url || ''} alt={vehicle.title} />
+        {#if vehicle.coverImage}
+          <img src={vehicle.coverImage.url} alt={vehicle.title} />
+        {:else}
+          <div class="admin-car-row__placeholder" aria-label={`${vehicle.title} 尚未上傳封面`}>相片整理中</div>
+        {/if}
         <div class="admin-car-row__info">
           <strong>{vehicle.cardTitle}</strong>
           <span>{adminCarMetaLine(vehicle)}</span>
@@ -1434,7 +1463,11 @@
         <div class="row-actions">
           <button onclick={() => editVehicle(vehicle)}>編輯</button>
           <button type="button" onclick={() => duplicateVehicle(vehicle)}>複製</button>
-          <a class="row-button-link" href={`/cars/${vehicle.slug}`} target="_blank" rel="noopener">預覽</a>
+          {#if vehicle.status !== 'sold' || settings.showSoldVehicles}
+            <a class="row-button-link" href={`/cars/${vehicle.slug}`} target="_blank" rel="noopener">預覽</a>
+          {:else}
+            <span class="row-button-link row-button-link--disabled">預覽關閉</span>
+          {/if}
           <button onclick={() => setStatus(vehicle.id, 'published')}>在庫</button>
           <button onclick={() => setStatus(vehicle.id, 'incoming')}>未到港</button>
           <button onclick={() => setStatus(vehicle.id, 'reserved')}>收訂</button>

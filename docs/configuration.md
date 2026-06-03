@@ -24,17 +24,18 @@ The site icon is emitted in the public layout, admin layout, and admin login pag
 
 The public `/cars` listing separates active inventory from sold records.
 
-- `全部`, brand filters, and `本月精選` show only active public inventory statuses: `published`, `incoming`, `reserved`, `special`, `unknown`, and `unpublished`.
+- `全部`, brand filters, and `本月精選` show only active public inventory statuses: `published`, `incoming`, `reserved`, `special`, and `unknown`.
 - Sold vehicles are not mixed into `全部` or brand filters.
-- The brand filter drawer always includes a fixed bottom entry named `成交實錄`; it links to `/cars?tab=sold` and shows only `sold` vehicles.
+- The brand filter drawer includes a fixed bottom entry named `成交實錄`; it links to `/cars?tab=sold` and shows only `sold` vehicles when `公開網頁顯示已售出車輛` is enabled.
 - The drawer itself is collapsed by default on both desktop and mobile. The page shows one trigger button (`品牌列表`, the selected brand, `本月精選`, or `成交實錄`) and opens the full list only after the user taps it.
 
 ## Sold Case Display
 
 Homepage sold cases are curated separately from the sold-records listing.
 
+- The admin setting `公開網頁顯示已售出車輛` is the global public gate for sold vehicles. When it is off, sold vehicles do not appear in `成交實錄`, homepage `成交案例`, or public detail pages.
 - Each vehicle has an admin checkbox named `顯示於成交案例`.
-- The homepage `成交案例` section only includes vehicles where `status = sold` and `show_sold_case = true`.
+- The homepage `成交案例` section only includes vehicles where `status = sold`, `show_sold_case = true`, and public sold vehicle display is enabled.
 - The database column is `vehicles.show_sold_case`, added by migration `0006_sold_case_display.sql`.
 - The default is `false`, so imported or existing sold vehicles do not automatically appear on the homepage.
 

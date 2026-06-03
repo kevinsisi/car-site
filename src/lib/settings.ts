@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db/connection';
 import { siteSettings, type ImportBehavior } from '@/db/schema';
 import { defaultDetailSpecFields } from './detail-spec-fields';
+import { sanitizeImageUrl, sanitizePublicHref } from './safe-url';
 import { resolveStyle, resolveTemplate, type StyleId, type TemplateId } from './theme';
 
 export type SocialPlatform = 'line' | 'instagram' | 'facebook' | 'threads' | 'tiktok' | 'phone' | 'share';
@@ -37,7 +38,7 @@ export function parseSocialIcons(raw: string | undefined | null): SocialIconsMap
       const entry = (parsed as Record<string, unknown>)[platform];
       if (!entry || typeof entry !== 'object') continue;
       const cfg = entry as Record<string, unknown>;
-      const url = typeof cfg.url === 'string' ? cfg.url.trim() : '';
+      const url = sanitizeImageUrl(cfg.url);
       if (!url) continue;
       const bgColor = typeof cfg.bgColor === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(cfg.bgColor.trim()) ? cfg.bgColor.trim() : '';
       result[platform] = {
@@ -59,8 +60,10 @@ export function serializeSocialIcons(map: SocialIconsMap): string {
   for (const platform of SOCIAL_PLATFORMS) {
     const cfg = map[platform];
     if (!cfg?.url) continue;
+    const url = sanitizeImageUrl(cfg.url);
+    if (!url) continue;
     clean[platform] = {
-      url: cfg.url,
+      url,
       zoom: clampNumber(cfg.zoom, ZOOM_MIN, ZOOM_MAX, 1),
       offsetX: clampNumber(cfg.offsetX, 0, 100, 50),
       offsetY: clampNumber(cfg.offsetY, 0, 100, 50),
@@ -164,13 +167,13 @@ export async function getSettings(): Promise<SiteSettings> {
   const settingValue = (key: keyof SiteSettings, fallback: string) => (map.has(key) ? map.get(key) || '' : fallback);
   return {
     siteName: map.get('siteName') || defaults.siteName,
-    siteIconUrl: settingValue('siteIconUrl', defaults.siteIconUrl),
+    siteIconUrl: sanitizeImageUrl(settingValue('siteIconUrl', defaults.siteIconUrl)),
     salespersonName: map.get('salespersonName') || defaults.salespersonName,
-    lineUrl: map.get('lineUrl') || defaults.lineUrl,
-    instagramUrl: settingValue('instagramUrl', defaults.instagramUrl),
-    facebookUrl: settingValue('facebookUrl', defaults.facebookUrl),
-    threadsUrl: settingValue('threadsUrl', defaults.threadsUrl),
-    tiktokUrl: settingValue('tiktokUrl', defaults.tiktokUrl),
+    lineUrl: sanitizePublicHref(map.get('lineUrl') || defaults.lineUrl) || defaults.lineUrl,
+    instagramUrl: sanitizePublicHref(settingValue('instagramUrl', defaults.instagramUrl)),
+    facebookUrl: sanitizePublicHref(settingValue('facebookUrl', defaults.facebookUrl)),
+    threadsUrl: sanitizePublicHref(settingValue('threadsUrl', defaults.threadsUrl)),
+    tiktokUrl: sanitizePublicHref(settingValue('tiktokUrl', defaults.tiktokUrl)),
     phoneNumber: map.get('phoneNumber') || defaults.phoneNumber,
     storeAddress: settingValue('storeAddress', defaults.storeAddress),
     businessHours: settingValue('businessHours', defaults.businessHours),

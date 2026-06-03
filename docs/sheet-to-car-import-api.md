@@ -44,4 +44,4 @@ When `sourceStatus` is provided, the import maps source inventory statuses into 
 | `售出` | `sold` |
 | `#N/A`, unknown values | `unknown` |
 
-Sold imports stay available through `/cars?tab=sold` (`成交實錄`) when public sold vehicles are enabled. They do not appear in brand inventory filters, `全部`, `本月精選`, or homepage `成交案例` unless explicitly curated in admin.
+Sold imports stay available through `/cars?tab=sold` (`成交實錄`) only when public sold vehicles are enabled in admin. They do not appear in brand inventory filters, `全部`, `本月精選`, public detail pages, or homepage `成交案例` while that setting is disabled. Homepage `成交案例` also requires explicit admin curation with `顯示於成交案例`.
