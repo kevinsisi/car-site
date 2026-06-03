@@ -74,6 +74,7 @@ const specRows = [
   { key: 'horsepower', label: '馬力', value: known.horsepower },
   { key: 'price', label: '價格', value: '價格請洽' },
 ].filter((row) => settings.detailSpecFields.includes(row.key) && row.value);
+const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findIndex((image) => image.id === vehicle.coverImage?.id)) : 0;
 ---
 
 <PublicLayout title={`${vehicle.title}｜${settings.siteName}`} description={vehicle.headline || vehicle.description} shareText={shareText} shareUrl={shareUrl} ogImage={vehicle.coverImage?.url} ogType="product" jsonLd={[vehicleJsonLd, breadcrumbJsonLd]}>
@@ -95,9 +96,13 @@ const specRows = [
           <ShareButton class="detail-share-button" title={vehicle.title} url={shareUrl} text={shareText} />
         </div>
       </div>
-      <div class="detail-cover">
-        {vehicle.coverImage && <img src={vehicle.coverImage.url} alt={vehicle.coverImage.alt || `${vehicle.title} 封面照`} fetchpriority="high" decoding="async" />}
-      </div>
+      {vehicle.coverImage ? (
+        <button class="detail-cover" type="button" data-gallery-index={coverImageIndex} aria-label="開啟封面大圖">
+          <img src={vehicle.coverImage.url} alt={vehicle.coverImage.alt || `${vehicle.title} 封面照`} fetchpriority="high" decoding="async" />
+        </button>
+      ) : (
+        <div class="detail-cover"></div>
+      )}
     </section>
     <section class="detail-section reveal-section">
       <div class="section-kicker">
