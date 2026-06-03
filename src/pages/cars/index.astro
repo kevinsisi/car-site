@@ -8,6 +8,7 @@ import { listMonthlyRecommendedVehicles, listPublicBrands, listPublicInventoryVe
 const settings = await getSettings();
 const activeBrand = Astro.url.searchParams.get('brand') || '';
 const tabParam = Astro.url.searchParams.get('tab');
+const searchQuery = (Astro.url.searchParams.get('q') || '').trim();
 const activeTab = activeBrand ? 'brand' : tabParam === 'recommended' ? 'recommended' : tabParam === 'sold' ? 'sold' : 'all';
 const allVehicles = await listPublicInventoryVehicles();
 const recommendedVehicles = await listMonthlyRecommendedVehicles();
@@ -32,7 +33,15 @@ const numericValue = (raw: string) => {
   const n = Number.parseFloat(match);
   return Number.isFinite(n) ? n : Number.NaN;
 };
-const sortedVehicles = [...baseVehicles];
+const matchesSearch = (vehicle: (typeof baseVehicles)[number]) => {
+  if (!searchQuery) return true;
+  const haystack = [vehicle.title, vehicle.cardTitle, vehicle.brand, vehicle.brandDisplayName, vehicle.model, vehicle.subModel, vehicle.year, vehicle.mileage, vehicle.condition, vehicle.slug]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  return haystack.includes(searchQuery.toLowerCase());
+};
+const sortedVehicles = baseVehicles.filter(matchesSearch);
 if (activeSort === 'year-desc') {
   sortedVehicles.sort((a, b) => (numericValue(b.year) || 0) - (numericValue(a.year) || 0));
 } else if (activeSort === 'year-asc') {
@@ -67,12 +76,18 @@ const vehicles = sortedVehicles;
     <div class="filter-scrim" aria-hidden="true"></div>
     <div class="inventory-content">
       <nav class="mobile-filter-strip" aria-label="車輛篩選">
+        <form class="listing-search" action="/cars" method="get" role="search">
+          {activeBrand && <input type="hidden" name="brand" value={activeBrand} />}
+          {!activeBrand && activeTab !== 'all' && <input type="hidden" name="tab" value={activeTab} />}
+          {activeSort !== 'recent' && <input type="hidden" name="sort" value={activeSort} />}
+          <input type="search" name="q" value={searchQuery} placeholder="搜尋車款、品牌、年份" aria-label="搜尋車輛" />
+        </form>
         <button class={`filter-toggle ${activeBrandLabel || activeTab === 'recommended' || activeTab === 'sold' ? 'is-active' : ''}`} type="button" aria-expanded="false" aria-controls="brand-filter-panel">{activeBrandLabel || (activeTab === 'recommended' ? '本月精選' : activeTab === 'sold' ? '成交實錄' : '品牌列表')}</button>
       </nav>
       <div class="inventory-toolbar">
         <div>
           <p class="eyebrow">選車</p>
-          <h2>{activeBrandLabel || (activeTab === 'recommended' ? '本月精選' : activeTab === 'sold' ? '成交實錄' : '全部車輛')}</h2>
+          <h2>{searchQuery ? `搜尋「${searchQuery}」` : activeBrandLabel || (activeTab === 'recommended' ? '本月精選' : activeTab === 'sold' ? '成交實錄' : '全部車輛')}</h2>
         </div>
         <div class="inventory-toolbar__controls">
           <label class="sort-control">
@@ -125,5 +140,18 @@ const vehicles = sortedVehicles;
       else url.searchParams.set('sort', target.value);
       window.location.href = url.toString();
     });
+
+    let lastCarsScrollY = window.scrollY;
+    const updateCarsCompact = () => {
+      if (!window.matchMedia('(max-width: 760px)').matches) return;
+      const current = window.scrollY;
+      const scrollingDown = current > lastCarsScrollY + 18;
+      const scrollingUp = current < lastCarsScrollY - 10;
+      if (scrollingDown && current > 120) document.body.classList.add('cars-compact-scroll');
+      if (scrollingUp || current < 40) document.body.classList.remove('cars-compact-scroll');
+      if (scrollingDown || scrollingUp) lastCarsScrollY = current;
+    };
+    updateCarsCompact();
+    window.addEventListener('scroll', updateCarsCompact, { passive: true });
   </script>
 </PublicLayout>
