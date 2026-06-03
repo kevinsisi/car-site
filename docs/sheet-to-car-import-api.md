@@ -24,8 +24,24 @@ Content-Type: application/json
   "description": "顧問整理後的車輛描述。",
   "features": ["Starlight Headliner", "Rear Theatre"],
   "photos": ["https://example.com/photo.jpg"],
+  "sourceStatus": "在庫",
   "publishMode": "use_default"
 }
 ```
 
 `publishMode` accepts `use_default`, `draft`, or `publish`. Repeated requests with the same `source + externalId` update the existing local vehicle.
+
+## Source Status Mapping
+
+When `sourceStatus` is provided, the import maps source inventory statuses into the local vehicle status model:
+
+| Source status | Local status |
+|---|---|
+| `在庫` | `published` |
+| `未到港` | `incoming` |
+| `收訂` | `reserved` |
+| `特殊` | `special` |
+| `售出` | `sold` |
+| `#N/A`, unknown values | `unknown` |
+
+Sold imports stay available through `/cars?tab=sold` (`成交實錄`) when public sold vehicles are enabled. They do not appear in brand inventory filters, `全部`, `本月精選`, or homepage `成交案例` unless explicitly curated in admin.
