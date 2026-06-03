@@ -28,6 +28,7 @@ The public `/cars` listing separates active inventory from sold records.
 - Sold vehicles are not mixed into `全部` or brand filters.
 - The brand filter drawer includes a fixed bottom entry named `成交實錄`; it links to `/cars?tab=sold` and shows only `sold` vehicles when `公開網頁顯示已售出車輛` is enabled.
 - The drawer itself is collapsed by default on both desktop and mobile. The page shows one trigger button (`品牌列表`, the selected brand, `本月精選`, or `成交實錄`) and opens the full list only after the user taps it.
+- On mobile, `/cars` keeps a sticky search/filter bar visible. Scrolling down collapses the hero and toolbar so only search/filter remains; scrolling up restores the full listing header.
 
 ## Sold Case Display
 
