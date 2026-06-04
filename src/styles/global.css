@@ -107,8 +107,8 @@ img.image-error::after { content: attr(alt); }
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
   gap: clamp(2rem, 5vw, 5rem);
   align-items: center;
-  min-height: calc(100vh - 86px);
-  padding: clamp(2rem, 7vw, 6rem) clamp(1.25rem, 5vw, 6rem);
+  min-height: clamp(34rem, 72vh, 46rem);
+  padding: clamp(2rem, 5.5vw, 4.5rem) clamp(1.25rem, 5vw, 6rem);
 }
 
 .hero h1,
