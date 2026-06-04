@@ -1,0 +1,22 @@
+---
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import Brands from '@/components/admin/Brands.svelte';
+import { getSession, hasAnyUsers } from '@/lib/auth';
+import { PERMISSIONS, hasPermission } from '@/lib/permissions';
+import { listBrandAliases } from '@/lib/brand-aliases';
+import { listAdminVehicles } from '@/lib/vehicles';
+
+if (!await hasAnyUsers()) return Astro.redirect('/admin/setup');
+const user = await getSession(Astro.cookies);
+if (!user) return Astro.redirect('/admin/login');
+if (user.role !== 'superadmin' && !hasPermission(user.permissions, PERMISSIONS.BRANDS_VIEW)) {
+  return Astro.redirect('/admin');
+}
+
+const brandAliases = await listBrandAliases();
+const vehicles = await listAdminVehicles();
+const canUploadIcon = user.role === 'superadmin' || hasPermission(user.permissions, PERMISSIONS.BRANDS_ICON);
+---
+<AdminLayout user={user} title="品牌管理">
+  <Brands client:load brandAliases={brandAliases} vehicles={vehicles} canUploadIcon={canUploadIcon} />
+</AdminLayout>
