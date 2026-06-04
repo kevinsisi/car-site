@@ -88,6 +88,30 @@ export const adminSessions = sqliteTable('admin_sessions', {
   createdAt: text('created_at').notNull(),
 });
 
+export const siteVideoLinks = sqliteTable('site_video_links', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull().default(''),
+  url: text('url').notNull(),
+  thumbnailUrl: text('thumbnail_url'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: text('created_at').notNull(),
+});
+
+export const sellInquiries = sqliteTable('sell_inquiries', {
+  id: text('id').primaryKey(),
+  brand: text('brand').notNull().default(''),
+  model: text('model').notNull().default(''),
+  year: integer('year'),
+  mileage: integer('mileage'),
+  exteriorColor: text('exterior_color').notNull().default(''),
+  notes: text('notes').notNull().default(''),
+  contactInfo: text('contact_info').notNull(),
+  contactName: text('contact_name').notNull().default(''),
+  photoUrls: text('photo_urls').notNull().default('[]'),
+  createdAt: text('created_at').notNull(),
+  readAt: text('read_at'),
+});
+
 export type VehicleStatus = 'draft' | 'published' | 'incoming' | 'reserved' | 'special' | 'unknown' | 'unpublished' | 'sold' | 'archived';
 export type ImportBehavior = 'draft_first' | 'auto_publish' | 'import_only';
 export type PublishMode = 'use_default' | 'draft' | 'publish';
