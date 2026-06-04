@@ -115,6 +115,8 @@ img.image-error::after { content: attr(alt); }
 .page-hero h1,
 .detail-copy h1 { font-size: clamp(2.35rem, 6.4vw, 5.6rem); line-height: 1.04; letter-spacing: -0.02em; margin: 0.5rem 0 1.25rem; overflow-wrap: anywhere; padding-bottom: 0.06em; }
 
+.detail-copy h1 { font-size: clamp(2.25rem, 4.25vw, 4rem); line-height: 1.03; letter-spacing: -0.035em; }
+
 .hero__lead,
 .page-hero p,
 .detail-headline { color: var(--muted); font-size: clamp(1.05rem, 2.2vw, 1.35rem); line-height: 1.5; max-width: 42rem; }
