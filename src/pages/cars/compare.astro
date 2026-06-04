@@ -15,17 +15,29 @@ const [vehicles, allVehicles] = await Promise.all([
 
 // Vehicles available to add (not already in compare)
 const availableVehicles = allVehicles.filter((v) => !slugs.includes(v.slug));
-const compareSearchSuggestions = Array.from(new Set(
+const compareBrandMap = new Map<string, { value: string; iconUrl: string | null }>();
+for (const vehicle of allVehicles) {
+  if (!vehicle.brandDisplayName) continue;
+  compareBrandMap.set(vehicle.brandDisplayName, { value: vehicle.brandDisplayName, iconUrl: vehicle.brandIconUrl });
+}
+const compareBrandSuggestionLabels = new Set(Array.from(compareBrandMap.keys()));
+const compareBrandSuggestions = Array.from(compareBrandMap.values()).map((brand) => ({
+  value: brand.value,
+  kind: 'brand',
+  iconUrl: brand.iconUrl,
+}));
+const compareVehicleSuggestions = Array.from(new Set(
   allVehicles.flatMap((vehicle) => [
-    vehicle.brandDisplayName,
-    vehicle.brand,
     vehicle.model,
     vehicle.subModel,
     vehicle.year,
     vehicle.cardTitle,
     vehicle.title,
   ].filter((value): value is string => Boolean(value && String(value).trim())))
-)).sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+)).filter((value) => !compareBrandSuggestionLabels.has(value))
+  .sort((a, b) => a.localeCompare(b, 'zh-Hant'))
+  .map((value) => ({ value, kind: 'vehicle', iconUrl: null }));
+const compareSearchSuggestions = [...compareBrandSuggestions, ...compareVehicleSuggestions];
 
 const specRows = [
   { key: 'year', label: '年份' },
@@ -75,7 +87,7 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
               data-suggestion-filter
             />
             <datalist id="compare-search-suggestions">
-              {compareSearchSuggestions.map((suggestion) => <option value={suggestion} />)}
+              {compareSearchSuggestions.map((suggestion) => <option value={suggestion.value} data-kind={suggestion.kind} data-icon={suggestion.iconUrl || ''} />)}
             </datalist>
             <div class="search-suggestions" role="listbox" aria-label="搜尋建議"></div>
           </div>
@@ -191,8 +203,12 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
     const datalist = listId ? document.getElementById(listId) : null;
     const panel = input.parentElement?.querySelector<HTMLElement>('.search-suggestions');
     const suggestions = Array.from(datalist?.querySelectorAll('option') || [])
-      .map((option) => option.value.trim())
-      .filter(Boolean);
+      .map((option) => ({
+        value: option.value.trim(),
+        kind: option.dataset.kind || 'vehicle',
+        icon: option.dataset.icon || '',
+      }))
+      .filter((item) => item.value);
     if (!panel || suggestions.length === 0) return;
 
     input.removeAttribute('list');
@@ -208,11 +224,13 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
         return;
       }
       const matches = suggestions
-        .filter((item) => item.toLowerCase().includes(q))
+        .filter((item) => item.value.toLowerCase().includes(q))
         .sort((a, b) => {
-          const aStarts = a.toLowerCase().startsWith(q) ? 0 : 1;
-          const bStarts = b.toLowerCase().startsWith(q) ? 0 : 1;
-          return aStarts - bStarts || a.localeCompare(b, 'zh-Hant');
+          const aBrand = a.kind === 'brand' ? 0 : 1;
+          const bBrand = b.kind === 'brand' ? 0 : 1;
+          const aStarts = a.value.toLowerCase().startsWith(q) ? 0 : 1;
+          const bStarts = b.value.toLowerCase().startsWith(q) ? 0 : 1;
+          return aBrand - bBrand || aStarts - bStarts || a.value.localeCompare(b.value, 'zh-Hant');
         })
         .slice(0, 6);
       if (matches.length === 0) {
@@ -223,7 +241,18 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
         const button = document.createElement('button');
         button.type = 'button';
         button.setAttribute('role', 'option');
-        button.textContent = item;
+        button.dataset.value = item.value;
+        if (item.kind === 'brand') button.classList.add('is-brand');
+        if (item.kind === 'brand' && item.icon) {
+          const img = document.createElement('img');
+          img.src = item.icon;
+          img.alt = '';
+          img.loading = 'lazy';
+          button.append(img);
+        }
+        const label = document.createElement('span');
+        label.textContent = item.value;
+        button.append(label);
         return button;
       }));
       panel.hidden = false;
@@ -240,7 +269,7 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
     panel.addEventListener('click', (event) => {
       const button = (event.target as HTMLElement).closest('button');
       if (!button) return;
-      input.value = button.textContent || '';
+      input.value = button.dataset.value || button.textContent || '';
       input.dispatchEvent(new Event('input', { bubbles: true }));
       hide();
     });

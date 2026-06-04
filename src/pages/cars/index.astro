@@ -18,17 +18,25 @@ const brands = await listPublicBrands();
 const baseVehicles = activeTab === 'recommended' ? recommendedVehicles : activeTab === 'sold' ? soldVehicles : activeBrand ? await listPublicVehiclesByBrand(activeBrand) : allVehicles;
 const activeBrandLabel = brands.find((brand) => brand.urlSlug === activeBrand)?.displayName;
 const shareOrigin = shareOriginFromRequest(Astro.request, Astro.url);
-const searchSuggestions = Array.from(new Set(
+const brandSuggestionLabels = new Set(brands.flatMap((brand) => [brand.displayName, brand.urlSlug.toLowerCase()]));
+const brandSuggestions = brands.map((brand) => ({
+  value: brand.displayName,
+  kind: 'brand',
+  iconUrl: brand.iconUrl,
+  href: `/cars?brand=${brand.urlSlug}`,
+}));
+const vehicleSuggestions = Array.from(new Set(
   allVehicles.flatMap((vehicle) => [
-    vehicle.brandDisplayName,
-    vehicle.brand,
     vehicle.model,
     vehicle.subModel,
     vehicle.year,
     vehicle.cardTitle,
     vehicle.title,
   ].filter((value): value is string => Boolean(value && String(value).trim())))
-)).sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+)).filter((value) => !brandSuggestionLabels.has(value) && !brandSuggestionLabels.has(value.toLowerCase()))
+  .sort((a, b) => a.localeCompare(b, 'zh-Hant'))
+  .map((value) => ({ value, kind: 'vehicle', iconUrl: null, href: '' }));
+const searchSuggestions = [...brandSuggestions, ...vehicleSuggestions];
 
 const SORT_OPTIONS = [
   { value: 'recent', label: '最近更新' },
@@ -111,7 +119,7 @@ const vehicles = sortedVehicles;
             <div class="autocomplete-field">
               <input type="search" name="q" value={searchQuery} placeholder="搜尋車款、品牌、年份" aria-label="搜尋車輛" list="vehicle-search-suggestions" autocomplete="off" data-suggestion-submit />
               <datalist id="vehicle-search-suggestions">
-                {searchSuggestions.map((suggestion) => <option value={suggestion} />)}
+                {searchSuggestions.map((suggestion) => <option value={suggestion.value} data-kind={suggestion.kind} data-icon={suggestion.iconUrl || ''} data-href={suggestion.href} />)}
               </datalist>
               <div class="search-suggestions" role="listbox" aria-label="搜尋建議"></div>
             </div>
@@ -177,8 +185,13 @@ const vehicles = sortedVehicles;
       const datalist = listId ? document.getElementById(listId) : null;
       const panel = input.parentElement?.querySelector<HTMLElement>('.search-suggestions');
       const suggestions = Array.from(datalist?.querySelectorAll('option') || [])
-        .map((option) => option.value.trim())
-        .filter(Boolean);
+        .map((option) => ({
+          value: option.value.trim(),
+          kind: option.dataset.kind || 'vehicle',
+          icon: option.dataset.icon || '',
+          href: option.dataset.href || '',
+        }))
+        .filter((item) => item.value);
       if (!panel || suggestions.length === 0) return;
 
       input.removeAttribute('list');
@@ -194,11 +207,13 @@ const vehicles = sortedVehicles;
           return;
         }
         const matches = suggestions
-          .filter((item) => item.toLowerCase().includes(q))
+          .filter((item) => item.value.toLowerCase().includes(q))
           .sort((a, b) => {
-            const aStarts = a.toLowerCase().startsWith(q) ? 0 : 1;
-            const bStarts = b.toLowerCase().startsWith(q) ? 0 : 1;
-            return aStarts - bStarts || a.localeCompare(b, 'zh-Hant');
+            const aBrand = a.kind === 'brand' ? 0 : 1;
+            const bBrand = b.kind === 'brand' ? 0 : 1;
+            const aStarts = a.value.toLowerCase().startsWith(q) ? 0 : 1;
+            const bStarts = b.value.toLowerCase().startsWith(q) ? 0 : 1;
+            return aBrand - bBrand || aStarts - bStarts || a.value.localeCompare(b.value, 'zh-Hant');
           })
           .slice(0, 6);
         if (matches.length === 0) {
@@ -209,7 +224,19 @@ const vehicles = sortedVehicles;
           const button = document.createElement('button');
           button.type = 'button';
           button.setAttribute('role', 'option');
-          button.textContent = item;
+          button.dataset.value = item.value;
+          button.dataset.href = item.href;
+          if (item.kind === 'brand') button.classList.add('is-brand');
+          if (item.kind === 'brand' && item.icon) {
+            const img = document.createElement('img');
+            img.src = item.icon;
+            img.alt = '';
+            img.loading = 'lazy';
+            button.append(img);
+          }
+          const label = document.createElement('span');
+          label.textContent = item.value;
+          button.append(label);
           return button;
         }));
         panel.hidden = false;
@@ -226,7 +253,13 @@ const vehicles = sortedVehicles;
       panel.addEventListener('click', (event) => {
         const button = (event.target as HTMLElement).closest('button');
         if (!button) return;
-        input.value = button.textContent || '';
+        const href = button.dataset.href || '';
+        const value = button.dataset.value || button.textContent || '';
+        if (href) {
+          window.location.href = href;
+          return;
+        }
+        input.value = value;
         hide();
         input.form?.requestSubmit();
       });
