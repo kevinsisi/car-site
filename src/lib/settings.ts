@@ -7,6 +7,16 @@ import { resolveStyle, resolveTemplate, type StyleId, type TemplateId } from './
 
 export type GalleryMode = 'lightbox' | 'slider' | 'thumbnail-strip' | 'grid';
 
+export interface HeroVideo {
+  id: string;
+  url: string;
+  type: 'youtube' | 'mp4';
+  thumbnailUrl: string;
+  label: string;
+}
+
+export type VideoSectionPosition = 'below-hero' | 'below-featured' | 'above-footer';
+
 export type SocialPlatform = 'line' | 'instagram' | 'facebook' | 'threads' | 'tiktok' | 'phone' | 'share';
 
 export interface SocialIconConfig {
@@ -111,6 +121,16 @@ export interface SiteSettings {
   showSoldVehicles: boolean;
   socialIcons: SocialIconsMap;
   galleryMode: GalleryMode;
+  heroVideos: HeroVideo[];
+  videoSectionEnabled: boolean;
+  videoSectionPosition: VideoSectionPosition;
+  videoLinksEnabled: boolean;
+  videoLinksSectionTitle: string;
+  notificationEmail: string;
+  smtpHost: string;
+  smtpPort: string;
+  smtpUser: string;
+  smtpPass: string;
 }
 
 const defaults: SiteSettings = {
@@ -149,6 +169,16 @@ const defaults: SiteSettings = {
   showSoldVehicles: false,
   socialIcons: {},
   galleryMode: 'lightbox',
+  heroVideos: [],
+  videoSectionEnabled: false,
+  videoSectionPosition: 'below-hero',
+  videoLinksEnabled: false,
+  videoLinksSectionTitle: '精選影片',
+  notificationEmail: '',
+  smtpHost: '',
+  smtpPort: '587',
+  smtpUser: '',
+  smtpPass: '',
 };
 
 function resolveDetailSpecFields(value: string | undefined): string[] {
@@ -215,6 +245,27 @@ export async function getSettings(): Promise<SiteSettings> {
       if (v === 'slider' || v === 'thumbnail-strip' || v === 'grid') return v;
       return 'lightbox';
     })(),
+    heroVideos: (() => {
+      try {
+        const parsed = JSON.parse(map.get('heroVideos') || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    })(),
+    videoSectionEnabled: map.get('videoSectionEnabled') === 'true',
+    videoSectionPosition: (() => {
+      const v = map.get('videoSectionPosition');
+      if (v === 'below-featured' || v === 'above-footer') return v as VideoSectionPosition;
+      return 'below-hero' as VideoSectionPosition;
+    })(),
+    videoLinksEnabled: map.get('videoLinksEnabled') === 'true',
+    videoLinksSectionTitle: map.get('videoLinksSectionTitle') || defaults.videoLinksSectionTitle,
+    notificationEmail: map.get('notificationEmail') || '',
+    smtpHost: map.get('smtpHost') || '',
+    smtpPort: map.get('smtpPort') || '587',
+    smtpUser: map.get('smtpUser') || '',
+    smtpPass: map.get('smtpPass') || '',
   };
 }
 
