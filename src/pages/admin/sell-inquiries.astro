@@ -1,0 +1,19 @@
+---
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import SellInquiries from '@/components/admin/SellInquiries.svelte';
+import { getSession, hasAnyUsers } from '@/lib/auth';
+import { PERMISSIONS, hasPermission } from '@/lib/permissions';
+import { listSellInquiries } from '@/lib/sell-inquiries';
+
+if (!await hasAnyUsers()) return Astro.redirect('/admin/setup');
+const user = await getSession(Astro.cookies);
+if (!user) return Astro.redirect('/admin/login');
+if (user.role !== 'superadmin' && !hasPermission(user.permissions, PERMISSIONS.SELL_INQUIRIES)) {
+  return Astro.redirect('/admin');
+}
+
+const inquiries = await listSellInquiries();
+---
+<AdminLayout user={user} title="賣車申請">
+  <SellInquiries client:load inquiries={inquiries} />
+</AdminLayout>
