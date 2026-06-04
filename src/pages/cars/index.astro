@@ -108,10 +108,13 @@ const vehicles = sortedVehicles;
             {activeBrand && <input type="hidden" name="brand" value={activeBrand} />}
             {!activeBrand && activeTab !== 'all' && <input type="hidden" name="tab" value={activeTab} />}
             {activeSort !== 'recent' && <input type="hidden" name="sort" value={activeSort} />}
-            <input type="search" name="q" value={searchQuery} placeholder="搜尋車款、品牌、年份" aria-label="搜尋車輛" list="vehicle-search-suggestions" autocomplete="off" />
-            <datalist id="vehicle-search-suggestions">
-              {searchSuggestions.map((suggestion) => <option value={suggestion} />)}
-            </datalist>
+            <div class="autocomplete-field">
+              <input type="search" name="q" value={searchQuery} placeholder="搜尋車款、品牌、年份" aria-label="搜尋車輛" list="vehicle-search-suggestions" autocomplete="off" data-suggestion-submit />
+              <datalist id="vehicle-search-suggestions">
+                {searchSuggestions.map((suggestion) => <option value={suggestion} />)}
+              </datalist>
+              <div class="search-suggestions" role="listbox" aria-label="搜尋建議"></div>
+            </div>
           </form>
           <button class={`filter-toggle ${activeBrandLabel || activeTab === 'recommended' || activeTab === 'sold' ? 'is-active' : ''}`} type="button" aria-expanded="false" aria-controls="brand-filter-panel">{activeBrandLabel || (activeTab === 'recommended' ? '本月精選' : activeTab === 'sold' ? '成交實錄' : '品牌列表')}</button>
         </nav>
@@ -168,6 +171,68 @@ const vehicles = sortedVehicles;
     };
     updateCarsCompact();
     window.addEventListener('scroll', updateCarsCompact, { passive: true });
+
+    const setupSearchSuggestions = (input: HTMLInputElement) => {
+      const listId = input.getAttribute('list');
+      const datalist = listId ? document.getElementById(listId) : null;
+      const panel = input.parentElement?.querySelector<HTMLElement>('.search-suggestions');
+      const suggestions = Array.from(datalist?.querySelectorAll('option') || [])
+        .map((option) => option.value.trim())
+        .filter(Boolean);
+      if (!panel || suggestions.length === 0) return;
+
+      input.removeAttribute('list');
+
+      const hide = () => {
+        panel.hidden = true;
+        panel.innerHTML = '';
+      };
+      const render = () => {
+        const q = input.value.trim().toLowerCase();
+        if (!q) {
+          hide();
+          return;
+        }
+        const matches = suggestions
+          .filter((item) => item.toLowerCase().includes(q))
+          .sort((a, b) => {
+            const aStarts = a.toLowerCase().startsWith(q) ? 0 : 1;
+            const bStarts = b.toLowerCase().startsWith(q) ? 0 : 1;
+            return aStarts - bStarts || a.localeCompare(b, 'zh-Hant');
+          })
+          .slice(0, 6);
+        if (matches.length === 0) {
+          hide();
+          return;
+        }
+        panel.replaceChildren(...matches.map((item) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.setAttribute('role', 'option');
+          button.textContent = item;
+          return button;
+        }));
+        panel.hidden = false;
+      };
+
+      panel.hidden = true;
+      input.addEventListener('input', render);
+      input.addEventListener('focus', render);
+      input.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') hide();
+      });
+      input.addEventListener('blur', () => window.setTimeout(hide, 120));
+      panel.addEventListener('pointerdown', (event) => event.preventDefault());
+      panel.addEventListener('click', (event) => {
+        const button = (event.target as HTMLElement).closest('button');
+        if (!button) return;
+        input.value = button.textContent || '';
+        hide();
+        input.form?.requestSubmit();
+      });
+    };
+
+    document.querySelectorAll<HTMLInputElement>('input[data-suggestion-submit]').forEach(setupSearchSuggestions);
   </script>
   <style>
     .brand-list a {

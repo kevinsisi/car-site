@@ -64,17 +64,21 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
       <div class="compare-add-section">
         <div class="compare-add-header">
           <h2>選擇車輛加入比較</h2>
-          <input
-            type="search"
-            id="compare-search"
-            placeholder="搜尋品牌、型號、年份..."
-            class="compare-search-input"
-            list="compare-search-suggestions"
-            autocomplete="off"
-          />
-          <datalist id="compare-search-suggestions">
-            {compareSearchSuggestions.map((suggestion) => <option value={suggestion} />)}
-          </datalist>
+          <div class="autocomplete-field compare-autocomplete-field">
+            <input
+              type="search"
+              id="compare-search"
+              placeholder="搜尋品牌、型號、年份..."
+              class="compare-search-input"
+              list="compare-search-suggestions"
+              autocomplete="off"
+              data-suggestion-filter
+            />
+            <datalist id="compare-search-suggestions">
+              {compareSearchSuggestions.map((suggestion) => <option value={suggestion} />)}
+            </datalist>
+            <div class="search-suggestions" role="listbox" aria-label="搜尋建議"></div>
+          </div>
         </div>
         <div class="compare-add-grid" id="compare-add-list">
           {availableVehicles.map((v) => (
@@ -181,6 +185,68 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
       item.style.display = match ? '' : 'none';
     });
   });
+
+  const setupSearchSuggestions = (input: HTMLInputElement) => {
+    const listId = input.getAttribute('list');
+    const datalist = listId ? document.getElementById(listId) : null;
+    const panel = input.parentElement?.querySelector<HTMLElement>('.search-suggestions');
+    const suggestions = Array.from(datalist?.querySelectorAll('option') || [])
+      .map((option) => option.value.trim())
+      .filter(Boolean);
+    if (!panel || suggestions.length === 0) return;
+
+    input.removeAttribute('list');
+
+    const hide = () => {
+      panel.hidden = true;
+      panel.innerHTML = '';
+    };
+    const render = () => {
+      const q = input.value.trim().toLowerCase();
+      if (!q) {
+        hide();
+        return;
+      }
+      const matches = suggestions
+        .filter((item) => item.toLowerCase().includes(q))
+        .sort((a, b) => {
+          const aStarts = a.toLowerCase().startsWith(q) ? 0 : 1;
+          const bStarts = b.toLowerCase().startsWith(q) ? 0 : 1;
+          return aStarts - bStarts || a.localeCompare(b, 'zh-Hant');
+        })
+        .slice(0, 6);
+      if (matches.length === 0) {
+        hide();
+        return;
+      }
+      panel.replaceChildren(...matches.map((item) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.setAttribute('role', 'option');
+        button.textContent = item;
+        return button;
+      }));
+      panel.hidden = false;
+    };
+
+    panel.hidden = true;
+    input.addEventListener('input', render);
+    input.addEventListener('focus', render);
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') hide();
+    });
+    input.addEventListener('blur', () => window.setTimeout(hide, 120));
+    panel.addEventListener('pointerdown', (event) => event.preventDefault());
+    panel.addEventListener('click', (event) => {
+      const button = (event.target as HTMLElement).closest('button');
+      if (!button) return;
+      input.value = button.textContent || '';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      hide();
+    });
+  };
+
+  document.querySelectorAll<HTMLInputElement>('input[data-suggestion-filter]').forEach(setupSearchSuggestions);
 </script>
 
 <style>
@@ -192,8 +258,9 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
 .compare-add-section { margin-bottom: 2.5rem; border: 1px solid var(--border, #e5e5e5); border-radius: 12px; padding: 1.25rem; background: var(--surface, #fff); }
 .compare-add-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
 .compare-add-header h2 { font-size: 1rem; margin: 0; white-space: nowrap; }
+.compare-autocomplete-field { flex: 1; min-width: 200px; max-width: 360px; }
 .compare-search-input {
-  flex: 1; min-width: 200px; max-width: 360px;
+  width: 100%;
   padding: 0.5rem 1rem;
   border: 1px solid var(--border, #ddd);
   border-radius: 8px;
