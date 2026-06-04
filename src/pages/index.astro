@@ -23,9 +23,6 @@ const quickBrands = brands
   .filter((brand) => brand.count > 0)
   .sort((a, b) => b.count - a.count || a.displayName.localeCompare(b.displayName))
   .slice(0, 9);
-const mapQuery = settings.storeAddress ? encodeURIComponent(settings.storeAddress) : '';
-const mapHref = mapQuery ? `https://www.google.com/maps/search/?api=1&query=${mapQuery}` : '';
-const mapEmbedSrc = mapQuery ? `https://www.google.com/maps?q=${mapQuery}&output=embed` : '';
 ---
 
 <PublicLayout title={`私人高級車顧問｜${settings.siteName}`}>
@@ -104,26 +101,5 @@ const mapEmbedSrc = mapQuery ? `https://www.google.com/maps?q=${mapQuery}&output
 
   {settings.videoLinksEnabled && videoLinks.length > 0 && (
     <VideoLinksSection links={videoLinks} sectionTitle={settings.videoLinksSectionTitle} />
-  )}
-
-  {settings.storeAddress && (
-    <section class="location-section reveal-section" aria-labelledby="location-title">
-      <div class="location-section__copy">
-        <p class="eyebrow">Location</p>
-        <h2 id="location-title">預約賞車位置</h2>
-        <p>{settings.storeAddress}</p>
-        {settings.businessHours && <span>{settings.businessHours}</span>}
-        {mapHref && <a href={mapHref} target="_blank" rel="noopener noreferrer">在 Google 地圖開啟</a>}
-      </div>
-      {mapEmbedSrc && (
-        <iframe
-          class="location-section__map"
-          src={mapEmbedSrc}
-          title={`${settings.siteName} Google 地圖`}
-          loading="lazy"
-          referrerpolicy="no-referrer-when-downgrade"
-        ></iframe>
-      )}
-    </section>
   )}
 </PublicLayout>

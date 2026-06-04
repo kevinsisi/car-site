@@ -4,11 +4,14 @@ import PremiumIcon from '@/components/PremiumIcon.astro';
 import { getSettings } from '@/lib/settings';
 
 const settings = await getSettings();
+const mapQuery = settings.storeAddress ? encodeURIComponent(settings.storeAddress) : '';
+const mapHref = mapQuery ? `https://www.google.com/maps/search/?api=1&query=${mapQuery}` : '#';
+const mapEmbedSrc = mapQuery ? `https://www.google.com/maps?q=${mapQuery}&output=embed` : '';
 const contactItems = [
   {
     title: '實體門市',
     body: settings.storeAddress || '預約後提供精確位置',
-    href: '#',
+    href: mapHref,
     icon: 'store',
   },
   {
@@ -52,4 +55,24 @@ const contactItems = [
       </a>
     ))}
   </section>
+  {settings.storeAddress && (
+    <section class="location-section location-section--contact reveal-section" aria-labelledby="contact-location-title">
+      <div class="location-section__copy">
+        <p class="eyebrow">Location</p>
+        <h2 id="contact-location-title">預約賞車位置</h2>
+        <p>{settings.storeAddress}</p>
+        {settings.businessHours && <span>{settings.businessHours}</span>}
+        <a href={mapHref} target="_blank" rel="noopener noreferrer">在 Google 地圖開啟</a>
+      </div>
+      {mapEmbedSrc && (
+        <iframe
+          class="location-section__map"
+          src={mapEmbedSrc}
+          title={`${settings.siteName} Google 地圖`}
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+        ></iframe>
+      )}
+    </section>
+  )}
 </PublicLayout>

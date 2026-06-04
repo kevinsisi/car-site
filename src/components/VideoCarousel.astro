@@ -7,6 +7,7 @@ interface Props {
 }
 const { videos, title, variant = 'default' } = Astro.props;
 if (!videos.length) return;
+const isTopStrip = variant === 'top-strip';
 
 function youtubeId(url: string): string | null {
   const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
@@ -18,28 +19,37 @@ function youtubeId(url: string): string | null {
   <section class:list={['video-carousel', { 'video-carousel--top-strip': variant === 'top-strip', 'reveal-section': variant !== 'top-strip' }]}>
     {title && <h2 class="video-carousel__title">{title}</h2>}
     <div class="video-carousel__stage" data-vcarousel>
-      {videos.map((video, index) => (
+      {videos.map((video, index) => {
+        const videoId = video.type === 'youtube' ? youtubeId(video.url) : null;
+        const youtubeParams = isTopStrip && videoId
+          ? `rel=0&autoplay=1&mute=1&loop=1&playlist=${videoId}&playsinline=1&controls=0&modestbranding=1`
+          : 'rel=0';
+        return (
         <div class={`video-carousel__item${index === 0 ? ' is-active' : ''}`} data-vitem={index}>
-          {video.type === 'youtube' && youtubeId(video.url) ? (
+          {video.type === 'youtube' && videoId ? (
             <iframe
-              src={`https://www.youtube.com/embed/${youtubeId(video.url)}?rel=0`}
+              src={`https://www.youtube.com/embed/${videoId}?${youtubeParams}`}
               title={video.label || `影片 ${index + 1}`}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowfullscreen
-              loading="lazy"
+              loading={index === 0 ? 'eager' : 'lazy'}
             ></iframe>
           ) : video.type === 'mp4' ? (
             <video
               src={video.url}
               poster={video.thumbnailUrl || undefined}
-              controls
-              preload="none"
+              controls={!isTopStrip}
+              autoplay={isTopStrip}
+              muted={isTopStrip}
+              loop={isTopStrip}
+              playsinline={isTopStrip}
+              preload={isTopStrip ? 'auto' : 'none'}
               title={video.label || `影片 ${index + 1}`}
             ></video>
           ) : null}
           {video.label && <p class="video-carousel__label">{video.label}</p>}
         </div>
-      ))}
+      );})}
     </div>
 
     {videos.length > 1 && (
@@ -68,13 +78,29 @@ function youtubeId(url: string): string | null {
     const dots = Array.from(section?.querySelectorAll<HTMLElement>('[data-vcarousel-dot]') ?? []);
     let current = 0;
 
+    const syncVideoPlayback = () => {
+      items.forEach((item, index) => {
+        const video = item.querySelector('video');
+        if (!video) return;
+        if (index === current) {
+          video.play().catch(() => undefined);
+        } else {
+          video.pause();
+          video.currentTime = 0;
+        }
+      });
+    };
+
     const show = (index: number) => {
       items[current]?.classList.remove('is-active');
       dots[current]?.classList.remove('is-active');
       current = (index + items.length) % items.length;
       items[current]?.classList.add('is-active');
       dots[current]?.classList.add('is-active');
+      syncVideoPlayback();
     };
+
+    syncVideoPlayback();
 
     section?.querySelector('[data-vcarousel-prev]')?.addEventListener('click', () => show(current - 1));
     section?.querySelector('[data-vcarousel-next]')?.addEventListener('click', () => show(current + 1));
