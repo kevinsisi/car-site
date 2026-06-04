@@ -127,10 +127,8 @@ export interface SiteSettings {
   videoLinksEnabled: boolean;
   videoLinksSectionTitle: string;
   notificationEmail: string;
-  smtpHost: string;
-  smtpPort: string;
-  smtpUser: string;
-  smtpPass: string;
+  gmailUser: string;
+  gmailAppPassword: string;
 }
 
 const defaults: SiteSettings = {
@@ -175,10 +173,8 @@ const defaults: SiteSettings = {
   videoLinksEnabled: false,
   videoLinksSectionTitle: '精選影片',
   notificationEmail: '',
-  smtpHost: '',
-  smtpPort: '587',
-  smtpUser: '',
-  smtpPass: '',
+  gmailUser: '',
+  gmailAppPassword: '',
 };
 
 function resolveDetailSpecFields(value: string | undefined): string[] {
@@ -262,10 +258,8 @@ export async function getSettings(): Promise<SiteSettings> {
     videoLinksEnabled: map.get('videoLinksEnabled') === 'true',
     videoLinksSectionTitle: map.get('videoLinksSectionTitle') || defaults.videoLinksSectionTitle,
     notificationEmail: map.get('notificationEmail') || '',
-    smtpHost: map.get('smtpHost') || '',
-    smtpPort: map.get('smtpPort') || '587',
-    smtpUser: map.get('smtpUser') || '',
-    smtpPass: map.get('smtpPass') || '',
+    gmailUser: map.get('gmailUser') || '',
+    gmailAppPassword: map.get('gmailAppPassword') || '',
   };
 }
 

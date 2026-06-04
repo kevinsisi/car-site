@@ -7,19 +7,20 @@ export const POST: APIRoute = async ({ cookies }) => {
   const _auth = await getAdminOrResponse(cookies);
   if (_auth instanceof Response) return _auth;
   const settings = await getSettings();
-  if (!settings.notificationEmail || !settings.smtpHost) {
-    return Response.json({ ok: false, error: '請先設定 SMTP 和通知信箱' });
+  if (!settings.gmailUser || !settings.gmailAppPassword) {
+    return Response.json({ ok: false, error: '請先設定 Gmail 帳號和應用程式密碼' });
   }
+  const to = settings.notificationEmail || settings.gmailUser;
   try {
     const transporter = nodemailer.createTransport({
-      host: settings.smtpHost,
-      port: Number.parseInt(settings.smtpPort || '587', 10),
-      secure: settings.smtpPort === '465',
-      auth: { user: settings.smtpUser, pass: settings.smtpPass },
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      auth: { user: settings.gmailUser, pass: settings.gmailAppPassword },
     });
     await transporter.sendMail({
-      from: settings.smtpUser,
-      to: settings.notificationEmail,
+      from: `"賣車通知" <${settings.gmailUser}>`,
+      to,
       subject: '測試信 — 賣車通知',
       text: '這是來自您網站的測試通知信。',
     });
