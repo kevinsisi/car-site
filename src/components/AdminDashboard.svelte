@@ -1414,19 +1414,16 @@
             {#each imageUrls() as url, index}
               <article class="image-sort-item" class:is-cover={index === 0} class:is-dragging={draggedImageIndex === index} draggable="true" ondragstart={() => { draggedImageIndex = index; }} ondragover={(event) => event.preventDefault()} ondrop={() => dropImage(index)} ondragend={() => { draggedImageIndex = null; }}>
                 <button type="button" class="image-sort-item__thumb" onclick={() => { lightboxImage = url; }} aria-label={`預覽圖片 ${index + 1}`}>
-                  <img src={url} alt={`車輛圖片 ${index + 1}`} />
+                  <img src={url} alt={`車輛圖片 ${index + 1}`} loading="lazy" />
                 </button>
-                <div>
-                  <strong>{index === 0 ? '★ 封面' : `第 ${index + 1} 張`}</strong>
-                  <span>{url}</span>
-                </div>
+                <span class="image-sort-item__index">{index + 1} / {imageUrls().length}</span>
                 <div class="image-sort-actions">
                   {#if index !== 0}
-                    <button type="button" onclick={() => setAsCover(index)}>設為封面</button>
+                    <button type="button" onclick={() => setAsCover(index)}>設封面</button>
                   {/if}
-                  <button type="button" onclick={() => moveImage(index, index - 1)} disabled={index === 0}>上移</button>
-                  <button type="button" onclick={() => moveImage(index, index + 1)} disabled={index === imageUrls().length - 1}>下移</button>
-                  <button type="button" class="row-button--danger" onclick={() => removeImage(index)}>移除</button>
+                  <button type="button" onclick={() => moveImage(index, index - 1)} disabled={index === 0}>←</button>
+                  <button type="button" onclick={() => moveImage(index, index + 1)} disabled={index === imageUrls().length - 1}>→</button>
+                  <button type="button" class="row-button--danger" onclick={() => removeImage(index)}>✕</button>
                 </div>
               </article>
             {/each}
