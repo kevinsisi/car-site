@@ -34,7 +34,7 @@
 
   <section class="settings-section">
     <h2>車輛詳情頁照片顯示方式</h2>
-    <p class="muted" style="margin-bottom:1.25rem">套用於所有車輛詳情頁，儲存後立即生效。</p>
+    <p class="muted">套用於所有車輛詳情頁，儲存後立即生效。</p>
 
     <div class="mode-list">
       {#each modes as mode (mode.value)}
@@ -64,9 +64,12 @@
 </div>
 
 <style>
-.mode-list { display: flex; flex-direction: column; gap: 0.75rem; max-width: 520px; }
-.mode-option { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.875rem 1rem; border: 2px solid #e5e5e5; border-radius: 8px; cursor: pointer; background: #fff; transition: border-color .15s; font-weight: normal; }
-.mode-option.is-selected { border-color: #2f66ad; background: #f0f6ff; }
+.mode-list { display: grid; gap: 0.75rem; max-width: 620px; }
+.mode-option { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: flex-start; gap: 0.85rem; padding: 0.95rem 1rem; border: 1px solid var(--line); border-radius: 0.95rem; cursor: pointer; background: color-mix(in srgb, var(--bg) 78%, var(--surface)); transition: border-color .15s, background .15s; font-weight: normal; color: var(--text); }
+.mode-option:hover { border-color: color-mix(in srgb, var(--accent) 52%, var(--line)); background: color-mix(in srgb, var(--accent) 7%, var(--surface)); }
+.mode-option.is-selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.mode-option input { width: 1.15rem; min-height: 1.15rem; margin-top: 0.12rem; accent-color: var(--accent); }
 .mode-label { display: flex; flex-direction: column; gap: 0.2rem; }
-.save-status { font-size: 0.85rem; color: #166534; }
+.mode-label strong { color: var(--accent-strong); }
+.save-status { font-size: 0.9rem; color: var(--accent-strong); }
 </style>

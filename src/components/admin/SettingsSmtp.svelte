@@ -39,7 +39,7 @@
   <div class="page-header"><h1>Email 通知設定</h1></div>
   <section class="settings-section">
     <h2>Gmail 通知</h2>
-    <p class="muted" style="margin-bottom:1rem">
+    <p class="muted">
       使用 Gmail 發送賣車申請通知。需先在 Google 帳號開啟兩步驟驗證，再產生應用程式密碼。
       <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener">前往產生 ↗</a>
     </p>
@@ -74,11 +74,13 @@
 </div>
 
 <style>
-.smtp-fields { display: flex; flex-direction: column; gap: 1rem; max-width: 480px; }
-.form-group { display: flex; flex-direction: column; gap: 0.35rem; }
-.form-group label { font-size: 0.875rem; font-weight: 600; }
-.form-group input { padding: 0.5rem 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.95rem; width: 100%; box-sizing: border-box; }
-.form-group small { font-size: 0.8rem; }
-.save-status { font-size: 0.85rem; color: #166534; }
-.test-status { font-size: 0.85rem; }
+.smtp-fields { display: grid; gap: 1rem; max-width: 560px; }
+.form-group { display: grid; gap: 0.4rem; }
+.form-group label { font-size: 0.92rem; font-weight: 800; color: var(--accent-strong); }
+.form-group small { font-size: 0.84rem; }
+.save-status { font-size: 0.9rem; color: var(--accent-strong); }
+.test-status { font-size: 0.9rem; color: var(--muted); }
+.form-actions button:not(.btn-primary) { min-height: 2.8rem; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--text); font: inherit; font-weight: 800; padding: 0 1rem; cursor: pointer; }
+.form-actions button:not(.btn-primary):hover { border-color: var(--accent); color: var(--accent-strong); }
+.form-actions button:disabled { opacity: 0.45; cursor: not-allowed; }
 </style>
