@@ -7,8 +7,6 @@ import { formatVehicleShareText, shareOriginFromRequest, vehicleShareUrl } from 
 import { listMonthlyRecommendedVehicles, listPublicBrands, listPublicInventoryVehicles, listPublicVehiclesByBrand, listSoldVehicles } from '@/lib/vehicles';
 
 const settings = await getSettings();
-const compareIdsParam = Astro.url.searchParams.get('ids') || '';
-const compareIds = compareIdsParam.split(',').map((s) => s.trim()).filter(Boolean);
 const activeBrand = Astro.url.searchParams.get('brand') || '';
 const tabParam = Astro.url.searchParams.get('tab');
 const searchQuery = (Astro.url.searchParams.get('q') || '').trim();
@@ -104,13 +102,6 @@ const vehicles = sortedVehicles;
           <span class="vehicle-count">{vehicles.length} 台車</span>
         </div>
       </div>
-      {compareIds.length > 0 && (
-        <div class="compare-bar">
-          <span>已選 {compareIds.length} 輛車</span>
-          <a href={`/cars/compare?ids=${compareIds.join(',')}`} class="btn-primary compare-bar__btn">查看比較</a>
-          <a href="/cars" class="compare-bar__clear">清除</a>
-        </div>
-      )}
       {vehicles.length === 0 ? (
         <div class="empty-state">
           <p class="eyebrow">目前無符合車輛</p>
@@ -120,7 +111,7 @@ const vehicles = sortedVehicles;
         </div>
       ) : (
         <div class="vehicle-grid listing-grid">
-          {vehicles.map((vehicle) => <VehicleCard vehicle={vehicle} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} compareIds={compareIds} />)}
+          {vehicles.map((vehicle) => <VehicleCard vehicle={vehicle} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
         </div>
       )}
     </div>
@@ -173,18 +164,5 @@ const vehicles = sortedVehicles;
     .brand-filter-icon {
       flex-shrink: 0;
     }
-    .compare-bar {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 0.75rem 1rem;
-      background: var(--accent-subtle, #e8f0fc);
-      border-radius: 8px;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
-      font-size: 0.875rem;
-    }
-    .compare-bar__btn { padding: 0.35rem 0.9rem; font-size: 0.875rem; }
-    .compare-bar__clear { color: var(--muted, #777); text-decoration: underline; }
   </style>
 </PublicLayout>

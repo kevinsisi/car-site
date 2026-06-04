@@ -1,0 +1,180 @@
+---
+// Floating compare bar — driven by localStorage, no server-side props needed
+---
+
+<div class="compare-bar" id="compare-bar" aria-hidden="true">
+  <div class="compare-bar__inner">
+    <span class="compare-bar__label">比較清單</span>
+    <div class="compare-bar__items" id="compare-bar-items"></div>
+    <div class="compare-bar__actions">
+      <a href="/cars/compare" class="compare-bar__go btn-primary" id="compare-go">
+        查看比較
+      </a>
+      <button type="button" class="compare-bar__clear" id="compare-clear" aria-label="清除比較清單">
+        清除
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const bar = document.getElementById('compare-bar')!;
+  const itemsEl = document.getElementById('compare-bar-items')!;
+  const goBtn = document.getElementById('compare-go') as HTMLAnchorElement;
+  const clearBtn = document.getElementById('compare-clear')!;
+
+  interface CompareItem { slug: string; title: string; thumb: string; }
+
+  function getItems(): CompareItem[] {
+    try {
+      const slugs: string[] = JSON.parse(localStorage.getItem('compare_slugs') || '[]');
+      const meta: Record<string, { title: string; thumb: string }> = JSON.parse(localStorage.getItem('compare_meta') || '{}');
+      return slugs.map((slug) => ({ slug, title: meta[slug]?.title || slug, thumb: meta[slug]?.thumb || '' }));
+    } catch { return []; }
+  }
+
+  function render() {
+    const items = getItems();
+    bar.setAttribute('aria-hidden', items.length === 0 ? 'true' : 'false');
+    bar.classList.toggle('is-visible', items.length > 0);
+    goBtn.href = `/cars/compare?ids=${items.map((i) => i.slug).join(',')}`;
+
+    itemsEl.innerHTML = '';
+    items.forEach(({ slug, title, thumb }) => {
+      const el = document.createElement('div');
+      el.className = 'compare-bar__item';
+      el.innerHTML = `
+        ${thumb ? `<img src="${thumb}" alt="${title}" />` : ''}
+        <span>${title}</span>
+        <button type="button" data-remove="${slug}" aria-label="移除 ${title}">✕</button>
+      `;
+      el.querySelector<HTMLButtonElement>('[data-remove]')!.addEventListener('click', () => {
+        const slugs: string[] = JSON.parse(localStorage.getItem('compare_slugs') || '[]');
+        localStorage.setItem('compare_slugs', JSON.stringify(slugs.filter((s) => s !== slug)));
+        window.dispatchEvent(new CustomEvent('compare-changed'));
+        render();
+      });
+      itemsEl.appendChild(el);
+    });
+  }
+
+  // Store metadata when compare buttons are clicked
+  document.addEventListener('click', (e) => {
+    const btn = (e.target as Element).closest<HTMLButtonElement>('[data-compare-slug]');
+    if (!btn) return;
+    const slug = btn.dataset.compareSlug!;
+    const title = btn.dataset.compareTitle || slug;
+    const thumb = btn.dataset.compareThumb || '';
+    const meta: Record<string, { title: string; thumb: string }> = JSON.parse(localStorage.getItem('compare_meta') || '{}');
+    meta[slug] = { title, thumb };
+    localStorage.setItem('compare_meta', JSON.stringify(meta));
+    render();
+  });
+
+  clearBtn.addEventListener('click', () => {
+    localStorage.removeItem('compare_slugs');
+    localStorage.removeItem('compare_meta');
+    window.dispatchEvent(new CustomEvent('compare-changed'));
+    render();
+  });
+
+  window.addEventListener('compare-changed', render);
+  window.addEventListener('storage', (e) => { if (e.key === 'compare_slugs') render(); });
+  render();
+</script>
+
+<style>
+.compare-bar {
+  position: fixed;
+  bottom: -120px;
+  left: 0; right: 0;
+  z-index: 300;
+  transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+.compare-bar.is-visible {
+  bottom: 0;
+  pointer-events: auto;
+}
+.compare-bar__inner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1.5rem;
+  background: var(--surface, #fff);
+  border-top: 2px solid var(--accent, #2f66ad);
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.12);
+  flex-wrap: wrap;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.compare-bar__label {
+  font-weight: 700;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  color: var(--accent, #2f66ad);
+}
+.compare-bar__items {
+  display: flex;
+  gap: 0.75rem;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.compare-bar__item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 4px 8px 4px 4px;
+  background: var(--surface-soft, #f5f5f5);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  max-width: 160px;
+}
+.compare-bar__item img {
+  width: 40px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.compare-bar__item span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.compare-bar__item button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted, #999);
+  font-size: 0.75rem;
+  padding: 0 2px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.compare-bar__item button:hover { color: #c00; }
+.compare-bar__actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-shrink: 0;
+}
+.compare-bar__go {
+  font-size: 0.875rem;
+  padding: 0.45rem 1.25rem;
+  text-decoration: none;
+  border-radius: 6px;
+}
+.compare-bar__clear {
+  font-size: 0.8rem;
+  background: none;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  color: var(--muted, #666);
+}
+.compare-bar__clear:hover { border-color: #999; }
+</style>

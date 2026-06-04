@@ -1,6 +1,7 @@
 ---
 import SocialIcon from '@/components/SocialIcon.astro';
 import PremiumIcon from '@/components/PremiumIcon.astro';
+import CompareBar from '@/components/CompareBar.astro';
 import { getSettings } from '@/lib/settings';
 import { siteIconHref } from '@/lib/site-icon';
 import { styleVars, styles, templates } from '@/lib/theme';
@@ -113,6 +114,7 @@ const socialIcons = settings.socialIcons || {};
     <main id="main">
       <slot />
     </main>
+    <CompareBar />
     <footer class="site-footer">
       <div class="site-footer__col site-footer__col--info">
         <strong>{settings.salespersonName}</strong>

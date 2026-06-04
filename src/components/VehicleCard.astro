@@ -7,17 +7,9 @@ import { vehicleStatusLabels } from '@/lib/vehicle-status';
 interface Props {
   vehicle: VehicleView;
   shareText?: string;
-  compareIds?: string[];
 }
 
-const { vehicle, shareText, compareIds = [] } = Astro.props;
-const isComparing = compareIds.includes(vehicle.slug);
-const newCompareIds = isComparing
-  ? compareIds.filter((id) => id !== vehicle.slug)
-  : [...compareIds, vehicle.slug];
-const compareHref = newCompareIds.length
-  ? `/cars/compare?ids=${newCompareIds.join(',')}`
-  : '/cars/compare';
+const { vehicle, shareText } = Astro.props;
 const image = vehicle.coverImage;
 const statusBadge = vehicle.status !== 'published' ? vehicleStatusLabels[vehicle.status] : '';
 const specs = [
@@ -76,10 +68,46 @@ const specs = [
     </div>
   </a>
   <ShareButton class="vehicle-share" title={vehicle.title} url={`/cars/${vehicle.slug}`} text={shareText} />
-  <a href={compareHref} class={`compare-btn${isComparing ? ' compare-btn--active' : ''}`}>
-    {isComparing ? '✓ 已加入' : '＋ 比較'}
-  </a>
+  <button
+    type="button"
+    class="compare-btn"
+    data-compare-slug={vehicle.slug}
+    data-compare-title={vehicle.cardTitle}
+    data-compare-thumb={vehicle.coverImage?.thumbUrl || vehicle.coverImage?.url || ''}
+    aria-label={`加入比較：${vehicle.title}`}
+  >
+    ＋ 比較
+  </button>
 </article>
+
+<script>
+  // Update button state from localStorage on load and on changes
+  function refreshCompareButtons() {
+    const stored = JSON.parse(localStorage.getItem('compare_slugs') || '[]') as string[];
+    document.querySelectorAll<HTMLButtonElement>('[data-compare-slug]').forEach((btn) => {
+      const slug = btn.dataset.compareSlug!;
+      const active = stored.includes(slug);
+      btn.classList.toggle('compare-btn--active', active);
+      btn.textContent = active ? '✓ 已加入' : '＋ 比較';
+    });
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('[data-compare-slug]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const slug = btn.dataset.compareSlug!;
+      const stored: string[] = JSON.parse(localStorage.getItem('compare_slugs') || '[]');
+      const idx = stored.indexOf(slug);
+      if (idx >= 0) stored.splice(idx, 1);
+      else stored.push(slug);
+      localStorage.setItem('compare_slugs', JSON.stringify(stored));
+      window.dispatchEvent(new CustomEvent('compare-changed', { detail: stored }));
+      refreshCompareButtons();
+    });
+  });
+
+  refreshCompareButtons();
+  window.addEventListener('compare-changed', refreshCompareButtons);
+</script>
 
 <style>
   .compare-btn {
@@ -88,13 +116,15 @@ const specs = [
     padding: 3px 10px;
     border: 1px solid var(--border, #e5e5e5);
     border-radius: 4px;
-    text-decoration: none;
+    background: none;
+    cursor: pointer;
     color: var(--muted, #777);
     transition: all 0.15s;
   }
   .compare-btn--active {
     border-color: var(--accent, #0066cc);
     color: var(--accent, #0066cc);
+    background: var(--accent-subtle, #f0f6ff);
   }
   .compare-btn:hover { opacity: 0.8; }
 </style>
