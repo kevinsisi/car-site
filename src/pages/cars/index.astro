@@ -76,15 +76,6 @@ const vehicles = sortedVehicles;
     </aside>
     <div class="filter-scrim" aria-hidden="true"></div>
     <div class="inventory-content">
-      <nav class="mobile-filter-strip" aria-label="車輛篩選">
-        <form class="listing-search" action="/cars" method="get" role="search">
-          {activeBrand && <input type="hidden" name="brand" value={activeBrand} />}
-          {!activeBrand && activeTab !== 'all' && <input type="hidden" name="tab" value={activeTab} />}
-          {activeSort !== 'recent' && <input type="hidden" name="sort" value={activeSort} />}
-          <input type="search" name="q" value={searchQuery} placeholder="搜尋車款、品牌、年份" aria-label="搜尋車輛" />
-        </form>
-        <button class={`filter-toggle ${activeBrandLabel || activeTab === 'recommended' || activeTab === 'sold' ? 'is-active' : ''}`} type="button" aria-expanded="false" aria-controls="brand-filter-panel">{activeBrandLabel || (activeTab === 'recommended' ? '本月精選' : activeTab === 'sold' ? '成交實錄' : '品牌列表')}</button>
-      </nav>
       <div class="inventory-toolbar">
         <div>
           <p class="eyebrow">選車</p>
@@ -102,6 +93,15 @@ const vehicles = sortedVehicles;
           <span class="vehicle-count">{vehicles.length} 台車</span>
         </div>
       </div>
+      <nav class="mobile-filter-strip" aria-label="車輛篩選">
+        <form class="listing-search" action="/cars" method="get" role="search">
+          {activeBrand && <input type="hidden" name="brand" value={activeBrand} />}
+          {!activeBrand && activeTab !== 'all' && <input type="hidden" name="tab" value={activeTab} />}
+          {activeSort !== 'recent' && <input type="hidden" name="sort" value={activeSort} />}
+          <input type="search" name="q" value={searchQuery} placeholder="搜尋車款、品牌、年份" aria-label="搜尋車輛" />
+        </form>
+        <button class={`filter-toggle ${activeBrandLabel || activeTab === 'recommended' || activeTab === 'sold' ? 'is-active' : ''}`} type="button" aria-expanded="false" aria-controls="brand-filter-panel">{activeBrandLabel || (activeTab === 'recommended' ? '本月精選' : activeTab === 'sold' ? '成交實錄' : '品牌列表')}</button>
+      </nav>
       {vehicles.length === 0 ? (
         <div class="empty-state">
           <p class="eyebrow">目前無符合車輛</p>
