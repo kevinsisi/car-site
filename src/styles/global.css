@@ -226,6 +226,9 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
 .vehicle-share svg { width: 1.715rem; height: 1.715rem; }
 .vehicle-share:hover { opacity: 1; transform: translateY(-1px); }
 
+.vehicle-card__brand-badge { position: absolute; bottom: 8px; right: 8px; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; background: rgba(255, 255, 255, 0.92); border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,0.18); padding: 4px; }
+.vehicle-card__brand-badge .brand-icon { width: 28px; height: 28px; }
+
 .vehicle-card__body { padding: 1.25rem; }
 
 .vehicle-card h2 { margin: 0.45rem 0; font-size: clamp(1.35rem, 2.3vw, 2rem); line-height: 1.12; white-space: pre-line; }

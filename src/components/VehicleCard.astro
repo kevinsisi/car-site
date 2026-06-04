@@ -1,6 +1,7 @@
 ---
 import type { VehicleView } from '@/lib/vehicles';
 import ShareButton from './ShareButton.astro';
+import BrandIcon from './BrandIcon.astro';
 import { vehicleStatusLabels } from '@/lib/vehicle-status';
 
 interface Props {
@@ -27,6 +28,11 @@ const specs = [
       ) : vehicle.monthlyRecommended ? (
         <span class="vehicle-badge">本月推薦</span>
       ) : null}
+      {vehicle.brandIconUrl && (
+        <span class="vehicle-card__brand-badge" aria-hidden="true">
+          <BrandIcon iconUrl={vehicle.brandIconUrl} alt={vehicle.brandDisplayName} size={32} />
+        </span>
+      )}
     </div>
       <div class="vehicle-card__body">
         <p class="eyebrow">{vehicle.brandDisplayName}</p>
