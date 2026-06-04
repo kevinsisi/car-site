@@ -5,6 +5,8 @@ import { defaultDetailSpecFields } from './detail-spec-fields';
 import { sanitizeImageUrl, sanitizePublicHref } from './safe-url';
 import { resolveStyle, resolveTemplate, type StyleId, type TemplateId } from './theme';
 
+export type GalleryMode = 'lightbox' | 'slider' | 'thumbnail-strip' | 'grid';
+
 export type SocialPlatform = 'line' | 'instagram' | 'facebook' | 'threads' | 'tiktok' | 'phone' | 'share';
 
 export interface SocialIconConfig {
@@ -108,6 +110,7 @@ export interface SiteSettings {
   importBehavior: ImportBehavior;
   showSoldVehicles: boolean;
   socialIcons: SocialIconsMap;
+  galleryMode: GalleryMode;
 }
 
 const defaults: SiteSettings = {
@@ -145,6 +148,7 @@ const defaults: SiteSettings = {
   importBehavior: 'draft_first',
   showSoldVehicles: false,
   socialIcons: {},
+  galleryMode: 'lightbox',
 };
 
 function resolveDetailSpecFields(value: string | undefined): string[] {
@@ -206,6 +210,11 @@ export async function getSettings(): Promise<SiteSettings> {
         : defaults.importBehavior,
     showSoldVehicles: map.get('showSoldVehicles') === 'true',
     socialIcons: parseSocialIcons(map.get('socialIcons')),
+    galleryMode: (() => {
+      const v = map.get('galleryMode');
+      if (v === 'slider' || v === 'thumbnail-strip' || v === 'grid') return v;
+      return 'lightbox';
+    })(),
   };
 }
 
