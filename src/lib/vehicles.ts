@@ -23,6 +23,7 @@ export interface VehicleView {
   brand: string;
   brandDisplayName: string;
   brandUrlSlug: string;
+  brandIconUrl: string | null;
   model: string;
   subModel: string;
   year: string;
@@ -129,6 +130,7 @@ async function attachImages(rows: (typeof vehicles.$inferSelect)[]): Promise<Veh
       brand: row.brand,
       brandDisplayName,
       brandUrlSlug: brandAlias?.urlSlug || '',
+      brandIconUrl: brandAlias?.iconUrl ?? null,
       model: row.model,
       subModel: row.subModel,
       year: row.year,
@@ -154,13 +156,18 @@ async function attachImages(rows: (typeof vehicles.$inferSelect)[]): Promise<Veh
   });
 }
 
-export async function listPublicBrands(): Promise<{ displayName: string; urlSlug: string; count: number }[]> {
-  const vehicles = await listPublicInventoryVehicles();
-  const countMap = new Map<string, { displayName: string; urlSlug: string; count: number }>();
-  for (const vehicle of vehicles) {
+export async function listPublicBrands(): Promise<{ displayName: string; urlSlug: string; count: number; iconUrl: string | null }[]> {
+  const allVehicles = await listPublicInventoryVehicles();
+  const countMap = new Map<string, { displayName: string; urlSlug: string; count: number; iconUrl: string | null }>();
+  for (const vehicle of allVehicles) {
     if (!vehicle.brandUrlSlug) continue;
     const key = vehicle.brandUrlSlug;
-    const current = countMap.get(key) || { displayName: vehicle.brandDisplayName, urlSlug: vehicle.brandUrlSlug, count: 0 };
+    const current = countMap.get(key) || {
+      displayName: vehicle.brandDisplayName,
+      urlSlug: vehicle.brandUrlSlug,
+      count: 0,
+      iconUrl: vehicle.brandIconUrl,
+    };
     current.count += 1;
     countMap.set(key, current);
   }
