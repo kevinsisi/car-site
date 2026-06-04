@@ -14,6 +14,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       sourceBrand: String(item.sourceBrand || ''),
       displayName: String(item.displayName || ''),
       urlSlug: String(item.urlSlug || ''),
+      iconUrl: typeof item.iconUrl === 'string' && item.iconUrl ? item.iconUrl : null,
     })),
   );
   return Response.json({ ok: true });
