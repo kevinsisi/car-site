@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { asc } from 'drizzle-orm';
+import sharp from 'sharp';
 import { db } from '@/db/connection';
 import { siteVideoLinks } from '@/db/schema';
 import { appConfig } from './config';
@@ -106,6 +107,35 @@ async function downloadThumbnail(url: string): Promise<string | null> {
   }
 }
 
+async function writeGeneratedThumbnail(label: string): Promise<string | null> {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const dir = path.join(thumbnailDir, today);
+    const root = path.resolve(mediaRoot);
+    const resolvedDir = path.resolve(dir);
+    if (!resolvedDir.startsWith(root + path.sep)) return null;
+    await fs.promises.mkdir(resolvedDir, { recursive: true });
+    const filename = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.png`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+      <defs>
+        <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0" stop-color="#833ab4"/><stop offset="0.48" stop-color="#fd1d1d"/><stop offset="1" stop-color="#fcb045"/>
+        </linearGradient>
+      </defs>
+      <rect width="960" height="540" rx="42" fill="url(#g)"/>
+      <rect x="280" y="96" width="400" height="348" rx="92" fill="none" stroke="rgba(255,255,255,.86)" stroke-width="32"/>
+      <circle cx="480" cy="270" r="82" fill="none" stroke="rgba(255,255,255,.86)" stroke-width="32"/>
+      <circle cx="604" cy="176" r="24" fill="rgba(255,255,255,.92)"/>
+      <rect x="0" y="376" width="960" height="164" fill="rgba(0,0,0,.22)"/>
+      <text x="480" y="466" text-anchor="middle" font-family="Arial, sans-serif" font-size="54" font-weight="900" fill="#fff">${label}</text>
+    </svg>`;
+    await sharp(Buffer.from(svg)).png().toFile(path.join(resolvedDir, filename));
+    return `/media/video-thumbnails/${today}/${filename}`;
+  } catch {
+    return null;
+  }
+}
+
 function firstMetaImage(html: string, baseUrl: string): string | null {
   const match =
     html.match(/<meta[^>]+(?:property|name)=["'](?:og:image|og:image:secure_url|twitter:image)["'][^>]+content=["']([^"']+)["']/i) ||
@@ -147,7 +177,11 @@ export async function fetchVideoThumbnail(url: string): Promise<string | null> {
     if (metaImage) return (await downloadThumbnail(metaImage)) || metaImage;
   }
 
-  return instagramFallback ? (await downloadThumbnail(instagramFallback)) || instagramFallback : null;
+  if (instagramFallback) {
+    return (await downloadThumbnail(instagramFallback)) || (await writeGeneratedThumbnail('Instagram Reel')) || instagramFallback;
+  }
+
+  return null;
 }
 
 export async function fetchOgImage(url: string): Promise<string | null> {
