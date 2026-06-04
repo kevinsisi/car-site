@@ -1,5 +1,6 @@
 ---
 import VehicleCard from '@/components/VehicleCard.astro';
+import BrandIcon from '@/components/BrandIcon.astro';
 import PublicLayout from '@/layouts/PublicLayout.astro';
 import { getSettings } from '@/lib/settings';
 import { formatVehicleShareText, shareOriginFromRequest, vehicleShareUrl } from '@/lib/vehicle-share';
@@ -68,7 +69,7 @@ const vehicles = sortedVehicles;
         <a class={activeTab === 'all' ? 'is-active' : ''} href="/cars"><span>全部</span><strong>{allVehicles.length}</strong></a>
         <a class={activeTab === 'recommended' ? 'is-active' : ''} href="/cars?tab=recommended"><span>本月精選</span><strong>{recommendedVehicles.length}</strong></a>
         {brands.map((brand) => (
-          <a class={activeBrand === brand.urlSlug ? 'is-active' : ''} href={`/cars?brand=${brand.urlSlug}`}><span>{brand.displayName}</span><strong>{brand.count}</strong></a>
+          <a class={activeBrand === brand.urlSlug ? 'is-active' : ''} href={`/cars?brand=${brand.urlSlug}`}><BrandIcon iconUrl={brand.iconUrl} alt="" size={20} class="brand-filter-icon" /><span>{brand.displayName}</span><strong>{brand.count}</strong></a>
         ))}
         <a class={`brand-list__sold ${activeTab === 'sold' ? 'is-active' : ''}`} href="/cars?tab=sold"><span>成交實錄</span><strong>{soldVehicles.length}</strong></a>
       </nav>
@@ -154,4 +155,14 @@ const vehicles = sortedVehicles;
     updateCarsCompact();
     window.addEventListener('scroll', updateCarsCompact, { passive: true });
   </script>
+  <style>
+    .brand-list a {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .brand-filter-icon {
+      flex-shrink: 0;
+    }
+  </style>
 </PublicLayout>
