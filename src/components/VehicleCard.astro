@@ -7,9 +7,10 @@ import { vehicleStatusLabels } from '@/lib/vehicle-status';
 interface Props {
   vehicle: VehicleView;
   shareText?: string;
+  variant?: 'featured' | 'listing';
 }
 
-const { vehicle, shareText } = Astro.props;
+const { vehicle, shareText, variant = 'featured' } = Astro.props;
 const image = vehicle.coverImage;
 const statusBadge = vehicle.status !== 'published' ? vehicleStatusLabels[vehicle.status] : '';
 const specs = [
@@ -19,7 +20,7 @@ const specs = [
 ].filter((spec) => spec.value);
 ---
 
-<article class="vehicle-card reveal-card">
+<article class:list={['vehicle-card', 'reveal-card', `vehicle-card--${variant}`]}>
   <a href={`/cars/${vehicle.slug}`} aria-label={`查看 ${vehicle.title}`} rel="prefetch">
     <div class="vehicle-card__media">
       {image ? <img src={image.thumbUrl} alt={image.alt || `${vehicle.title} 封面照`} loading="lazy" decoding="async" width="800" height="533" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px" /> : <div class="image-placeholder">相片整理中</div>}

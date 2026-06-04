@@ -19,6 +19,9 @@ const heroBySlug = settings.heroVehicleSlug ? featuredVehicles.find((v) => v.slu
 const hero = heroBySlug || featuredVehicles[0] || soldCaseVehicles[0];
 const shareOrigin = shareOriginFromRequest(Astro.request, Astro.url);
 const featuredCount = Math.max(1, Math.min(12, settings.featuredCount ?? 3));
+const mapQuery = settings.storeAddress ? encodeURIComponent(settings.storeAddress) : '';
+const mapHref = mapQuery ? `https://www.google.com/maps/search/?api=1&query=${mapQuery}` : '';
+const mapEmbedSrc = mapQuery ? `https://www.google.com/maps?q=${mapQuery}&output=embed` : '';
 ---
 
 <PublicLayout title={`私人高級車顧問｜${settings.siteName}`}>
@@ -49,7 +52,7 @@ const featuredCount = Math.max(1, Math.min(12, settings.featuredCount ?? 3));
   </section>
   {featuredVehicles.length > 0 && (
     <div class="vehicle-grid">
-      {featuredVehicles.slice(0, featuredCount).map((vehicle) => <VehicleCard vehicle={vehicle} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
+      {featuredVehicles.slice(0, featuredCount).map((vehicle) => <VehicleCard vehicle={vehicle} variant="featured" shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
     </div>
   )}
 
@@ -71,7 +74,7 @@ const featuredCount = Math.max(1, Math.min(12, settings.featuredCount ?? 3));
         <a href="/cars">瀏覽車庫</a>
       </section>
       <div class="vehicle-grid sold-case-grid">
-        {soldCaseVehicles.map((vehicle) => <VehicleCard vehicle={vehicle} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
+        {soldCaseVehicles.map((vehicle) => <VehicleCard vehicle={vehicle} variant="featured" shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
       </div>
     </>
   )}
@@ -82,5 +85,26 @@ const featuredCount = Math.max(1, Math.min(12, settings.featuredCount ?? 3));
 
   {settings.videoLinksEnabled && videoLinks.length > 0 && (
     <VideoLinksSection links={videoLinks} sectionTitle={settings.videoLinksSectionTitle} />
+  )}
+
+  {settings.storeAddress && (
+    <section class="location-section reveal-section" aria-labelledby="location-title">
+      <div class="location-section__copy">
+        <p class="eyebrow">Location</p>
+        <h2 id="location-title">預約賞車位置</h2>
+        <p>{settings.storeAddress}</p>
+        {settings.businessHours && <span>{settings.businessHours}</span>}
+        {mapHref && <a href={mapHref} target="_blank" rel="noopener noreferrer">在 Google 地圖開啟</a>}
+      </div>
+      {mapEmbedSrc && (
+        <iframe
+          class="location-section__map"
+          src={mapEmbedSrc}
+          title={`${settings.siteName} Google 地圖`}
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+        ></iframe>
+      )}
+    </section>
   )}
 </PublicLayout>

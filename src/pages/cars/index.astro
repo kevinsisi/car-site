@@ -152,7 +152,7 @@ const vehicles = sortedVehicles;
         </div>
       ) : (
         <div class="vehicle-grid listing-grid">
-          {vehicles.map((vehicle) => <VehicleCard vehicle={vehicle} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
+          {vehicles.map((vehicle) => <VehicleCard vehicle={vehicle} variant="listing" shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
         </div>
       )}
     </div>

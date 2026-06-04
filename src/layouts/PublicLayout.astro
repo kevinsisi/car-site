@@ -65,6 +65,8 @@ const socialLinks = [
   { platform: 'tiktok', href: settings.tiktokUrl, label: 'TikTok' },
 ].filter((item) => item.href && item.href !== '#') as { platform: 'line' | 'instagram' | 'facebook' | 'threads' | 'tiktok'; href: string; label: string }[];
 const socialIcons = settings.socialIcons || {};
+const mapQuery = settings.storeAddress ? encodeURIComponent(settings.storeAddress) : '';
+const mapHref = mapQuery ? `https://www.google.com/maps/search/?api=1&query=${mapQuery}` : '';
 ---
 
 <!doctype html>
@@ -104,6 +106,12 @@ const socialIcons = settings.socialIcons || {};
         <a href="/contact" aria-current={isCurrentPath('/contact') ? 'page' : undefined}>聯絡</a>
       </nav>
       <div class="site-cta">
+        {mapHref && (
+          <a class="site-address" href={mapHref} target="_blank" rel="noopener noreferrer" aria-label={`查看地址：${settings.storeAddress}`}>
+            <span class="site-address__label">地址</span>
+            <span class="site-address__text">{settings.storeAddress}</span>
+          </a>
+        )}
         <a class="site-cta__link site-cta__link--line" href={settings.lineUrl}>
           <PremiumIcon platform="line" label="LINE" customIcon={socialIcons.line} />
           <span>LINE 洽詢</span>
