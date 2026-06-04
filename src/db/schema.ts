@@ -54,6 +54,7 @@ export const brandAliases = sqliteTable('brand_aliases', {
   sourceBrand: text('source_brand').primaryKey(),
   displayName: text('display_name').notNull(),
   urlSlug: text('url_slug').notNull().default(''),
+  iconUrl: text('icon_url'),
   updatedAt: text('updated_at').notNull(),
 });
 
