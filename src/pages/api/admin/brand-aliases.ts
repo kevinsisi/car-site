@@ -1,9 +1,10 @@
 import type { APIRoute } from 'astro';
-import { requireAdmin } from '@/lib/auth';
+import { requirePermission } from '@/lib/auth';
+import { PERMISSIONS } from '@/lib/permissions';
 import { setBrandAliases } from '@/lib/brand-aliases';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-  await requireAdmin(cookies);
+  await requirePermission(cookies, PERMISSIONS.BRANDS_VIEW);
   const body = await request.json();
   if (!Array.isArray(body.aliases)) {
     return Response.json({ error: 'aliases must be an array' }, { status: 400 });

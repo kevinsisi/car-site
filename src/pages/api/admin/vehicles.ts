@@ -1,10 +1,11 @@
 import type { APIRoute } from 'astro';
-import { requireAdmin } from '@/lib/auth';
+import { requirePermission } from '@/lib/auth';
+import { PERMISSIONS } from '@/lib/permissions';
 import { upsertVehicle } from '@/lib/vehicles';
 import { isVehicleStatus } from '@/lib/vehicle-status';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-  await requireAdmin(cookies);
+  await requirePermission(cookies, PERMISSIONS.VEHICLES_EDIT);
   const body = await request.json();
   if (!body.title || !body.brand || !body.model) {
     return Response.json({ error: 'title, brand, and model are required' }, { status: 400 });
