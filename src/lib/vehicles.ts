@@ -2,13 +2,14 @@ import { and, asc, desc, eq, inArray, ne } from 'drizzle-orm';
 import { db } from '@/db/connection';
 import { importMappings, vehicleImages, vehicles, type PublishMode, type VehicleStatus } from '@/db/schema';
 import { getBrandAliasMap } from './brand-aliases';
-import { optimizedMediaUrl } from './media';
+import { optimizedMediaUrl, thumbnailMediaUrl } from './media';
 import { getSettings } from './settings';
 import { alwaysPublicVehicleStatuses, isPublicVehicleStatus, mapSourceInventoryStatus } from './vehicle-status';
 
 export interface VehicleImageView {
   id: string;
   url: string;
+  thumbUrl: string; // 600px WebP thumbnail (falls back to url if not generated yet)
   alt: string;
   sortOrder: number;
   isCover: boolean;
@@ -114,7 +115,8 @@ async function attachImages(rows: (typeof vehicles.$inferSelect)[]): Promise<Veh
   const imageMap = new Map<string, VehicleImageView[]>();
   for (const image of images) {
     const list = imageMap.get(image.vehicleId) || [];
-    list.push({ id: image.id, url: optimizedMediaUrl(image.url), alt: image.alt, sortOrder: image.sortOrder, isCover: image.isCover });
+    const fullUrl = optimizedMediaUrl(image.url);
+    list.push({ id: image.id, url: fullUrl, thumbUrl: thumbnailMediaUrl(image.url), alt: image.alt, sortOrder: image.sortOrder, isCover: image.isCover });
     imageMap.set(image.vehicleId, list);
   }
   return rows.map((row) => {

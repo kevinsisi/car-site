@@ -21,6 +21,8 @@ const { images, title, coverImageIndex = 0 } = Astro.props;
         alt={images[coverImageIndex]?.alt || `${title} 封面照`}
         fetchpriority="high"
         decoding="async"
+        width="1200" height="675"
+        sizes="(max-width: 768px) 100vw, 800px"
       />
     </button>
     {images.length > 1 && (
@@ -34,7 +36,7 @@ const { images, title, coverImageIndex = 0 } = Astro.props;
             role="listitem"
             aria-label={`查看第 ${index + 1} 張`}
           >
-            <img src={image.url} alt={image.alt || `${title} 第 ${index + 1} 張`} loading="lazy" decoding="async" />
+            <img src={image.thumbUrl} data-full={image.url} alt={image.alt || `${title} 第 ${index + 1} 張`} loading="lazy" decoding="async" width="100" height="56" />
           </button>
         ))}
       </div>
@@ -55,7 +57,9 @@ const { images, title, coverImageIndex = 0 } = Astro.props;
         active = i;
         thumb.classList.add('is-active');
         const thumbImg = thumb.querySelector('img');
-        if (mainImg && thumbImg?.src) { mainImg.src = thumbImg.src; mainImg.alt = thumbImg.alt; }
+        // Use full-res url from data-full if available, else fall back to thumb src
+        const fullSrc = thumbImg?.dataset.full || thumbImg?.src;
+        if (mainImg && fullSrc) { mainImg.src = fullSrc; mainImg.alt = thumbImg?.alt ?? ''; }
         if (main) main.dataset.galleryIndex = String(i);
       });
     });

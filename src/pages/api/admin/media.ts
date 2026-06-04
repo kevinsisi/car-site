@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { APIRoute } from 'astro';
+import sharp from 'sharp';
 import { getAdminOrResponse } from '@/lib/auth';
 import { appConfig } from '@/lib/config';
 
@@ -20,6 +21,28 @@ function safeName(name: string) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 48) || 'vehicle-image';
+}
+
+// Generate WebP full + thumbnail in __optimized (non-blocking, best-effort)
+async function generateOptimized(srcPath: string, relDir: string, baseName: string): Promise<void> {
+  const optimizedDir = path.join(mediaRoot, '__optimized', relDir);
+  await fs.promises.mkdir(optimizedDir, { recursive: true });
+
+  const img = sharp(srcPath).rotate(); // auto-rotate from EXIF
+  const meta = await img.metadata();
+  const w = meta.width ?? 1800;
+
+  // Full WebP — max 1800px, q82 (typically 80-90% smaller than original JPG)
+  await img.clone()
+    .resize({ width: Math.min(w, 1800), withoutEnlargement: true })
+    .webp({ quality: 82 })
+    .toFile(path.join(optimizedDir, `${baseName}.webp`));
+
+  // Thumbnail WebP — max 600px, q75 (for gallery strips, car cards)
+  await img.clone()
+    .resize({ width: Math.min(w, 600), withoutEnlargement: true })
+    .webp({ quality: 75 })
+    .toFile(path.join(optimizedDir, `${baseName}-thumb.webp`));
 }
 
 export const POST: APIRoute = async ({ request, cookies }) => {
@@ -50,10 +73,17 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     const id = crypto.randomUUID().slice(0, 8);
-    const filename = `${Date.now()}-${id}-${safeName(file.name)}${ext}`;
+    const baseName = `${Date.now()}-${id}-${safeName(file.name)}`;
+    const filename = `${baseName}${ext}`;
     const filePath = path.join(uploadDir, filename);
     const buffer = Buffer.from(await file.arrayBuffer());
     await fs.promises.writeFile(filePath, buffer, { flag: 'wx' });
+
+    // Fire-and-forget optimization (won't delay upload response)
+    generateOptimized(filePath, `uploads/${today}`, baseName).catch((err) =>
+      console.error('[media] optimize failed:', baseName, err)
+    );
+
     urls.push(`/media/uploads/${today}/${filename}`);
   }
 
