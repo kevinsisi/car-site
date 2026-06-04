@@ -2,11 +2,12 @@ import { asc, eq } from 'drizzle-orm';
 import type { APIRoute } from 'astro';
 import { db } from '@/db/connection';
 import { adminUsers } from '@/db/schema';
-import { requireAdmin } from '@/lib/auth';
+import { getAdminOrResponse } from '@/lib/auth';
 import { hashPassword } from '@/lib/crypto';
 
 export const GET: APIRoute = async ({ cookies }) => {
-  await requireAdmin(cookies);
+  const _auth = await getAdminOrResponse(cookies);
+  if (_auth instanceof Response) return _auth;
   const rows = await db
     .select({ id: adminUsers.id, username: adminUsers.username, createdAt: adminUsers.createdAt })
     .from(adminUsers)
@@ -15,7 +16,8 @@ export const GET: APIRoute = async ({ cookies }) => {
 };
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-  await requireAdmin(cookies);
+  const _auth = await getAdminOrResponse(cookies);
+  if (_auth instanceof Response) return _auth;
   const body = await request.json().catch(() => ({}));
   const username = String(body.username || '').trim();
   const password = String(body.password || '');

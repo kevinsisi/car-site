@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { requireAdmin } from '@/lib/auth';
+import { getAdminOrResponse } from '@/lib/auth';
 import { PERMISSIONS } from '@/lib/permissions';
 import { detailSpecFieldOptions } from '@/lib/detail-spec-fields';
 import { sanitizeImageUrl, sanitizePublicHref } from '@/lib/safe-url';
@@ -9,7 +9,9 @@ import { resolveStyle, resolveTemplate } from '@/lib/theme';
 const allowedDetailSpecFields = new Set<string>(detailSpecFieldOptions.map((field) => field.key));
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-  const user = await requireAdmin(cookies);
+  const _user = await getAdminOrResponse(cookies);
+  if (_user instanceof Response) return _user;
+  const user = _user;
   const settingsPerms = PERMISSIONS.SETTINGS_BASIC | PERMISSIONS.SETTINGS_LAYOUT | PERMISSIONS.SETTINGS_GALLERY | PERMISSIONS.SETTINGS_SMTP;
   if (user.role !== 'superadmin' && (user.permissions & settingsPerms) === 0) {
     return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403, headers: { 'content-type': 'application/json' } });

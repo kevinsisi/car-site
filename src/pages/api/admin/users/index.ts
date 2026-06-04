@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { requirePermission } from '@/lib/auth';
+import { getPermittedOrResponse } from '@/lib/auth';
 import { PERMISSIONS } from '@/lib/permissions';
 import { db } from '@/db/connection';
 import { adminUsers } from '@/db/schema';
@@ -7,7 +7,9 @@ import { asc, eq } from 'drizzle-orm';
 import { hashPassword } from '@/lib/crypto';
 
 export const GET: APIRoute = async ({ cookies }) => {
-  await requirePermission(cookies, PERMISSIONS.USERS_MANAGE);
+  const _auth = await getPermittedOrResponse(cookies, PERMISSIONS.USERS_MANAGE);
+  if (_auth instanceof Response) return _auth;
+  const user = _auth;
   const rows = await db.select({
     id: adminUsers.id,
     username: adminUsers.username,
@@ -19,7 +21,9 @@ export const GET: APIRoute = async ({ cookies }) => {
 };
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-  const creator = await requirePermission(cookies, PERMISSIONS.USERS_MANAGE);
+  const _creator = await getPermittedOrResponse(cookies, PERMISSIONS.USERS_MANAGE);
+  if (_creator instanceof Response) return _creator;
+  const creator = _creator;
   if (creator.role !== 'superadmin') {
     return Response.json({ error: '只有 superadmin 可以建立用戶' }, { status: 403 });
   }

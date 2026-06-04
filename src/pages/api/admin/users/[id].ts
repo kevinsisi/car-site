@@ -1,12 +1,14 @@
 import type { APIRoute } from 'astro';
-import { requirePermission } from '@/lib/auth';
+import { getPermittedOrResponse } from '@/lib/auth';
 import { PERMISSIONS } from '@/lib/permissions';
 import { db } from '@/db/connection';
 import { adminUsers } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 export const DELETE: APIRoute = async ({ params, cookies }) => {
-  const actor = await requirePermission(cookies, PERMISSIONS.USERS_MANAGE);
+  const _actor = await getPermittedOrResponse(cookies, PERMISSIONS.USERS_MANAGE);
+  if (_actor instanceof Response) return _actor;
+  const actor = _actor;
   if (actor.role !== 'superadmin') {
     return Response.json({ error: '只有 superadmin 可以刪除用戶' }, { status: 403 });
   }

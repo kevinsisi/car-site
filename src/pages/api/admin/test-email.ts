@@ -1,10 +1,11 @@
 import type { APIRoute } from 'astro';
 import nodemailer from 'nodemailer';
-import { requireAdmin } from '@/lib/auth';
+import { getAdminOrResponse } from '@/lib/auth';
 import { getSettings } from '@/lib/settings';
 
 export const POST: APIRoute = async ({ cookies }) => {
-  await requireAdmin(cookies);
+  const _auth = await getAdminOrResponse(cookies);
+  if (_auth instanceof Response) return _auth;
   const settings = await getSettings();
   if (!settings.notificationEmail || !settings.smtpHost) {
     return Response.json({ ok: false, error: '請先設定 SMTP 和通知信箱' });

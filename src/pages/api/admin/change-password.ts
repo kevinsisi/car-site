@@ -2,11 +2,13 @@ import { eq } from 'drizzle-orm';
 import type { APIRoute } from 'astro';
 import { db } from '@/db/connection';
 import { adminUsers } from '@/db/schema';
-import { requireAdmin } from '@/lib/auth';
+import { getAdminOrResponse } from '@/lib/auth';
 import { hashPassword, verifyPassword } from '@/lib/crypto';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-  const admin = await requireAdmin(cookies);
+  const _admin = await getAdminOrResponse(cookies);
+  if (_admin instanceof Response) return _admin;
+  const admin = _admin;
   const body = await request.json().catch(() => ({}));
   const currentPassword = String(body.currentPassword || '');
   const newPassword = String(body.newPassword || '');

@@ -57,6 +57,22 @@ export async function requireAdmin(cookies: AstroCookies): Promise<AdminUserSess
   return user;
 }
 
+// Returns user or a Response (401/403) — API routes must check: if (result instanceof Response) return result;
+export async function getAdminOrResponse(cookies: AstroCookies): Promise<AdminUserSession | Response> {
+  const user = await getSession(cookies);
+  if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'content-type': 'application/json' } });
+  return user;
+}
+
+export async function getPermittedOrResponse(cookies: AstroCookies, required: number): Promise<AdminUserSession | Response> {
+  const user = await getSession(cookies);
+  if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'content-type': 'application/json' } });
+  if (user.role !== 'superadmin' && !hasPermission(user.permissions, required)) {
+    return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { 'content-type': 'application/json' } });
+  }
+  return user;
+}
+
 export async function requirePermission(cookies: AstroCookies, required: number): Promise<AdminUserSession> {
   const user = await requireAdmin(cookies);
   if (user.role !== 'superadmin' && !hasPermission(user.permissions, required)) {

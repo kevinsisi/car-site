@@ -2,10 +2,12 @@ import { eq } from 'drizzle-orm';
 import type { APIRoute } from 'astro';
 import { db } from '@/db/connection';
 import { adminUsers } from '@/db/schema';
-import { requireAdmin } from '@/lib/auth';
+import { getAdminOrResponse } from '@/lib/auth';
 
 export const DELETE: APIRoute = async ({ params, cookies }) => {
-  const admin = await requireAdmin(cookies);
+  const _admin = await getAdminOrResponse(cookies);
+  if (_admin instanceof Response) return _admin;
+  const admin = _admin;
   const id = String(params.id || '');
   if (!id) return Response.json({ error: '缺少帳號 ID' }, { status: 400 });
   if (id === admin.id) {

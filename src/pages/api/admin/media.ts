@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { APIRoute } from 'astro';
-import { requireAdmin } from '@/lib/auth';
+import { getAdminOrResponse } from '@/lib/auth';
 import { appConfig } from '@/lib/config';
 
 const mediaRoot = path.resolve(path.join(appConfig.databasePath, '..', 'media'));
@@ -23,7 +23,8 @@ function safeName(name: string) {
 }
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-  await requireAdmin(cookies);
+  const _auth = await getAdminOrResponse(cookies);
+  if (_auth instanceof Response) return _auth;
   const formData = await request.formData();
   const files = formData.getAll('files').filter((file): file is File => file instanceof File);
 
