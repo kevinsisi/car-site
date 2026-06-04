@@ -180,17 +180,45 @@
 }
 .compare-bar__clear:hover { border-color: #999; }
 
-/* ── Mobile ── */
+/* ── Mobile — 橫向滑動，縮圖縮小 ── */
 @media (max-width: 640px) {
   .compare-bar__inner {
-    padding: 0.75rem 1rem;
-    gap: 0.6rem;
+    padding: 0.6rem 0.75rem;
+    gap: 0.5rem;
     flex-wrap: nowrap;
+    align-items: center;
   }
-  /* Hide individual items on mobile — show count in label instead */
-  .compare-bar__items { display: none; }
-  .compare-bar__label { flex: 1; font-size: 0.875rem; }
-  .compare-bar__go { font-size: 0.85rem; padding: 0.4rem 1rem; }
-  .compare-bar__clear { font-size: 0.8rem; padding: 0.35rem 0.6rem; }
+  .compare-bar__label {
+    font-size: 0.75rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  /* Items row: horizontal scroll, no wrap */
+  .compare-bar__items {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 0.4rem;
+    flex: 1;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .compare-bar__items::-webkit-scrollbar { display: none; }
+  /* Smaller item cards on mobile */
+  .compare-bar__item {
+    flex-shrink: 0;
+    max-width: 100px;
+    padding: 3px 6px 3px 3px;
+    gap: 0.3rem;
+  }
+  .compare-bar__item img {
+    width: 32px;
+    height: 22px;
+  }
+  .compare-bar__item span { font-size: 0.72rem; max-width: 52px; }
+  /* Smaller action buttons */
+  .compare-bar__actions { flex-shrink: 0; gap: 0.35rem; }
+  .compare-bar__go { font-size: 0.78rem; padding: 0.35rem 0.75rem; white-space: nowrap; }
+  .compare-bar__clear { font-size: 0.75rem; padding: 0.3rem 0.5rem; white-space: nowrap; }
 }
 </style>
