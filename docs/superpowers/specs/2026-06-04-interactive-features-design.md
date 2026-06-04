@@ -195,9 +195,26 @@ In `AdminDashboard.svelte` settings, new "影片連結" section:
 2. Validate required fields
 3. Save uploaded photos to `data/media/sell-inquiries/{date}/`
 4. Save inquiry to new DB table `sellInquiries`
-5. Return 200 JSON `{ success: true }`
+5. Send notification email if `notificationEmail` is configured in siteSettings (see below)
+6. Return 200 JSON `{ success: true }`
 
 **Rate limiting:** max 5 submissions per IP per hour (in-memory counter, reset on restart)
+
+### Email Notification
+
+New keys in `siteSettings`:
+- `notificationEmail: text` — the address to send notifications to (nullable; if empty, no email sent)
+- `smtpHost: text`, `smtpPort: text`, `smtpUser: text`, `smtpPass: text` — SMTP credentials
+
+On new sell inquiry submission:
+1. If `notificationEmail` is not set: skip silently
+2. Compose email: subject "新賣車申請：{brand} {model} {year}", body lists all form fields + photo count
+3. Send via configured SMTP; log failure to console but do not fail the API response (best-effort)
+
+Admin UI: new "通知設定" subsection in settings:
+- Notification email input
+- SMTP host/port/user/password inputs
+- "傳送測試信" button (sends test email to configured address)
 
 ### Database Changes
 
