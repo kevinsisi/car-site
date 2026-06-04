@@ -19,7 +19,10 @@ const heroBySlug = settings.heroVehicleSlug ? featuredVehicles.find((v) => v.slu
 const hero = heroBySlug || featuredVehicles[0] || soldCaseVehicles[0];
 const shareOrigin = shareOriginFromRequest(Astro.request, Astro.url);
 const featuredCount = Math.max(1, Math.min(12, settings.featuredCount ?? 3));
-const quickBrands = brands.filter((brand) => brand.count > 0).slice(0, 9);
+const quickBrands = brands
+  .filter((brand) => brand.count > 0)
+  .sort((a, b) => b.count - a.count || a.displayName.localeCompare(b.displayName))
+  .slice(0, 9);
 const mapQuery = settings.storeAddress ? encodeURIComponent(settings.storeAddress) : '';
 const mapHref = mapQuery ? `https://www.google.com/maps/search/?api=1&query=${mapQuery}` : '';
 const mapEmbedSrc = mapQuery ? `https://www.google.com/maps?q=${mapQuery}&output=embed` : '';
