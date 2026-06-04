@@ -1,0 +1,22 @@
+---
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import Videos from '@/components/admin/Videos.svelte';
+import { getSession, hasAnyUsers } from '@/lib/auth';
+import { PERMISSIONS, hasPermission } from '@/lib/permissions';
+import { getSettings } from '@/lib/settings';
+import { listVideoLinks } from '@/lib/video-links';
+
+if (!await hasAnyUsers()) return Astro.redirect('/admin/setup');
+const user = await getSession(Astro.cookies);
+if (!user) return Astro.redirect('/admin/login');
+
+const canCarousel = user.role === 'superadmin' || hasPermission(user.permissions, PERMISSIONS.VIDEOS_CAROUSEL);
+const canLinks = user.role === 'superadmin' || hasPermission(user.permissions, PERMISSIONS.VIDEOS_LINKS);
+if (!canCarousel && !canLinks) return Astro.redirect('/admin');
+
+const settings = await getSettings();
+const videoLinks = await listVideoLinks();
+---
+<AdminLayout user={user} title="影片管理">
+  <Videos client:load settings={settings} videoLinks={videoLinks} canCarousel={canCarousel} canLinks={canLinks} />
+</AdminLayout>
