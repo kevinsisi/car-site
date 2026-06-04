@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, inArray, ne } from 'drizzle-orm';
 import { db } from '@/db/connection';
 import { importMappings, vehicleImages, vehicles, type PublishMode, type VehicleStatus } from '@/db/schema';
-import { getBrandAliasMap } from './brand-aliases';
+import { brandUrlSlug, getBrandAliasMap } from './brand-aliases';
 import { optimizedMediaUrl, thumbnailMediaUrl } from './media';
 import { getSettings } from './settings';
 import { alwaysPublicVehicleStatuses, isPublicVehicleStatus, mapSourceInventoryStatus } from './vehicle-status';
@@ -123,6 +123,7 @@ async function attachImages(rows: (typeof vehicles.$inferSelect)[]): Promise<Veh
     const rowImages = imageMap.get(row.id) || [];
     const brandAlias = brandAliasMap.get(row.brand);
     const brandDisplayName = brandAlias?.displayName || row.brand;
+    const routeBrandSlug = brandAlias?.urlSlug || brandUrlSlug(brandDisplayName);
     return {
       id: row.id,
       slug: row.slug,
@@ -131,7 +132,7 @@ async function attachImages(rows: (typeof vehicles.$inferSelect)[]): Promise<Veh
       cardTitleSupplement: row.cardTitleSupplement,
       brand: row.brand,
       brandDisplayName,
-      brandUrlSlug: brandAlias?.urlSlug || '',
+      brandUrlSlug: routeBrandSlug,
       brandIconUrl: brandAlias?.iconUrl ?? null,
       model: row.model,
       subModel: row.subModel,
