@@ -3,12 +3,11 @@ import AdminLayout from '@/layouts/AdminLayout.astro';
 import { asc } from 'drizzle-orm';
 import { db } from '@/db/connection';
 import { adminUsers } from '@/db/schema';
-import { getSession } from '@/lib/auth';
+import { getSession, hasAnyUsers } from '@/lib/auth';
 
-const admin = await getSession(Astro.cookies);
-if (!admin) {
-  return Astro.redirect('/admin/login');
-}
+if (!await hasAnyUsers()) return Astro.redirect('/admin/setup');
+const user = await getSession(Astro.cookies);
+if (!user) return Astro.redirect('/admin/login');
 const isForced = Astro.url.searchParams.get('force') === '1';
 const accounts = await db
   .select({ id: adminUsers.id, username: adminUsers.username, createdAt: adminUsers.createdAt })
@@ -16,14 +15,14 @@ const accounts = await db
   .orderBy(asc(adminUsers.createdAt));
 ---
 
-<AdminLayout>
+<AdminLayout user={user}>
   <section class="admin-panel hero-panel">
     <div>
       <p class="admin-eyebrow">帳號設定</p>
       <h1>帳號設定</h1>
       <p>變更自己的密碼，並管理可登入後台的管理員帳號。</p>
     </div>
-    <span class="account-current">目前帳號：<strong>{admin.username}</strong></span>
+    <span class="account-current">目前帳號：<strong>{user.username}</strong></span>
   </section>
 
   {isForced && (
@@ -58,10 +57,10 @@ const accounts = await db
         <li class="account-item" data-id={acc.id}>
           <div>
             <strong>{acc.username}</strong>
-            {acc.id === admin.id && <span class="account-badge">目前登入</span>}
+            {acc.id === user.id && <span class="account-badge">目前登入</span>}
             <small>建立於 {new Date(acc.createdAt).toLocaleDateString('zh-TW')}</small>
           </div>
-          {acc.id !== admin.id && (
+          {acc.id !== user.id && (
             <button type="button" class="row-button--danger account-delete" data-id={acc.id} data-username={acc.username}>刪除帳號</button>
           )}
         </li>

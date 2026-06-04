@@ -1,21 +1,20 @@
 ---
 import AdminDashboard from '@/components/AdminDashboard.svelte';
 import AdminLayout from '@/layouts/AdminLayout.astro';
-import { getSession } from '@/lib/auth';
+import { getSession, hasAnyUsers } from '@/lib/auth';
 import { listBrandAliases } from '@/lib/brand-aliases';
 import { getSettings } from '@/lib/settings';
 import { listAdminVehicles } from '@/lib/vehicles';
 
-const admin = await getSession(Astro.cookies);
-if (!admin) {
-  return Astro.redirect('/admin/login');
-}
+if (!await hasAnyUsers()) return Astro.redirect('/admin/setup');
+const user = await getSession(Astro.cookies);
+if (!user) return Astro.redirect('/admin/login');
 
 const vehicles = await listAdminVehicles();
 const settings = await getSettings();
 const brandAliases = await listBrandAliases();
 ---
 
-<AdminLayout>
+<AdminLayout user={user}>
   <AdminDashboard client:load mode="overview" vehicles={vehicles} settings={settings} brandAliases={brandAliases} />
 </AdminLayout>
