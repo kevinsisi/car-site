@@ -1,0 +1,116 @@
+---
+import PublicLayout from '@/layouts/PublicLayout.astro';
+import BrandIcon from '@/components/BrandIcon.astro';
+import { getSettings } from '@/lib/settings';
+import { getVehicleBySlug } from '@/lib/vehicles';
+
+const settings = await getSettings();
+const idsParam = Astro.url.searchParams.get('ids') || '';
+const slugs = idsParam.split(',').map((s) => s.trim()).filter(Boolean);
+
+const vehicles = (await Promise.all(slugs.map((slug) => getVehicleBySlug(slug)))).filter(Boolean);
+
+const specRows = [
+  { key: 'year', label: '年份' },
+  { key: 'mileage', label: '里程' },
+  { key: 'condition', label: '車況' },
+  { key: 'exteriorColor', label: '外觀顏色' },
+  { key: 'interiorColor', label: '內裝顏色' },
+  { key: 'brandDisplayName', label: '品牌' },
+  { key: 'model', label: '型號' },
+  { key: 'subModel', label: '規格' },
+];
+
+function removeSlug(slug: string): string {
+  const remaining = slugs.filter((s) => s !== slug);
+  return remaining.length ? `/cars/compare?ids=${remaining.join(',')}` : '/cars/compare';
+}
+
+function getSpecValue(v: NonNullable<(typeof vehicles)[number]>, key: string): string {
+  return (v as unknown as Record<string, unknown>)[key] as string || '—';
+}
+---
+
+<PublicLayout title={`車輛比較｜${settings.siteName}`} description="比較多款車輛規格">
+  <div class="compare-page">
+    <div class="compare-page__header">
+      <p class="eyebrow">車輛比較</p>
+      <h1>規格比較</h1>
+      {vehicles.length > 0 && (
+        <a href="/cars/compare" class="btn-compare-clear">清除全部</a>
+      )}
+    </div>
+
+    {vehicles.length === 0 ? (
+      <div class="compare-empty">
+        <p>尚未選擇任何車輛</p>
+        <a href="/cars" class="btn-primary">瀏覽庫存</a>
+      </div>
+    ) : (
+      <div class="compare-table-wrapper">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th class="compare-label-col"></th>
+              {vehicles.map((v) => (
+                <th class="compare-vehicle-col">
+                  <div class="compare-vehicle-header">
+                    {v!.coverImage && (
+                      <a href={`/cars/${v!.slug}`}>
+                        <img src={v!.coverImage.url} alt={v!.title} loading="lazy" class="compare-vehicle-img" />
+                      </a>
+                    )}
+                    <div class="compare-vehicle-title">
+                      <BrandIcon iconUrl={v!.brandIconUrl} alt={v!.brandDisplayName} size={20} />
+                      <a href={`/cars/${v!.slug}`}>{v!.cardTitle}</a>
+                    </div>
+                    <a href={removeSlug(v!.slug)} class="compare-remove" aria-label={`移除 ${v!.title}`}>✕ 移除</a>
+                  </div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {specRows.map((row) => (
+              <tr>
+                <td class="compare-label">{row.label}</td>
+                {vehicles.map((v) => (
+                  <td class="compare-value">
+                    {getSpecValue(v!, row.key)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+
+    <div class="compare-page__footer">
+      <a href="/cars" class="btn-secondary">繼續加入車輛</a>
+    </div>
+  </div>
+</PublicLayout>
+
+<style>
+.compare-page { max-width: 1200px; margin: 0 auto; padding: 2rem 1rem; }
+.compare-page__header { margin-bottom: 2rem; }
+.compare-page__header h1 { margin: 0.5rem 0 1rem; }
+.btn-compare-clear { display: inline-block; font-size: 0.875rem; color: var(--muted, #777); text-decoration: underline; }
+.compare-empty { text-align: center; padding: 4rem; }
+.compare-empty p { margin-bottom: 1rem; color: var(--muted, #777); }
+.compare-table-wrapper { overflow-x: auto; }
+.compare-table { width: 100%; border-collapse: collapse; min-width: 400px; }
+.compare-table th, .compare-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border, #e5e5e5); vertical-align: top; text-align: left; }
+.compare-label-col { width: 100px; min-width: 80px; }
+.compare-vehicle-col { min-width: 180px; }
+.compare-label { font-weight: 600; font-size: 0.85rem; color: var(--muted, #777); }
+.compare-value { font-size: 0.9rem; }
+.compare-vehicle-header { display: flex; flex-direction: column; gap: 0.5rem; }
+.compare-vehicle-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 4px; }
+.compare-vehicle-title { display: flex; align-items: center; gap: 0.4rem; font-size: 0.875rem; font-weight: 600; }
+.compare-vehicle-title a { text-decoration: none; color: inherit; }
+.compare-remove { font-size: 0.8rem; color: var(--muted, #777); text-decoration: none; }
+.compare-remove:hover { color: #c00; }
+.compare-page__footer { margin-top: 2rem; }
+</style>
