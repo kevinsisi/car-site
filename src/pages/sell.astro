@@ -1,0 +1,114 @@
+---
+import PublicLayout from '@/layouts/PublicLayout.astro';
+import { getSettings } from '@/lib/settings';
+const settings = await getSettings();
+---
+<PublicLayout title={`賣車詢問｜${settings.siteName}`} description="填寫車輛資訊，讓我們為您評估">
+  <div class="sell-page">
+    <div class="sell-page__header">
+      <p class="eyebrow">賣車詢問</p>
+      <h1>我想賣車</h1>
+      <p class="sell-page__desc">填寫以下資訊，我們會盡快與您聯絡評估。</p>
+    </div>
+
+    <form class="sell-form" id="sell-form" novalidate>
+      <div class="sell-form__grid">
+        <div class="form-group">
+          <label for="contactName">姓名 <span aria-hidden="true">*</span></label>
+          <input type="text" id="contactName" name="contactName" required autocomplete="name" />
+        </div>
+        <div class="form-group">
+          <label for="contactInfo">聯絡方式（手機 / LINE）<span aria-hidden="true">*</span></label>
+          <input type="text" id="contactInfo" name="contactInfo" required placeholder="09xxxxxxxx 或 LINE ID" />
+        </div>
+        <div class="form-group">
+          <label for="brand">品牌</label>
+          <input type="text" id="brand" name="brand" placeholder="例：BMW" />
+        </div>
+        <div class="form-group">
+          <label for="model">型號</label>
+          <input type="text" id="model" name="model" placeholder="例：M3" />
+        </div>
+        <div class="form-group">
+          <label for="year">年份</label>
+          <input type="number" id="year" name="year" min="1980" max="2030" placeholder="例：2020" />
+        </div>
+        <div class="form-group">
+          <label for="mileage">里程（km）</label>
+          <input type="number" id="mileage" name="mileage" min="0" placeholder="例：30000" />
+        </div>
+        <div class="form-group">
+          <label for="exteriorColor">外觀顏色</label>
+          <input type="text" id="exteriorColor" name="exteriorColor" placeholder="例：珍珠白" />
+        </div>
+        <div class="form-group form-group--full">
+          <label for="notes">車況描述</label>
+          <textarea id="notes" name="notes" rows="4" placeholder="請描述車況、保養記錄、特殊配備等"></textarea>
+        </div>
+        <div class="form-group form-group--full">
+          <label for="photos">照片（可選，最多 10 張）</label>
+          <input type="file" id="photos" name="photos" multiple accept="image/jpeg,image/png,image/webp" />
+          <small>JPEG / PNG / WebP，單檔最大 12MB</small>
+        </div>
+        <div class="form-group form-group--full">
+          <label class="checkbox-label">
+            <input type="checkbox" name="consent" required />
+            我同意本站收集並使用上述資訊以便聯絡評估
+          </label>
+        </div>
+      </div>
+
+      <button type="submit" class="button button--primary sell-form__submit">送出詢問</button>
+      <p class="sell-form__status" id="sell-status" aria-live="polite"></p>
+    </form>
+  </div>
+</PublicLayout>
+
+<script>
+  const form = document.getElementById('sell-form') as HTMLFormElement | null;
+  const status = document.getElementById('sell-status');
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!form) return;
+    const submitBtn = form.querySelector<HTMLButtonElement>('[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
+    if (status) status.textContent = '送出中...';
+
+    try {
+      const res = await fetch('/api/sell', { method: 'POST', body: new FormData(form) });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.error || '送出失敗');
+      if (status) status.textContent = '✓ 已收到您的詢問，我們會盡快聯絡您！';
+      form.reset();
+    } catch (err) {
+      if (status) status.textContent = `送出失敗：${(err as Error).message}`;
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  });
+</script>
+
+<style>
+.sell-page { max-width: 800px; margin: 0 auto; padding: 2rem 1rem; }
+.sell-page__header { margin-bottom: 2rem; }
+.sell-page__header h1 { margin: 0.5rem 0 0.75rem; }
+.sell-page__desc { color: var(--muted, #777); }
+.sell-form__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+@media (max-width: 640px) { .sell-form__grid { grid-template-columns: 1fr; } }
+.form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+.form-group--full { grid-column: 1 / -1; }
+.form-group label { font-size: 0.875rem; font-weight: 600; }
+.form-group input, .form-group textarea, .form-group select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 6px;
+  font-size: 1rem;
+  background: var(--input-bg, #fff);
+  font-family: inherit;
+}
+.form-group textarea { resize: vertical; }
+.form-group small { color: var(--muted, #888); font-size: 0.8rem; }
+.checkbox-label { display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.875rem; cursor: pointer; font-weight: normal; }
+.sell-form__submit { margin-top: 1.5rem; }
+.sell-form__status { margin-top: 0.75rem; font-size: 0.9rem; }
+</style>

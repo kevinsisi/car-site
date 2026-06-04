@@ -4,124 +4,96 @@
   interface Props {
     inquiries: SellInquiryView[];
   }
-  let { inquiries }: Props = $props();
+  let { inquiries: initial }: Props = $props();
+  let inquiries = $state(initial.map((i) => ({ ...i })));
+  let expanded = $state<string | null>(null);
+
+  async function markRead(id: string) {
+    const res = await fetch(`/api/admin/sell-inquiries/${id}/read`, { method: 'POST' });
+    if (res.ok) {
+      const inq = inquiries.find((i) => i.id === id);
+      if (inq) inq.readAt = new Date().toISOString();
+      inquiries = [...inquiries];
+    }
+  }
 </script>
 
 <div class="admin-page">
   <div class="page-header">
     <h1>賣車申請</h1>
+    <span class="muted">{inquiries.filter((i) => !i.readAt).length} 筆未讀</span>
   </div>
 
   {#if inquiries.length === 0}
     <div class="empty-state">
       <p>尚無賣車申請</p>
-      <p class="muted">賣車詢問功能將在下一階段啟用。</p>
+      <p class="muted">訪客透過 <a href="/sell">/sell</a> 頁面提交後會出現在這裡。</p>
     </div>
   {:else}
-    <table class="users-table">
-      <thead>
-        <tr>
-          <th>日期</th>
-          <th>姓名</th>
-          <th>車輛</th>
-          <th>聯絡</th>
-          <th>狀態</th>
-        </tr>
-      </thead>
-      <tbody>
-        {#each inquiries as inq}
-          <tr class:is-unread={!inq.readAt}>
-            <td>{new Date(inq.createdAt).toLocaleDateString('zh-TW')}</td>
-            <td>{inq.contactName}</td>
-            <td>{[inq.brand, inq.model, inq.year].filter(Boolean).join(' ')}</td>
-            <td>{inq.contactInfo}</td>
-            <td>{inq.readAt ? '已讀' : '未讀'}</td>
-          </tr>
-        {/each}
-      </tbody>
-    </table>
+    <div class="inquiry-list">
+      {#each inquiries as inq}
+        <div class="inquiry-item{!inq.readAt ? ' is-unread' : ''}">
+          <div class="inquiry-summary" role="button" tabindex="0"
+            onclick={() => expanded = expanded === inq.id ? null : inq.id}
+            onkeydown={(e) => e.key === 'Enter' && (expanded = expanded === inq.id ? null : inq.id)}>
+            <span class="inquiry-date">{new Date(inq.createdAt).toLocaleDateString('zh-TW')}</span>
+            <span class="inquiry-name">{inq.contactName || '—'}</span>
+            <span class="inquiry-vehicle">{[inq.brand, inq.model, inq.year].filter(Boolean).join(' ') || '—'}</span>
+            <span class="inquiry-contact">{inq.contactInfo}</span>
+            {#if !inq.readAt}<span class="badge-new">未讀</span>{/if}
+            <span class="inquiry-toggle">{expanded === inq.id ? '▲' : '▼'}</span>
+          </div>
+
+          {#if expanded === inq.id}
+            <div class="inquiry-detail">
+              <dl class="inquiry-dl">
+                <dt>聯絡方式</dt><dd>{inq.contactInfo}</dd>
+                <dt>品牌</dt><dd>{inq.brand || '—'}</dd>
+                <dt>型號</dt><dd>{inq.model || '—'}</dd>
+                <dt>年份</dt><dd>{inq.year ?? '—'}</dd>
+                <dt>里程</dt><dd>{inq.mileage != null ? `${inq.mileage} km` : '—'}</dd>
+                <dt>外觀顏色</dt><dd>{inq.exteriorColor || '—'}</dd>
+                <dt>說明</dt><dd>{inq.notes || '—'}</dd>
+              </dl>
+              {#if inq.photoUrls.length > 0}
+                <div class="inquiry-photos">
+                  {#each inq.photoUrls as url}
+                    <a href={url} target="_blank"><img src={url} alt="" /></a>
+                  {/each}
+                </div>
+              {/if}
+              {#if !inq.readAt}
+                <button type="button" onclick={() => markRead(inq.id)} class="btn-mark-read">標記為已讀</button>
+              {/if}
+            </div>
+          {/if}
+        </div>
+      {/each}
+    </div>
   {/if}
 </div>
 
 <style>
-  .admin-page {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-  }
-
-  .page-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid #e5e7eb;
-    padding-bottom: 1rem;
-  }
-
-  .page-header h1 {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 600;
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: 3rem;
-    color: #6b7280;
-  }
-
-  .empty-state p {
-    margin: 0.5rem 0;
-  }
-
-  .empty-state .muted {
-    font-size: 0.875rem;
-    color: #9ca3af;
-  }
-
-  .users-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: #fff;
-    border-radius: 6px;
-    overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  }
-
-  .users-table thead {
-    background: #f9fafb;
-    border-bottom: 1px solid #e5e7eb;
-  }
-
-  .users-table th {
-    padding: 0.75rem 1rem;
-    text-align: left;
-    font-weight: 600;
-    font-size: 0.875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #6b7280;
-  }
-
-  .users-table td {
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid #f3f4f6;
-    font-size: 0.875rem;
-  }
-
-  .users-table tbody tr:last-child td {
-    border-bottom: none;
-  }
-
-  .users-table tbody tr:hover {
-    background: #f9fafb;
-  }
-
-  .users-table tbody tr.is-unread {
-    background: #fef3c7;
-  }
-
-  .users-table tbody tr.is-unread:hover {
-    background: #fde68a;
-  }
+.inquiry-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.inquiry-item { border: 1px solid var(--border, #e5e5e5); border-radius: 8px; overflow: hidden; background: #fff; }
+.inquiry-item.is-unread { border-left: 3px solid var(--accent, #0066cc); }
+.inquiry-summary {
+  display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem;
+  cursor: pointer; font-size: 0.875rem; flex-wrap: wrap;
+}
+.inquiry-summary:hover { background: #f9f9f9; }
+.inquiry-date { color: var(--muted, #777); white-space: nowrap; }
+.inquiry-name { font-weight: 600; }
+.inquiry-vehicle { color: var(--muted, #666); }
+.inquiry-contact { margin-left: auto; }
+.inquiry-toggle { color: var(--muted, #aaa); }
+.badge-new { background: #dbeafe; color: #1e40af; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+.inquiry-detail { padding: 1rem; border-top: 1px solid var(--border, #e5e5e5); background: #fafafa; }
+.inquiry-dl { display: grid; grid-template-columns: 100px 1fr; gap: 0.4rem 1rem; font-size: 0.875rem; margin: 0 0 1rem; }
+.inquiry-dl dt { font-weight: 600; color: var(--muted, #666); }
+.inquiry-dl dd { margin: 0; }
+.inquiry-photos { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.inquiry-photos img { width: 80px; height: 60px; object-fit: cover; border-radius: 4px; }
+.btn-mark-read { font-size: 0.8rem; padding: 4px 12px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; }
+.btn-mark-read:hover { background: #f0f0f0; }
 </style>

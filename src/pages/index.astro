@@ -2,14 +2,18 @@
 import PublicLayout from '@/layouts/PublicLayout.astro';
 import VehicleCard from '@/components/VehicleCard.astro';
 import BrandStrip from '@/components/BrandStrip.astro';
+import VideoCarousel from '@/components/VideoCarousel.astro';
+import VideoLinksSection from '@/components/VideoLinksSection.astro';
 import { getSettings } from '@/lib/settings';
 import { formatVehicleShareText, shareOriginFromRequest, vehicleShareUrl } from '@/lib/vehicle-share';
 import { listPublicVehicles, listSoldCaseVehicles, listPublicBrands } from '@/lib/vehicles';
+import { listVideoLinks } from '@/lib/video-links';
 
 const settings = await getSettings();
 const vehicles = await listPublicVehicles();
 const soldCaseVehicles = await listSoldCaseVehicles(6);
 const brands = await listPublicBrands();
+const videoLinks = await listVideoLinks();
 const featuredVehicles = vehicles.filter((vehicle) => vehicle.status !== 'sold');
 const heroBySlug = settings.heroVehicleSlug ? featuredVehicles.find((v) => v.slug === settings.heroVehicleSlug) : null;
 const hero = heroBySlug || featuredVehicles[0] || soldCaseVehicles[0];
@@ -49,7 +53,15 @@ const featuredCount = Math.max(1, Math.min(12, settings.featuredCount ?? 3));
     </div>
   )}
 
+  {settings.videoSectionEnabled && settings.heroVideos.length > 0 && settings.videoSectionPosition === 'below-hero' && (
+    <VideoCarousel videos={settings.heroVideos} />
+  )}
+
   <BrandStrip brands={brands} eyebrow="車系品牌" />
+
+  {settings.videoSectionEnabled && settings.heroVideos.length > 0 && settings.videoSectionPosition === 'below-featured' && (
+    <VideoCarousel videos={settings.heroVideos} />
+  )}
 
   {soldCaseVehicles.length > 0 && (
     <>
@@ -62,5 +74,13 @@ const featuredCount = Math.max(1, Math.min(12, settings.featuredCount ?? 3));
         {soldCaseVehicles.map((vehicle) => <VehicleCard vehicle={vehicle} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
       </div>
     </>
+  )}
+
+  {settings.videoSectionEnabled && settings.heroVideos.length > 0 && settings.videoSectionPosition === 'above-footer' && (
+    <VideoCarousel videos={settings.heroVideos} />
+  )}
+
+  {settings.videoLinksEnabled && videoLinks.length > 0 && (
+    <VideoLinksSection links={videoLinks} sectionTitle={settings.videoLinksSectionTitle} />
   )}
 </PublicLayout>
