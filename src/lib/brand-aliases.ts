@@ -6,6 +6,7 @@ export interface BrandAliasView {
   sourceBrand: string;
   displayName: string;
   urlSlug: string;
+  iconUrl: string | null;
 }
 
 export function brandUrlSlug(input: string): string {
@@ -20,11 +21,21 @@ export function brandUrlSlug(input: string): string {
 
 export async function listBrandAliases(): Promise<BrandAliasView[]> {
   const rows = await db.select().from(brandAliases).orderBy(asc(brandAliases.sourceBrand));
-  return rows.map((row) => ({ sourceBrand: row.sourceBrand, displayName: row.displayName, urlSlug: row.urlSlug || brandUrlSlug(row.displayName) }));
+  return rows.map((row) => ({
+    sourceBrand: row.sourceBrand,
+    displayName: row.displayName,
+    urlSlug: row.urlSlug || brandUrlSlug(row.displayName),
+    iconUrl: row.iconUrl ?? null,
+  }));
 }
 
-export async function getBrandAliasMap(): Promise<Map<string, { displayName: string; urlSlug: string }>> {
-  return new Map((await listBrandAliases()).map((row) => [row.sourceBrand, { displayName: row.displayName, urlSlug: row.urlSlug }]));
+export async function getBrandAliasMap(): Promise<Map<string, { displayName: string; urlSlug: string; iconUrl: string | null }>> {
+  return new Map(
+    (await listBrandAliases()).map((row) => [
+      row.sourceBrand,
+      { displayName: row.displayName, urlSlug: row.urlSlug, iconUrl: row.iconUrl },
+    ])
+  );
 }
 
 export async function setBrandAliases(input: BrandAliasView[]) {
@@ -35,6 +46,12 @@ export async function setBrandAliases(input: BrandAliasView[]) {
     const displayName = row.displayName.trim();
     const urlSlug = brandUrlSlug(row.urlSlug || displayName);
     if (!sourceBrand || !displayName) continue;
-    await db.insert(brandAliases).values({ sourceBrand, displayName, urlSlug, updatedAt: now });
+    await db.insert(brandAliases).values({
+      sourceBrand,
+      displayName,
+      urlSlug,
+      iconUrl: row.iconUrl ?? null,
+      updatedAt: now,
+    });
   }
 }
