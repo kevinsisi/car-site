@@ -18,13 +18,29 @@ const brands = await listPublicBrands();
 const baseVehicles = activeTab === 'recommended' ? recommendedVehicles : activeTab === 'sold' ? soldVehicles : activeBrand ? await listPublicVehiclesByBrand(activeBrand) : allVehicles;
 const activeBrandLabel = brands.find((brand) => brand.urlSlug === activeBrand)?.displayName;
 const shareOrigin = shareOriginFromRequest(Astro.request, Astro.url);
-const brandSuggestionLabels = new Set(brands.flatMap((brand) => [brand.displayName, brand.urlSlug.toLowerCase()]));
-const brandSuggestions = brands.map((brand) => ({
-  value: brand.displayName,
-  kind: 'brand',
-  iconUrl: brand.iconUrl,
-  href: `/cars?brand=${brand.urlSlug}`,
-}));
+const brandSuggestionMap = new Map<string, { value: string; kind: 'brand'; iconUrl: string | null; href: string }>();
+for (const brand of brands) {
+  if (!brand.displayName || !brand.urlSlug) continue;
+  brandSuggestionMap.set(brand.displayName.toLowerCase(), {
+    value: brand.displayName,
+    kind: 'brand',
+    iconUrl: brand.iconUrl,
+    href: `/cars?brand=${brand.urlSlug}`,
+  });
+}
+for (const vehicle of allVehicles) {
+  if (!vehicle.brandDisplayName || !vehicle.brandUrlSlug) continue;
+  const key = vehicle.brandDisplayName.toLowerCase();
+  if (brandSuggestionMap.has(key)) continue;
+  brandSuggestionMap.set(key, {
+    value: vehicle.brandDisplayName,
+    kind: 'brand',
+    iconUrl: vehicle.brandIconUrl,
+    href: `/cars?brand=${vehicle.brandUrlSlug}`,
+  });
+}
+const brandSuggestions = Array.from(brandSuggestionMap.values()).sort((a, b) => a.value.localeCompare(b.value, 'zh-Hant'));
+const brandSuggestionLabels = new Set(brandSuggestions.flatMap((brand) => [brand.value, brand.value.toLowerCase(), brand.href.replace('/cars?brand=', '').toLowerCase()]));
 const vehicleSuggestions = Array.from(new Set(
   allVehicles.flatMap((vehicle) => [
     vehicle.model,
