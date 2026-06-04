@@ -12,6 +12,7 @@ interface Props {
 
 const { vehicle, shareText, variant = 'featured' } = Astro.props;
 const image = vehicle.coverImage;
+const imageSrc = image ? (variant === 'featured' ? image.url : image.thumbUrl) : '';
 const statusBadge = vehicle.status !== 'published' ? vehicleStatusLabels[vehicle.status] : '';
 const specs = [
   { label: '年份', value: vehicle.year, icon: 'calendar' },
@@ -23,7 +24,7 @@ const specs = [
 <article class:list={['vehicle-card', 'reveal-card', `vehicle-card--${variant}`]}>
   <a href={`/cars/${vehicle.slug}`} aria-label={`查看 ${vehicle.title}`} rel="prefetch">
     <div class="vehicle-card__media">
-      {image ? <img src={image.thumbUrl} alt={image.alt || `${vehicle.title} 封面照`} loading="lazy" decoding="async" width="800" height="533" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px" /> : <div class="image-placeholder">相片整理中</div>}
+      {image ? <img src={imageSrc} alt={image.alt || `${vehicle.title} 封面照`} loading="lazy" decoding="async" width="800" height="533" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px" /> : <div class="image-placeholder">相片整理中</div>}
       {statusBadge ? (
         <span class={`vehicle-badge${vehicle.status === 'sold' ? ' vehicle-badge--sold' : ''}`}>{statusBadge}</span>
       ) : vehicle.monthlyRecommended ? (

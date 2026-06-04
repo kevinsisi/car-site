@@ -545,21 +545,23 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
   .vehicle-card--featured { border-radius: 1.15rem; }
   .vehicle-card--featured .vehicle-card__media { aspect-ratio: 1.6; }
   .vehicle-card--featured h2 { font-size: clamp(1.15rem, 6.2vw, 1.38rem); }
-  .home-featured-grid .vehicle-card--featured { border-radius: 0.95rem; }
+  .home-featured-grid .vehicle-card--featured { display: grid; border-radius: 1rem; overflow: hidden; }
   .home-featured-grid .vehicle-card--featured:hover { transform: translateY(-2px); box-shadow: 0 0.7rem 1.5rem rgba(0, 0, 0, 0.12); }
-  .home-featured-grid .vehicle-card--featured .vehicle-card__media { aspect-ratio: 2.35; }
-  .home-featured-grid .vehicle-card--featured .vehicle-card__body { padding: 0.64rem 0.75rem 0.72rem; }
+  .home-featured-grid .vehicle-card--featured > a { display: block; min-width: 0; }
+  .home-featured-grid .vehicle-card--featured .vehicle-card__media { aspect-ratio: 16 / 9; min-height: 0; padding: 0.25rem; background: color-mix(in srgb, var(--surface-soft) 82%, var(--surface)); }
+  .home-featured-grid .vehicle-card--featured .vehicle-card__media img { position: absolute; inset: 0.25rem; width: calc(100% - 0.5rem); height: calc(100% - 0.5rem); max-width: none; object-fit: contain; object-position: center; border-radius: 0.78rem; }
+  .home-featured-grid .vehicle-card--featured .vehicle-card__body { padding: 0.72rem 0.8rem 0.75rem; }
   .home-featured-grid .vehicle-card--featured .eyebrow { margin: 0; font-size: 0.68rem; letter-spacing: 0.12em; }
-  .home-featured-grid .vehicle-card--featured h2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 0.25rem 0 0; font-size: clamp(1rem, 5.1vw, 1.16rem); line-height: 1.08; letter-spacing: -0.02em; }
+  .home-featured-grid .vehicle-card--featured h2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 0.25rem 0 0; font-size: clamp(1rem, 4.9vw, 1.14rem); line-height: 1.1; letter-spacing: -0.02em; }
   .home-featured-grid .vehicle-card--featured .spec-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; margin-top: 0.55rem; overflow: hidden; border: 1px solid color-mix(in srgb, var(--line) 68%, transparent); border-radius: 0.7rem; background: color-mix(in srgb, var(--line) 54%, transparent); }
-  .home-featured-grid .vehicle-card--featured .spec-item { display: grid; grid-template-columns: 1fr; gap: 0.05rem; min-width: 0; padding: 0.38rem 0.44rem; background: color-mix(in srgb, var(--surface) 92%, transparent); }
+  .home-featured-grid .vehicle-card--featured .spec-item { display: grid; grid-template-columns: 1fr; gap: 0.05rem; min-width: 0; padding: 0.34rem 0.44rem; background: color-mix(in srgb, var(--surface) 92%, transparent); }
   .home-featured-grid .vehicle-card--featured .spec-icon { display: none; }
   .home-featured-grid .vehicle-card--featured .spec-copy span { font-size: 0.58rem; letter-spacing: 0.05em; }
   .home-featured-grid .vehicle-card--featured .spec-copy strong { font-size: 0.72rem; line-height: 1.15; }
-  .home-featured-grid .vehicle-card--featured .card-footer { margin-top: 0.55rem; font-size: 0.82rem; line-height: 1.1; }
+  .home-featured-grid .vehicle-card--featured .card-footer { align-items: center; margin-top: 0.55rem; padding-right: 0; font-size: 0.82rem; line-height: 1.1; }
   .home-featured-grid .vehicle-card--featured .vehicle-share { top: 0.55rem; right: 0.55rem; width: 2.05rem; height: 2.05rem; }
   .home-featured-grid .vehicle-card--featured .vehicle-share svg { width: 1.22rem; height: 1.22rem; }
-  .home-featured-grid .vehicle-card--featured .compare-btn { position: absolute; right: 0.68rem; bottom: 0.58rem; font-size: 0.68rem; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 82%, transparent); }
+  .home-featured-grid .vehicle-card--featured .compare-btn { position: static; justify-self: end; margin: -0.48rem 0.72rem 0.64rem 0; font-size: 0.68rem; padding: 3px 9px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 88%, transparent); color: var(--muted); }
   .vehicle-card--listing { display: block; min-height: 0; border-radius: 1rem; }
   .vehicle-card--listing > a { display: block; }
   .vehicle-card--listing .vehicle-card__media { aspect-ratio: 1.52; border-right: 0; }
