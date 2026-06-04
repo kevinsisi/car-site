@@ -7,12 +7,12 @@
   interface Props {
     vehicles: VehicleView[];
     settings: SiteSettings;
-    brandAliases: { sourceBrand: string; displayName: string; urlSlug: string }[];
+    brandAliases: { sourceBrand: string; displayName: string; urlSlug: string; iconUrl?: string | null }[];
     mode?: 'overview' | 'settings' | 'contact' | 'vehicles';
   }
 
   type TemplateField = 'cardTitleTemplate' | 'shareMessageTemplate';
-  type BrandAliasRow = { sourceBrand: string; displayName: string; urlSlug: string };
+  type BrandAliasRow = { sourceBrand: string; displayName: string; urlSlug: string; iconUrl?: string | null };
 
   let { vehicles, settings, brandAliases, mode = 'overview' }: Props = $props();
 
@@ -58,7 +58,7 @@
   const cardTitleTokens = ['車名', '年份', '品牌', '顯示品牌', '型號', '規格', '補充', '里程', '車況'];
   const shareTemplateTokens = ['車名', '年份', '品牌', '里程', '外觀色', '內裝色', '車況', '價格', '網址'];
   const sourceBrandOptions = Array.from(new Set([...vehicles.map((vehicle) => vehicle.brand), ...brandAliases.map((item) => item.sourceBrand)])).filter(Boolean).sort((a, b) => a.localeCompare(b));
-  let brandAliasRows = $state<BrandAliasRow[]>(brandAliases.length ? brandAliases.map((item) => ({ ...item })) : sourceBrandOptions.map((sourceBrand) => ({ sourceBrand, displayName: '', urlSlug: '' })));
+  let brandAliasRows = $state<BrandAliasRow[]>(brandAliases.length ? brandAliases.map((item) => ({ ...item, iconUrl: item.iconUrl ?? null })) : sourceBrandOptions.map((sourceBrand) => ({ sourceBrand, displayName: '', urlSlug: '', iconUrl: null })));
   let settingsForm = $state({
     siteName: settings.siteName,
     siteIconUrl: settings.siteIconUrl,
@@ -94,6 +94,7 @@
     importBehavior: settings.importBehavior,
     showSoldVehicles: settings.showSoldVehicles,
     socialIcons: { ...settings.socialIcons } as Record<SocialPlatform, SocialIconConfig | undefined>,
+    galleryMode: settings.galleryMode,
   });
   let originalSettingsForm = $state(JSON.stringify(settingsForm));
   let settingsFormDirty = $derived(JSON.stringify(settingsForm) !== originalSettingsForm);
@@ -233,7 +234,7 @@
   async function saveBrandAliases() {
     const tid = notifyProgress('儲存品牌對照中...');
     const aliases = brandAliasRows
-      .map((item) => ({ sourceBrand: item.sourceBrand.trim(), displayName: item.displayName.trim(), urlSlug: item.urlSlug.trim() }))
+      .map((item) => ({ sourceBrand: item.sourceBrand.trim(), displayName: item.displayName.trim(), urlSlug: item.urlSlug.trim(), iconUrl: item.iconUrl ?? null }))
       .filter((item) => item.sourceBrand && item.displayName);
     const response = await adminFetch('/api/admin/brand-aliases', {
       method: 'POST',
@@ -409,7 +410,19 @@
   function addBrandAliasRow() {
     const used = new Set(brandAliasRows.map((row) => row.sourceBrand));
     const sourceBrand = sourceBrandOptions.find((brand) => !used.has(brand)) || sourceBrandOptions[0] || '';
-    brandAliasRows = [...brandAliasRows, { sourceBrand, displayName: '', urlSlug: '' }];
+    brandAliasRows = [...brandAliasRows, { sourceBrand, displayName: '', urlSlug: '', iconUrl: null }];
+  }
+
+  async function handleBrandIconUpload(e: Event, alias: BrandAliasRow) {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('files', file);
+    const res = await adminFetch('/api/admin/media', { method: 'POST', body: formData });
+    if (!res.ok) { notifyError('上傳失敗'); return; }
+    const json = await res.json().catch(() => ({}));
+    alias.iconUrl = json.urls?.[0] ?? null;
+    brandAliasRows = [...brandAliasRows];
   }
 
   function removeBrandAliasRow(index: number) {
@@ -1150,6 +1163,28 @@
     </details>
 
     <details class="settings-section">
+      <summary>照片展示模式</summary>
+      <div class="settings-section__body">
+        <div class="setting-group">
+          <label>照片展示模式</label>
+          <div class="radio-group">
+            {#each [
+              { value: 'lightbox', label: '展開式 Lightbox（預設）' },
+              { value: 'slider', label: '全寬輪播 Slider' },
+              { value: 'thumbnail-strip', label: '主圖 + 縮圖列' },
+              { value: 'grid', label: '瀑布格 Grid' },
+            ] as mode}
+              <label class="radio-label">
+                <input type="radio" name="galleryMode" value={mode.value} bind:group={settingsForm.galleryMode} />
+                {mode.label}
+              </label>
+            {/each}
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="settings-section">
       <summary>外部匯入與公開狀態</summary>
       <div class="settings-section__body">
         <label>外部來源新車輛預設
@@ -1277,6 +1312,18 @@
             </label>
             <label>公開網頁顯示名稱 <input bind:value={row.displayName} placeholder="例如 Bentley" /></label>
             <label>英文網址 <input bind:value={row.urlSlug} placeholder="例如 bentley" /></label>
+            <div class="brand-icon-field">
+              {#if row.iconUrl}
+                <img src={row.iconUrl} alt={row.displayName} width="32" height="32" style="object-fit:contain;border-radius:50%;background:#fff;border:1px solid #ddd;" />
+                <button type="button" onclick={() => { row.iconUrl = null; brandAliasRows = [...brandAliasRows]; }} title="移除圖示" style="background:none;border:none;cursor:pointer;color:#999;font-size:1rem;">✕</button>
+              {:else}
+                <label style="cursor:pointer;font-size:0.8rem;color:#888;display:flex;align-items:center;gap:4px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                  圖示
+                  <input type="file" accept="image/*" style="display:none" onchange={(e) => handleBrandIconUpload(e, row)} />
+                </label>
+              {/if}
+            </div>
             <button type="button" onclick={() => removeBrandAliasRow(index)}>移除</button>
           </div>
         {/each}
