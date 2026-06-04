@@ -122,40 +122,78 @@
     </div>
   {/if}
 
-  <table class="users-table">
-    <thead>
-      <tr>
-        <th>帳號</th>
-        <th>角色</th>
-        <th>權限</th>
-        <th>建立時間</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {#each users as u (u.id)}
-        <tr class:is-current={u.id === currentUserId}>
-          <td>
+  <!-- Desktop table -->
+  <div class="users-table-wrap">
+    <table class="users-table">
+      <thead>
+        <tr>
+          <th>帳號</th>
+          <th>角色</th>
+          <th>權限</th>
+          <th>建立時間</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {#each users as u (u.id)}
+          <tr class:is-current={u.id === currentUserId}>
+            <td>
+              {u.username}
+              {#if u.id === currentUserId}<span style="color:#888;font-size:0.75rem">（你）</span>{/if}
+            </td>
+            <td><span class="role-badge role-badge--{u.role}">{u.role}</span></td>
+            <td>{formatPerms(u.role, u.permissions)}</td>
+            <td>{new Date(u.createdAt).toLocaleDateString('zh-TW')}</td>
+            <td>
+              {#if isSuperAdmin && u.id !== currentUserId && u.role !== 'superadmin'}
+                <button type="button" class="btn-danger-sm" on:click={() => deleteUser(u.id, u.username)}>刪除</button>
+              {/if}
+            </td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile cards -->
+  <div class="users-cards">
+    {#each users as u (u.id)}
+      <div class="user-card" class:is-current={u.id === currentUserId}>
+        <div class="user-card__main">
+          <span class="user-card__name">
             {u.username}
             {#if u.id === currentUserId}<span style="color:#888;font-size:0.75rem">（你）</span>{/if}
-          </td>
-          <td><span class="role-badge role-badge--{u.role}">{u.role}</span></td>
-          <td>{formatPerms(u.role, u.permissions)}</td>
-          <td>{new Date(u.createdAt).toLocaleDateString('zh-TW')}</td>
-          <td>
-            {#if isSuperAdmin && u.id !== currentUserId && u.role !== 'superadmin'}
-              <button type="button" class="btn-danger-sm" on:click={() => deleteUser(u.id, u.username)}>刪除</button>
-            {/if}
-          </td>
-        </tr>
-      {/each}
-    </tbody>
-  </table>
+          </span>
+          <span class="role-badge role-badge--{u.role}">{u.role}</span>
+        </div>
+        <div class="user-card__meta">
+          <span>權限：{formatPerms(u.role, u.permissions)}</span>
+          <span>{new Date(u.createdAt).toLocaleDateString('zh-TW')}</span>
+          {#if isSuperAdmin && u.id !== currentUserId && u.role !== 'superadmin'}
+            <button type="button" class="btn-danger-sm" on:click={() => deleteUser(u.id, u.username)}>刪除</button>
+          {/if}
+        </div>
+      </div>
+    {/each}
+  </div>
 </div>
 
 <style>
 .status-success { color: #166534; background: #dcfce7; padding: 0.5rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
 .error-text { color: #991b1b; background: #fee2e2; padding: 0.5rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
 .perm-label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; cursor: pointer; }
+/* Desktop table */
+.users-table-wrap { overflow-x: auto; }
+/* Mobile cards */
+.users-cards { display: none; flex-direction: column; gap: 0.5rem; }
+.user-card { padding: 0.75rem 1rem; border: 1px solid var(--border, #e5e5e5); border-radius: 8px; background: #fff; }
+.user-card.is-current { background: var(--accent-subtle, #f0f9ff); }
+.user-card__main { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem; }
+.user-card__name { font-weight: 600; font-size: 0.9rem; }
+.user-card__meta { display: flex; align-items: center; gap: 0.75rem; font-size: 0.8rem; color: var(--muted, #666); flex-wrap: wrap; }
+@media (max-width: 640px) {
+  .users-table-wrap { display: none; }
+  .users-cards { display: flex; }
+}
 .perm-label.disabled { opacity: 0.4; cursor: not-allowed; }
 </style>

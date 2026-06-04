@@ -75,9 +75,9 @@
 <div class="admin-page">
   <div class="page-header">
     <h1>品牌管理</h1>
-    <div style="display:flex;gap:0.5rem">
-      <button type="button" on:click={autoPopulate} class="btn-secondary">從車輛自動帶入</button>
-      <button type="button" on:click={addRow} class="btn-secondary">＋ 新增品牌</button>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+      <button type="button" on:click={autoPopulate} class="btn-secondary">從車輛帶入</button>
+      <button type="button" on:click={addRow} class="btn-secondary">＋ 新增</button>
       <button type="button" on:click={save} disabled={saving} class="btn-primary">
         {saving ? '儲存中...' : '儲存'}
       </button>
@@ -135,7 +135,8 @@
 
 <style>
 .brand-list { display: flex; flex-direction: column; gap: 0.75rem; }
-.brand-row { display: flex; align-items: flex-end; gap: 1rem; flex-wrap: wrap; background: #f9f9f9; padding: 1rem; border-radius: 8px; border: 1px solid #e5e5e5; }
+.brand-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; background: #f9f9f9; padding: 1rem; border-radius: 8px; border: 1px solid #e5e5e5; align-items: end; }
+@media (max-width: 480px) { .brand-row { grid-template-columns: 1fr; } }
 .form-group { display: flex; flex-direction: column; gap: 0.3rem; }
 .form-group label { font-size: 0.8rem; font-weight: 600; color: #555; }
 .form-select, .form-input { padding: 0.4rem 0.6rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.875rem; }
