@@ -7,9 +7,17 @@ import { vehicleStatusLabels } from '@/lib/vehicle-status';
 interface Props {
   vehicle: VehicleView;
   shareText?: string;
+  compareIds?: string[];
 }
 
-const { vehicle, shareText } = Astro.props;
+const { vehicle, shareText, compareIds = [] } = Astro.props;
+const isComparing = compareIds.includes(vehicle.slug);
+const newCompareIds = isComparing
+  ? compareIds.filter((id) => id !== vehicle.slug)
+  : [...compareIds, vehicle.slug];
+const compareHref = newCompareIds.length
+  ? `/cars/compare?ids=${newCompareIds.join(',')}`
+  : '/cars/compare';
 const image = vehicle.coverImage;
 const statusBadge = vehicle.status !== 'published' ? vehicleStatusLabels[vehicle.status] : '';
 const specs = [
@@ -68,4 +76,25 @@ const specs = [
     </div>
   </a>
   <ShareButton class="vehicle-share" title={vehicle.title} url={`/cars/${vehicle.slug}`} text={shareText} />
+  <a href={compareHref} class={`compare-btn${isComparing ? ' compare-btn--active' : ''}`}>
+    {isComparing ? '✓ 已加入' : '＋ 比較'}
+  </a>
 </article>
+
+<style>
+  .compare-btn {
+    display: inline-block;
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border: 1px solid var(--border, #e5e5e5);
+    border-radius: 4px;
+    text-decoration: none;
+    color: var(--muted, #777);
+    transition: all 0.15s;
+  }
+  .compare-btn--active {
+    border-color: var(--accent, #0066cc);
+    color: var(--accent, #0066cc);
+  }
+  .compare-btn:hover { opacity: 0.8; }
+</style>
