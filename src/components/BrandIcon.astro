@@ -1,0 +1,28 @@
+---
+interface Props {
+  iconUrl: string | null | undefined;
+  alt?: string;
+  size?: number;
+  class?: string;
+}
+const { iconUrl, alt = '', size = 24, class: className = '' } = Astro.props;
+---
+{iconUrl && (
+  <img
+    src={iconUrl}
+    alt={alt}
+    width={size}
+    height={size}
+    class={`brand-icon ${className}`.trim()}
+    loading="lazy"
+    decoding="async"
+  />
+)}
+
+<style>
+.brand-icon {
+  display: inline-block;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+</style>
