@@ -1,6 +1,7 @@
 ---
 import PublicLayout from '@/layouts/PublicLayout.astro';
 import PremiumIcon from '@/components/PremiumIcon.astro';
+import BrandIcon from '@/components/BrandIcon.astro';
 import ShareButton from '@/components/ShareButton.astro';
 import { getSettings } from '@/lib/settings';
 import { formatVehicleShareText, shareOriginFromRequest, vehicleShareUrl } from '@/lib/vehicle-share';
@@ -84,7 +85,12 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
   <article class="detail-page luxury-enter">
     <section class="detail-hero">
       <div class="detail-copy">
-        <p class="eyebrow">{vehicle.brandDisplayName}</p>
+        <p class="eyebrow">
+          <span class="detail-brand">
+            <BrandIcon iconUrl={vehicle.brandIconUrl} alt="" size={24} class="detail-brand-icon" />
+            {vehicle.brandDisplayName}
+          </span>
+        </p>
         <h1>{vehicle.title}</h1>
         <p class="detail-headline">{vehicle.headline || vehicle.condition}</p>
         <div class="detail-actions">
@@ -336,4 +342,12 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
       }
     });
   </script>
+
+  <style>
+    .detail-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+  </style>
 </PublicLayout>
