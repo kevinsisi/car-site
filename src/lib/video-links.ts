@@ -1,6 +1,9 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { asc } from 'drizzle-orm';
 import { db } from '@/db/connection';
 import { siteVideoLinks } from '@/db/schema';
+import { appConfig } from './config';
 
 export interface VideoLinkView {
   id: string;
@@ -9,6 +12,16 @@ export interface VideoLinkView {
   thumbnailUrl: string | null;
   sortOrder: number;
 }
+
+const mediaRoot = path.resolve(path.dirname(appConfig.databasePath), 'media');
+const thumbnailDir = path.join(mediaRoot, 'video-thumbnails');
+const imageTypes: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+  'image/gif': '.gif',
+};
+const maxThumbnailBytes = 8 * 1024 * 1024;
 
 export async function listVideoLinks(): Promise<VideoLinkView[]> {
   const rows = await db.select().from(siteVideoLinks).orderBy(asc(siteVideoLinks.sortOrder));
@@ -57,6 +70,42 @@ async function fetchText(url: string): Promise<string | null> {
   }
 }
 
+async function downloadThumbnail(url: string): Promise<string | null> {
+  if (url.startsWith('/media/')) return url;
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 7000);
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+        Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+        Referer: 'https://www.instagram.com/',
+      },
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+    const type = (res.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+    const ext = imageTypes[type];
+    if (!ext) return null;
+    const buffer = Buffer.from(await res.arrayBuffer());
+    if (!buffer.length || buffer.length > maxThumbnailBytes) return null;
+
+    const today = new Date().toISOString().slice(0, 10);
+    const dir = path.join(thumbnailDir, today);
+    const root = path.resolve(mediaRoot);
+    const resolvedDir = path.resolve(dir);
+    if (!resolvedDir.startsWith(root + path.sep)) return null;
+    await fs.promises.mkdir(resolvedDir, { recursive: true });
+    const filename = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}${ext}`;
+    const filePath = path.join(resolvedDir, filename);
+    await fs.promises.writeFile(filePath, buffer, { flag: 'wx' });
+    return `/media/video-thumbnails/${today}/${filename}`;
+  } catch {
+    return null;
+  }
+}
+
 function firstMetaImage(html: string, baseUrl: string): string | null {
   const match =
     html.match(/<meta[^>]+(?:property|name)=["'](?:og:image|og:image:secure_url|twitter:image)["'][^>]+content=["']([^"']+)["']/i) ||
@@ -72,7 +121,10 @@ function firstMetaImage(html: string, baseUrl: string): string | null {
 
 export async function fetchVideoThumbnail(url: string): Promise<string | null> {
   const youtube = youtubeId(url);
-  if (youtube) return `https://i.ytimg.com/vi/${youtube}/hqdefault.jpg`;
+  if (youtube) {
+    const thumbnail = `https://i.ytimg.com/vi/${youtube}/hqdefault.jpg`;
+    return (await downloadThumbnail(thumbnail)) || thumbnail;
+  }
 
   const instagramFallback = instagramMediaThumbnail(url);
 
@@ -80,7 +132,10 @@ export async function fetchVideoThumbnail(url: string): Promise<string | null> {
     const oembed = await fetchText(`https://www.instagram.com/oembed/?url=${encodeURIComponent(url)}`);
     if (oembed) {
       const parsed = JSON.parse(oembed) as { thumbnail_url?: string };
-      if (parsed.thumbnail_url) return parsed.thumbnail_url.replace(/&amp;/g, '&');
+      if (parsed.thumbnail_url) {
+        const thumbnail = parsed.thumbnail_url.replace(/&amp;/g, '&');
+        return (await downloadThumbnail(thumbnail)) || thumbnail;
+      }
     }
   } catch {
     // Continue to metadata and deterministic media endpoint fallback.
@@ -89,10 +144,10 @@ export async function fetchVideoThumbnail(url: string): Promise<string | null> {
   const html = await fetchText(url);
   if (html) {
     const metaImage = firstMetaImage(html, url);
-    if (metaImage) return metaImage;
+    if (metaImage) return (await downloadThumbnail(metaImage)) || metaImage;
   }
 
-  return instagramFallback;
+  return instagramFallback ? (await downloadThumbnail(instagramFallback)) || instagramFallback : null;
 }
 
 export async function fetchOgImage(url: string): Promise<string | null> {
