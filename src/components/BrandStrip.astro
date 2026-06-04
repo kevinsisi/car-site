@@ -1,0 +1,69 @@
+---
+interface BrandItem {
+  displayName: string;
+  urlSlug: string;
+  iconUrl: string | null;
+  count: number;
+}
+interface Props {
+  brands: BrandItem[];
+  eyebrow?: string;
+}
+const { brands, eyebrow = '車系品牌' } = Astro.props;
+const brandsWithIcons = brands.filter((b) => b.iconUrl);
+---
+
+{brandsWithIcons.length > 0 && (
+  <section class="brand-strip reveal-section">
+    <p class="eyebrow">{eyebrow}</p>
+    <ul class="brand-strip__list" role="list">
+      {brandsWithIcons.map((brand) => (
+        <li>
+          <a href={`/cars?brand=${brand.urlSlug}`} class="brand-strip__item">
+            <span class="brand-strip__logo">
+              <img src={brand.iconUrl!} alt={brand.displayName} width="48" height="48" loading="lazy" />
+            </span>
+            <span class="brand-strip__name">{brand.displayName}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}
+
+<style>
+.brand-strip { margin: var(--section-gap, 4rem) 0; }
+.brand-strip .eyebrow { text-align: center; margin-bottom: 1.5rem; }
+.brand-strip__list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.brand-strip__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.2s;
+}
+.brand-strip__item:hover { opacity: 0.7; }
+.brand-strip__logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--card-bg, #fff);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 8px;
+}
+.brand-strip__logo img { width: 48px; height: 48px; object-fit: contain; }
+.brand-strip__name { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; }
+</style>
