@@ -100,6 +100,8 @@ function youtubeId(url: string): string | null {
 }
 .video-carousel--top-strip .video-carousel__item iframe,
 .video-carousel--top-strip .video-carousel__item video {
+  height: clamp(24rem, 42vw, 34rem);
+  aspect-ratio: auto;
   border-radius: 0;
 }
 .video-carousel--top-strip .video-carousel__label { display: none; }
@@ -120,4 +122,11 @@ function youtubeId(url: string): string | null {
 .video-carousel__dots { display: flex; gap: 0.5rem; }
 .vdot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted, #aaa); border: 0; padding: 0; cursor: pointer; transition: background 0.15s; }
 .vdot.is-active { background: var(--accent, #0066cc); }
+
+@media (max-width: 900px) {
+  .video-carousel--top-strip .video-carousel__item iframe,
+  .video-carousel--top-strip .video-carousel__item video {
+    height: clamp(11.5rem, 52vw, 14rem);
+  }
+}
 </style>

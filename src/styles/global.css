@@ -158,6 +158,10 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
 .section-heading,
 .page-hero { padding: clamp(3rem, 7vw, 6rem) clamp(1.25rem, 5vw, 6rem) 2rem; }
 
+.page-hero.compact { padding-top: clamp(1.35rem, 2.8vw, 2.7rem); padding-bottom: 1.1rem; }
+.page-hero.compact h1 { margin-bottom: 0.75rem; font-size: clamp(2.2rem, 4.8vw, 4.45rem); }
+.page-hero.compact p:not(.eyebrow) { max-width: 54rem; margin: 0; font-size: clamp(0.98rem, 1.45vw, 1.12rem); line-height: 1.42; }
+
 .section-heading { display: flex; justify-content: space-between; align-items: end; gap: 2rem; }
 
 .section-heading--sold { padding-top: clamp(1rem, 4vw, 3rem); }
@@ -212,9 +216,9 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
 .brand-list a:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--accent-strong); }
 .brand-list a:active { transform: scale(0.985); }
 .brand-list strong { min-width: 1.75rem; height: 1.75rem; display: inline-grid; place-items: center; border-radius: 999px; background: color-mix(in srgb, var(--surface-soft) 80%, transparent); color: color-mix(in srgb, var(--muted) 70%, transparent); font-size: 0.82rem; }
-.inventory-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 1rem; margin-bottom: 1.25rem; }
+.inventory-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 0.75rem 1rem; margin-bottom: 0.8rem; }
 .inventory-toolbar .eyebrow { margin: 0 0 0.35rem; color: var(--muted); letter-spacing: 0.08em; }
-.inventory-toolbar h2 { margin: 0; font-size: clamp(1.8rem, 3.6vw, 3.6rem); letter-spacing: -0.055em; line-height: 1; }
+.inventory-toolbar h2 { margin: 0; font-size: clamp(1.65rem, 3vw, 3rem); letter-spacing: -0.05em; line-height: 1; }
 .inventory-toolbar__controls { display: flex; align-items: center; gap: 1rem; }
 .vehicle-count { color: var(--muted); font-weight: 700; white-space: nowrap; }
 .sort-control { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--muted); font-size: 0.92rem; }
