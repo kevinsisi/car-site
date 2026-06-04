@@ -1,0 +1,40 @@
+---
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import Users from '@/components/admin/Users.svelte';
+import { getSession, hasAnyUsers } from '@/lib/auth';
+import { PERMISSIONS, PERMISSION_LABELS, hasPermission } from '@/lib/permissions';
+import { db } from '@/db/connection';
+import { adminUsers } from '@/db/schema';
+import { asc } from 'drizzle-orm';
+
+if (!await hasAnyUsers()) return Astro.redirect('/admin/setup');
+const user = await getSession(Astro.cookies);
+if (!user) return Astro.redirect('/admin/login');
+if (user.role !== 'superadmin' && !hasPermission(user.permissions, PERMISSIONS.USERS_MANAGE)) {
+  return Astro.redirect('/admin');
+}
+
+const users = await db.select({
+  id: adminUsers.id,
+  username: adminUsers.username,
+  role: adminUsers.role,
+  permissions: adminUsers.permissions,
+  createdAt: adminUsers.createdAt,
+}).from(adminUsers).orderBy(asc(adminUsers.createdAt));
+
+// Pass permission bits as plain object (Svelte runs in browser, can't import server modules)
+const permissionBits = Object.fromEntries(
+  Object.entries(PERMISSIONS).filter(([k]) => k !== 'ALL').map(([k, v]) => [k, v])
+) as Record<string, number>;
+---
+<AdminLayout user={user} title="用戶管理">
+  <Users
+    client:load
+    users={users}
+    currentUserId={user.id}
+    isSuperAdmin={user.role === 'superadmin'}
+    creatorPermissions={user.permissions}
+    permissionLabels={PERMISSION_LABELS}
+    permissionBits={permissionBits}
+  />
+</AdminLayout>
