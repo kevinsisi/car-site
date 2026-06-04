@@ -5,7 +5,7 @@ import { sanitizeImageUrl, sanitizePublicHref } from '@/lib/safe-url';
 import { setSettings } from '@/lib/settings';
 import { fetchVideoThumbnail } from '@/lib/video-links';
 
-const videoPositions = new Set(['below-hero', 'below-featured', 'above-footer']);
+const videoPositions = new Set(['above-header', 'below-hero', 'below-featured', 'above-footer']);
 
 async function sanitizeHeroVideos(value: unknown) {
   let raw = value;

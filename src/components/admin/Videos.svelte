@@ -121,6 +121,7 @@
         <div class="form-group" style="margin-bottom:1rem">
           <label>顯示位置</label>
           <select bind:value={videoSectionPosition} on:change={() => (carouselDirty = true)} class="form-select">
+            <option value="above-header">Header 上方整條橫幅</option>
             <option value="below-hero">Hero 下方</option>
             <option value="below-featured">精選車輛下方</option>
             <option value="above-footer">頁尾上方</option>

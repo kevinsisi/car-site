@@ -3,8 +3,9 @@ import type { HeroVideo } from '@/lib/settings';
 interface Props {
   videos: HeroVideo[];
   title?: string;
+  variant?: 'default' | 'top-strip';
 }
-const { videos, title } = Astro.props;
+const { videos, title, variant = 'default' } = Astro.props;
 if (!videos.length) return;
 
 function youtubeId(url: string): string | null {
@@ -14,7 +15,7 @@ function youtubeId(url: string): string | null {
 ---
 
 {videos.length > 0 && (
-  <section class="video-carousel reveal-section">
+  <section class:list={['video-carousel', { 'video-carousel--top-strip': variant === 'top-strip', 'reveal-section': variant !== 'top-strip' }]}>
     {title && <h2 class="video-carousel__title">{title}</h2>}
     <div class="video-carousel__stage" data-vcarousel>
       {videos.map((video, index) => (
@@ -83,6 +84,7 @@ function youtubeId(url: string): string | null {
 
 <style>
 .video-carousel { width: 100%; margin: var(--section-gap, 3rem) 0; }
+.video-carousel--top-strip { position: relative; margin: 0; background: #000; }
 .video-carousel__title { text-align: center; margin-bottom: 1.5rem; }
 .video-carousel__stage { position: relative; }
 .video-carousel__item { display: none; }
@@ -96,6 +98,21 @@ function youtubeId(url: string): string | null {
   background: #000;
   display: block;
 }
+.video-carousel--top-strip .video-carousel__item iframe,
+.video-carousel--top-strip .video-carousel__item video {
+  border-radius: 0;
+}
+.video-carousel--top-strip .video-carousel__label { display: none; }
+.video-carousel--top-strip .video-carousel__controls {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.35rem;
+  margin: 0;
+  color: #fff;
+  pointer-events: none;
+}
+.video-carousel--top-strip .video-carousel__controls button { pointer-events: auto; color: #fff; text-shadow: 0 1px 8px rgba(0,0,0,0.8); }
 .video-carousel__label { text-align: center; margin-top: 0.75rem; font-size: 0.9rem; color: var(--muted, #777); }
 .video-carousel__controls { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1rem; }
 .video-carousel__controls button { background: none; border: 0; font-size: 1.5rem; cursor: pointer; padding: 0.25em 0.5em; color: inherit; opacity: 0.7; }

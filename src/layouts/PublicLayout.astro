@@ -2,6 +2,7 @@
 import SocialIcon from '@/components/SocialIcon.astro';
 import PremiumIcon from '@/components/PremiumIcon.astro';
 import CompareBar from '@/components/CompareBar.astro';
+import VideoCarousel from '@/components/VideoCarousel.astro';
 import { getSettings } from '@/lib/settings';
 import { siteIconHref } from '@/lib/site-icon';
 import { styleVars, styles, templates } from '@/lib/theme';
@@ -50,6 +51,7 @@ const themeColors: Record<typeof settings.activeStyle, string> = {
 };
 const themeColor = themeColors[settings.activeStyle] || '#070605';
 const pathname = Astro.url.pathname;
+const showHeaderVideo = pathname === '/' && settings.videoSectionEnabled && settings.videoSectionPosition === 'above-header' && settings.heroVideos.length > 0;
 const isCurrentPath = (test: string) => {
   if (test === '/cars') return pathname === '/cars' || pathname.startsWith('/cars/');
   return pathname === test;
@@ -92,6 +94,7 @@ const socialIcons = settings.socialIcons || {};
   </head>
   <body id="top">
     <a class="skip-to-content" href="#main">跳至主要內容</a>
+    {showHeaderVideo && <VideoCarousel videos={settings.heroVideos} variant="top-strip" />}
     <header class="site-header">
       <a class="brand-mark" href="/" aria-current={pathname === '/' ? 'page' : undefined}>{settings.siteName}</a>
       <nav class="site-nav" aria-label="主選單">

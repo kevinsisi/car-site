@@ -15,7 +15,7 @@ export interface HeroVideo {
   label: string;
 }
 
-export type VideoSectionPosition = 'below-hero' | 'below-featured' | 'above-footer';
+export type VideoSectionPosition = 'above-header' | 'below-hero' | 'below-featured' | 'above-footer';
 
 export type SocialPlatform = 'line' | 'instagram' | 'facebook' | 'threads' | 'tiktok' | 'phone' | 'share';
 
@@ -252,7 +252,7 @@ export async function getSettings(): Promise<SiteSettings> {
     videoSectionEnabled: map.get('videoSectionEnabled') === 'true',
     videoSectionPosition: (() => {
       const v = map.get('videoSectionPosition');
-      if (v === 'below-featured' || v === 'above-footer') return v as VideoSectionPosition;
+      if (v === 'above-header' || v === 'below-featured' || v === 'above-footer') return v as VideoSectionPosition;
       return 'below-hero' as VideoSectionPosition;
     })(),
     videoLinksEnabled: map.get('videoLinksEnabled') === 'true',

@@ -5,30 +5,53 @@ interface Props {
   sectionTitle?: string;
 }
 const { links, sectionTitle = '精選影片' } = Astro.props;
+
+function instagramEmbedUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    if (!/(^|\.)instagram\.com$/i.test(parsed.hostname)) return null;
+    const match = parsed.pathname.match(/^\/(p|reel|tv)\/([^/?#]+)/i);
+    if (!match) return null;
+    return `https://www.instagram.com/${match[1].toLowerCase()}/${match[2]}/embed`;
+  } catch {
+    return null;
+  }
+}
 ---
 {links.length > 0 && (
   <section class="video-links reveal-section">
     <p class="eyebrow">{sectionTitle}</p>
     <ul class="video-links__grid" role="list">
-      {links.map((link) => (
+      {links.map((link) => {
+        const instagramEmbed = instagramEmbedUrl(link.url);
+        const showInstagramEmbed = instagramEmbed && (!link.thumbnailUrl || link.thumbnailUrl.includes('/video-thumbnails/'));
+        return (
         <li>
-          <a href={link.url} target="_blank" rel="noopener noreferrer" class="video-links__item">
+          <div class="video-links__item">
             <div class="video-links__thumb">
-              {link.thumbnailUrl ? (
+              {showInstagramEmbed ? (
+                <iframe
+                  src={instagramEmbed}
+                  title={link.title || 'Instagram 影片'}
+                  loading="lazy"
+                  allowtransparency="true"
+                  allow="encrypted-media; clipboard-write"
+                ></iframe>
+              ) : link.thumbnailUrl ? (
                 <img src={link.thumbnailUrl} alt={link.title} loading="lazy" decoding="async" />
               ) : (
                 <div class="video-links__thumb-placeholder">
                   <svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true"><path d="M5 3l14 9-14 9V3z" fill="currentColor" /></svg>
                 </div>
               )}
-              <span class="video-links__play" aria-hidden="true">
+              {!showInstagramEmbed && <span class="video-links__play" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="36" height="36"><circle cx="12" cy="12" r="11" fill="rgba(0,0,0,0.5)"/><path d="M10 8l6 4-6 4V8z" fill="#fff" /></svg>
-              </span>
+              </span>}
             </div>
-            {link.title && <p class="video-links__title">{link.title}</p>}
-          </a>
+            {link.title && <a href={link.url} target="_blank" rel="noopener noreferrer" class="video-links__title">{link.title}</a>}
+          </div>
         </li>
-      ))}
+      )})}
     </ul>
   </section>
 )}
@@ -37,14 +60,17 @@ const { links, sectionTitle = '精選影片' } = Astro.props;
 .video-links { margin: var(--section-gap, 4rem) 0; }
 .video-links .eyebrow { margin-bottom: 1.5rem; }
 .video-links__grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
   gap: 1.25rem;
   list-style: none;
-  padding: 0; margin: 0;
+  padding: 0 0 0.35rem; margin: 0;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
 }
-@media (max-width: 640px) { .video-links__grid { grid-template-columns: repeat(2, 1fr); } }
-.video-links__item { display: block; text-decoration: none; color: inherit; }
+.video-links__grid > li { flex: 0 0 min(22rem, 78vw); scroll-snap-align: start; }
+@media (min-width: 900px) { .video-links__grid > li { flex-basis: min(28rem, 32vw); } }
+.video-links__item { display: block; color: inherit; }
 .video-links__thumb {
   position: relative;
   aspect-ratio: 16/9;
@@ -53,8 +79,10 @@ const { links, sectionTitle = '精選影片' } = Astro.props;
   background: var(--image-bg, #111);
 }
 .video-links__thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.2s; }
+.video-links__thumb iframe { width: 100%; height: 100%; border: 0; display: block; background: #fff; }
 .video-links__item:hover .video-links__thumb img { transform: scale(1.04); }
 .video-links__thumb-placeholder { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--muted, #777); }
 .video-links__play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
-.video-links__title { margin-top: 0.5rem; font-size: 0.85rem; font-weight: 500; }
+.video-links__title { display: block; margin-top: 0.5rem; color: inherit; text-decoration: none; font-size: 0.85rem; font-weight: 700; }
+.video-links__title:hover { color: var(--accent-strong); }
 </style>
