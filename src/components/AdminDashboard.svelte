@@ -717,6 +717,16 @@
     else if (adminSort === 'mileage-asc') list.sort((a, b) => (adminNumericValue(a.mileage) || Infinity) - (adminNumericValue(b.mileage) || Infinity));
     return list;
   });
+  const vehicleSearchSuggestions = $derived.by(() => Array.from(new Set(
+    vehicles.flatMap((v) => [
+      v.title,
+      v.brand,
+      v.model,
+      v.subModel,
+      v.year,
+      v.slug,
+    ].filter((value): value is string => Boolean(value && String(value).trim())))
+  )).sort((a, b) => a.localeCompare(b, 'zh-Hant')));
 
   const totalPages = $derived(Math.max(1, Math.ceil(filteredVehicles.length / PAGE_SIZE)));
   const visibleVehicles = $derived.by(() => {
@@ -1442,7 +1452,12 @@
     <div class="admin-list-toolbar">
       <label class="admin-search">
         <span>搜尋車輛</span>
-        <input type="search" bind:value={vehicleSearch} placeholder="輸入標題、品牌、型號或網址代號" />
+        <input type="search" bind:value={vehicleSearch} placeholder="輸入標題、品牌、型號或網址代號" list="admin-vehicle-search-suggestions" autocomplete="off" />
+        <datalist id="admin-vehicle-search-suggestions">
+          {#each vehicleSearchSuggestions as suggestion}
+            <option value={suggestion}></option>
+          {/each}
+        </datalist>
       </label>
       <label class="admin-sort">
         <span>排序</span>

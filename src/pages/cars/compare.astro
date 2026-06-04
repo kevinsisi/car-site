@@ -15,6 +15,17 @@ const [vehicles, allVehicles] = await Promise.all([
 
 // Vehicles available to add (not already in compare)
 const availableVehicles = allVehicles.filter((v) => !slugs.includes(v.slug));
+const compareSearchSuggestions = Array.from(new Set(
+  allVehicles.flatMap((vehicle) => [
+    vehicle.brandDisplayName,
+    vehicle.brand,
+    vehicle.model,
+    vehicle.subModel,
+    vehicle.year,
+    vehicle.cardTitle,
+    vehicle.title,
+  ].filter((value): value is string => Boolean(value && String(value).trim())))
+)).sort((a, b) => a.localeCompare(b, 'zh-Hant'));
 
 const specRows = [
   { key: 'year', label: '年份' },
@@ -58,8 +69,12 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
             id="compare-search"
             placeholder="搜尋品牌、型號、年份..."
             class="compare-search-input"
+            list="compare-search-suggestions"
             autocomplete="off"
           />
+          <datalist id="compare-search-suggestions">
+            {compareSearchSuggestions.map((suggestion) => <option value={suggestion} />)}
+          </datalist>
         </div>
         <div class="compare-add-grid" id="compare-add-list">
           {availableVehicles.map((v) => (
@@ -161,7 +176,7 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
 
   searchInput?.addEventListener('input', () => {
     const q = searchInput.value.toLowerCase().trim();
-    list?.querySelectorAll<HTMLElement>('.compare-add-item').forEach((item) => {
+    list?.querySelectorAll<HTMLElement>('.compare-add-card').forEach((item) => {
       const match = !q || (item.dataset.search || '').includes(q);
       item.style.display = match ? '' : 'none';
     });

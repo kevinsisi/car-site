@@ -174,7 +174,7 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
 .inventory-shell { position: relative; display: block; padding: 0 clamp(1.25rem, 5vw, 6rem) 6rem; }
 .inventory-content { min-width: 0; }
 .inventory-content .vehicle-grid { padding: 0; }
-.mobile-filter-strip { display: flex; align-items: center; justify-content: flex-start; gap: 0.55rem; margin: -0.25rem 0 1.25rem; }
+.mobile-filter-strip { flex: 0 0 100%; order: 3; display: flex; align-items: center; justify-content: flex-start; gap: 0.55rem; margin: 0.15rem 0 0; }
 .listing-search { flex: 1; min-width: 0; }
 .listing-search input { width: 100%; min-height: 2.65rem; border: 1px solid color-mix(in srgb, var(--line) 72%, transparent); border-radius: 999px; padding: 0 1rem; background: color-mix(in srgb, var(--surface) 84%, transparent); color: var(--text); font: inherit; font-size: 1rem; font-weight: 720; box-shadow: 0 0.5rem 1.2rem rgba(0, 0, 0, 0.1); }
 .listing-search input::placeholder { color: color-mix(in srgb, var(--muted) 72%, transparent); }
@@ -198,7 +198,7 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
 .brand-list a:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--accent-strong); }
 .brand-list a:active { transform: scale(0.985); }
 .brand-list strong { min-width: 1.75rem; height: 1.75rem; display: inline-grid; place-items: center; border-radius: 999px; background: color-mix(in srgb, var(--surface-soft) 80%, transparent); color: color-mix(in srgb, var(--muted) 70%, transparent); font-size: 0.82rem; }
-.inventory-toolbar { display: flex; justify-content: space-between; align-items: end; gap: 1rem; margin-bottom: 1.25rem; }
+.inventory-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 1rem; margin-bottom: 1.25rem; }
 .inventory-toolbar .eyebrow { margin: 0 0 0.35rem; color: var(--muted); letter-spacing: 0.08em; }
 .inventory-toolbar h2 { margin: 0; font-size: clamp(1.8rem, 3.6vw, 3.6rem); letter-spacing: -0.055em; line-height: 1; }
 .inventory-toolbar__controls { display: flex; align-items: center; gap: 1rem; }
@@ -440,7 +440,7 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
   .inventory-content { padding-top: 1rem; }
   .page-hero.compact { padding-top: 1.5rem; padding-bottom: 1rem; }
   /* Search strip: static inline below heading, no longer fixed */
-  .mobile-filter-strip { position: static; display: flex; margin: 0.75rem 0 1rem; padding: 0; z-index: auto; }
+  .mobile-filter-strip { grid-column: 1 / -1; position: static; display: flex; margin: 0.15rem 0 0.2rem; padding: 0; z-index: auto; }
   .listing-search input { min-height: 2.6rem; font-size: 1rem; }
   .filter-toggle { min-height: 2.6rem; max-width: 9rem; padding: 0 0.9rem; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .filter-toggle.is-active { background: var(--surface); color: var(--accent-strong); box-shadow: 0 0.35rem 1rem rgba(0, 0, 0, 0.16); }
