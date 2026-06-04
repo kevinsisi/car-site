@@ -249,6 +249,11 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
           img.alt = '';
           img.loading = 'lazy';
           button.append(img);
+        } else if (item.kind === 'brand') {
+          const fallback = document.createElement('span');
+          fallback.className = 'brand-suggestion-fallback';
+          fallback.textContent = item.value.slice(0, 1).toUpperCase();
+          button.append(fallback);
         }
         const label = document.createElement('span');
         label.textContent = item.value;

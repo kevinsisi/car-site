@@ -183,6 +183,7 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
 .search-suggestions[hidden] { display: none; }
 .search-suggestions button { min-height: 2.45rem; width: 100%; display: flex; align-items: center; gap: 0.55rem; border: 0; border-radius: 0.85rem; padding: 0 0.85rem; background: transparent; color: var(--text); font: inherit; font-size: 0.96rem; font-weight: 760; text-align: left; }
 .search-suggestions button img { width: 1.35rem; height: 1.35rem; flex: 0 0 auto; object-fit: contain; border-radius: 999px; background: color-mix(in srgb, var(--surface-soft) 82%, transparent); }
+.brand-suggestion-fallback { width: 1.35rem; height: 1.35rem; flex: 0 0 auto; display: inline-grid; place-items: center; border-radius: 999px; background: color-mix(in srgb, var(--accent) 14%, var(--surface)); color: var(--accent-strong); font-size: 0.72rem; font-weight: 900; }
 .search-suggestions button span { min-width: 0; overflow: visible; white-space: nowrap; }
 .search-suggestions button.is-brand span { font-weight: 850; color: var(--accent-strong); }
 .search-suggestions button:hover,

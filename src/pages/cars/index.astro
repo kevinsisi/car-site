@@ -29,14 +29,14 @@ for (const brand of brands) {
   });
 }
 for (const vehicle of allVehicles) {
-  if (!vehicle.brandDisplayName || !vehicle.brandUrlSlug) continue;
+  if (!vehicle.brandDisplayName) continue;
   const key = vehicle.brandDisplayName.toLowerCase();
   if (brandSuggestionMap.has(key)) continue;
   brandSuggestionMap.set(key, {
     value: vehicle.brandDisplayName,
     kind: 'brand',
     iconUrl: vehicle.brandIconUrl,
-    href: `/cars?brand=${vehicle.brandUrlSlug}`,
+    href: vehicle.brandUrlSlug ? `/cars?brand=${vehicle.brandUrlSlug}` : `/cars?q=${encodeURIComponent(vehicle.brandDisplayName)}`,
   });
 }
 const brandSuggestions = Array.from(brandSuggestionMap.values()).sort((a, b) => a.value.localeCompare(b.value, 'zh-Hant'));
@@ -249,6 +249,11 @@ const vehicles = sortedVehicles;
             img.alt = '';
             img.loading = 'lazy';
             button.append(img);
+          } else if (item.kind === 'brand') {
+            const fallback = document.createElement('span');
+            fallback.className = 'brand-suggestion-fallback';
+            fallback.textContent = item.value.slice(0, 1).toUpperCase();
+            button.append(fallback);
           }
           const label = document.createElement('span');
           label.textContent = item.value;
