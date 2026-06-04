@@ -1,0 +1,18 @@
+---
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import SettingsSmtp from '@/components/admin/SettingsSmtp.svelte';
+import { getSession, hasAnyUsers } from '@/lib/auth';
+import { PERMISSIONS, hasPermission } from '@/lib/permissions';
+import { getSettings } from '@/lib/settings';
+
+if (!await hasAnyUsers()) return Astro.redirect('/admin/setup');
+const user = await getSession(Astro.cookies);
+if (!user) return Astro.redirect('/admin/login');
+if (user.role !== 'superadmin' && !hasPermission(user.permissions, PERMISSIONS.SETTINGS_SMTP)) {
+  return Astro.redirect('/admin');
+}
+const settings = await getSettings();
+---
+<AdminLayout user={user} title="SMTP 通知">
+  <SettingsSmtp client:load settings={settings} />
+</AdminLayout>

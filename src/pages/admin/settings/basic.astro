@@ -1,0 +1,18 @@
+---
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import SettingsBasic from '@/components/admin/SettingsBasic.svelte';
+import { getSession, hasAnyUsers } from '@/lib/auth';
+import { PERMISSIONS, hasPermission } from '@/lib/permissions';
+import { getSettings } from '@/lib/settings';
+
+if (!await hasAnyUsers()) return Astro.redirect('/admin/setup');
+const user = await getSession(Astro.cookies);
+if (!user) return Astro.redirect('/admin/login');
+if (user.role !== 'superadmin' && !hasPermission(user.permissions, PERMISSIONS.SETTINGS_BASIC)) {
+  return Astro.redirect('/admin');
+}
+const settings = await getSettings();
+---
+<AdminLayout user={user} title="基本設定">
+  <SettingsBasic client:load settings={settings} />
+</AdminLayout>
