@@ -7,6 +7,7 @@ const params = Astro.url.searchParams;
 const hasError = params.get('error') === '1';
 const isExpired = params.get('expired') === '1';
 const isLimited = params.get('limited') === '1';
+const isSetup = params.get('setup') === '1';
 const settings = await getSettings();
 const siteIconUrl = siteIconHref(settings);
 const errorMessage = isExpired
@@ -31,6 +32,7 @@ const errorMessage = isExpired
     <form class="login-card" method="post" action="/api/admin/login">
       <p class="admin-eyebrow">私人精品車展</p>
       <h1>後台登入</h1>
+      {isSetup && <p class="login-success">帳號建立完成，請登入</p>}
       {errorMessage && (
         <p class="login-error" role="alert">{errorMessage}</p>
       )}
