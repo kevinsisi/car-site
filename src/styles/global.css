@@ -157,6 +157,15 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
 
 .salon-note { max-width: 58rem; margin: 0 auto; padding: 4rem clamp(1.25rem, 5vw, 6rem); font-size: clamp(1.5rem, 3vw, 2.7rem); line-height: 1.45; color: var(--text); text-align: center; }
 
+.home-brand-quick { display: flex; align-items: center; gap: 0.5rem; margin: clamp(1rem, 2.4vw, 1.6rem) clamp(1.25rem, 5vw, 6rem) 0; overflow-x: auto; padding-bottom: 0.15rem; scrollbar-width: none; }
+.home-brand-quick::-webkit-scrollbar { display: none; }
+.home-brand-quick a { flex: 0 0 auto; min-height: 2.45rem; display: inline-flex; align-items: center; gap: 0.42rem; border: 1px solid color-mix(in srgb, var(--line) 72%, transparent); border-radius: 999px; padding: 0 0.75rem; background: color-mix(in srgb, var(--surface) 74%, transparent); color: var(--muted); font-size: 0.84rem; font-weight: 780; }
+.home-brand-quick a:hover { color: var(--accent-strong); border-color: color-mix(in srgb, var(--accent) 48%, var(--line)); background: var(--surface); transform: translateY(-1px); }
+.home-brand-quick__all { color: var(--accent-strong) !important; background: color-mix(in srgb, var(--accent) 11%, var(--surface)) !important; }
+.home-brand-quick__mark { width: 1.35rem; height: 1.35rem; display: inline-grid; place-items: center; border-radius: 999px; background: color-mix(in srgb, var(--surface-soft) 82%, transparent); color: var(--accent-strong); font-size: 0.72rem; font-weight: 900; }
+.home-brand-quick__mark img { width: 1.05rem; height: 1.05rem; object-fit: contain; }
+.home-brand-quick strong { min-width: 1.35rem; height: 1.35rem; display: inline-grid; place-items: center; border-radius: 999px; background: color-mix(in srgb, var(--surface-soft) 80%, transparent); color: color-mix(in srgb, var(--muted) 72%, transparent); font-size: 0.72rem; }
+
 .section-heading,
 .page-hero { padding: clamp(3rem, 7vw, 6rem) clamp(1.25rem, 5vw, 6rem) 2rem; }
 

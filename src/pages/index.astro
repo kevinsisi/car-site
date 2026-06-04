@@ -19,6 +19,7 @@ const heroBySlug = settings.heroVehicleSlug ? featuredVehicles.find((v) => v.slu
 const hero = heroBySlug || featuredVehicles[0] || soldCaseVehicles[0];
 const shareOrigin = shareOriginFromRequest(Astro.request, Astro.url);
 const featuredCount = Math.max(1, Math.min(12, settings.featuredCount ?? 3));
+const quickBrands = brands.filter((brand) => brand.count > 0).slice(0, 9);
 const mapQuery = settings.storeAddress ? encodeURIComponent(settings.storeAddress) : '';
 const mapHref = mapQuery ? `https://www.google.com/maps/search/?api=1&query=${mapQuery}` : '';
 const mapEmbedSrc = mapQuery ? `https://www.google.com/maps?q=${mapQuery}&output=embed` : '';
@@ -40,6 +41,21 @@ const mapEmbedSrc = mapQuery ? `https://www.google.com/maps?q=${mapQuery}&output
       <div class="hero__badge">{settings.homepageBadge}</div>
     </div>
   </section>
+
+  {quickBrands.length > 0 && (
+    <nav class="home-brand-quick reveal-section" aria-label="快速瀏覽品牌">
+      <a class="home-brand-quick__all" href="/cars">全部車款</a>
+      {quickBrands.map((brand) => (
+        <a href={`/cars?brand=${brand.urlSlug}`} class="home-brand-quick__item">
+          <span class="home-brand-quick__mark">
+            {brand.iconUrl ? <img src={brand.iconUrl} alt="" width="22" height="22" loading="lazy" /> : brand.displayName.slice(0, 1)}
+          </span>
+          <span>{brand.displayName}</span>
+          <strong>{brand.count}</strong>
+        </a>
+      ))}
+    </nav>
+  )}
 
   <section class="section-heading section-heading--featured reveal-section">
     <p class="eyebrow">{settings.featuredEyebrow}</p>
