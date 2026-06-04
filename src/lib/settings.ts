@@ -263,7 +263,7 @@ export async function getSettings(): Promise<SiteSettings> {
   };
 }
 
-export async function setSettings(input: Partial<Record<keyof SiteSettings, string | number | boolean | string[] | SocialIconsMap>>) {
+export async function setSettings(input: Partial<Record<keyof SiteSettings, unknown>>) {
   const now = new Date().toISOString();
   for (const [key, rawValue] of Object.entries(input)) {
     if (rawValue === undefined) continue;

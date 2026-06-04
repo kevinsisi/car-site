@@ -16,6 +16,8 @@
   let carouselStatus = '';
 
   let links: VideoLinkView[] = [...videoLinks];
+  let videoLinksEnabled = settings.videoLinksEnabled ?? false;
+  let videoLinksSectionTitle = settings.videoLinksSectionTitle ?? '精選影片';
   let linksDirty = false;
   let linksSaving = false;
   let linksStatus = '';
@@ -45,13 +47,14 @@
 
   async function saveCarousel() {
     carouselSaving = true;
-    const res = await fetch('/api/admin/settings', {
+    const res = await fetch('/api/admin/video-settings', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ videoSectionEnabled, videoSectionPosition, heroVideos: JSON.stringify(heroVideos) }),
     });
     carouselSaving = false;
-    carouselStatus = res.ok ? '已儲存' : '儲存失敗';
+    const json = await res.json().catch(() => null);
+    carouselStatus = res.ok ? '已儲存' : json?.error || '儲存失敗';
     if (res.ok) carouselDirty = false;
     setTimeout(() => (carouselStatus = ''), 2500);
   }
@@ -81,14 +84,23 @@
 
   async function saveLinks() {
     linksSaving = true;
-    const res = await fetch('/api/admin/video-links', {
+    const settingsRes = await fetch('/api/admin/video-settings', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ videoLinksEnabled, videoLinksSectionTitle }),
+    });
+    const res = settingsRes.ok ? await fetch('/api/admin/video-links', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(links.map((l, i) => ({ ...l, sortOrder: i }))),
-    });
+    }) : settingsRes;
     linksSaving = false;
-    linksStatus = res.ok ? '已儲存' : '儲存失敗';
-    if (res.ok) linksDirty = false;
+    const json = await res.json().catch(() => null);
+    linksStatus = res.ok ? '已儲存' : json?.error || '儲存失敗';
+    if (res.ok) {
+      links = json?.links ?? links;
+      linksDirty = false;
+    }
     setTimeout(() => (linksStatus = ''), 2500);
   }
 </script>
@@ -148,6 +160,16 @@
   {#if canLinks}
     <section class="settings-section">
       <h2>底部影片連結</h2>
+      <div class="video-options">
+        <label class="checkbox-row">
+          <input type="checkbox" bind:checked={videoLinksEnabled} on:change={() => (linksDirty = true)} />
+          啟用底部影片連結區塊
+        </label>
+        <label class="title-field">
+          <span>區塊標題</span>
+          <input type="text" bind:value={videoLinksSectionTitle} on:input={() => (linksDirty = true)} class="form-input" placeholder="精選影片" />
+        </label>
+      </div>
       <div class="video-list">
         {#each links as link, i (i)}
           <div class="video-row">
@@ -176,17 +198,36 @@
 </div>
 
 <style>
-.checkbox-row { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; cursor: pointer; }
-.form-select { padding: 0.35rem 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; }
-.form-input { padding: 0.35rem 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; }
+.settings-section { display: grid; gap: 1rem; padding: clamp(1rem, 3vw, 1.4rem); border: 1px solid rgba(210, 174, 101, 0.18); border-radius: 1.2rem; background: #110e0b; overflow: hidden; }
+.settings-section h2 { margin: 0; color: #f8efe1; font-size: clamp(1.35rem, 4.8vw, 2rem); line-height: 1.12; }
+.checkbox-row { display: flex; align-items: center; gap: 0.65rem; font-weight: 800; cursor: pointer; color: #f8efe1; }
+.checkbox-row input { width: 1.25rem; min-height: 1.25rem; accent-color: #d6b06a; }
+.form-select { min-height: 2.65rem; padding: 0 0.75rem; border: 1px solid rgba(210, 174, 101, 0.28); border-radius: 0.75rem; background: #0d0b09; color: #f8efe1; font-size: 1rem; }
+.form-input { min-height: 2.65rem; padding: 0 0.75rem; border: 1px solid rgba(210, 174, 101, 0.28); border-radius: 0.75rem; background: #0d0b09; color: #f8efe1; font-size: 1rem; }
+.video-options { display: grid; gap: 0.8rem; }
+.title-field { display: grid; gap: 0.45rem; color: #c9bda6; }
+.title-field span { font-size: 0.88rem; font-weight: 800; color: #d6b06a; }
 .flex1 { flex: 1; min-width: 0; }
 .w80 { width: 80px; }
 .w140 { width: 140px; }
 .video-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem; }
-.video-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; background: #f8f8f8; padding: 0.5rem 0.75rem; border-radius: 6px; }
-.upload-label { cursor: pointer; font-size: 0.8rem; color: #666; white-space: nowrap; padding: 3px 8px; border: 1px solid #ddd; border-radius: 4px; }
-.thumb-preview { width: 48px; height: 30px; object-fit: cover; border-radius: 3px; }
-.btn-remove { background: none; border: none; color: #999; cursor: pointer; font-size: 1rem; padding: 0 4px; }
-.btn-add { font-size: 0.85rem; padding: 0.4rem 0.8rem; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; }
+.video-row { display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap; background: #0d0b09; padding: 0.75rem; border: 1px solid rgba(210, 174, 101, 0.14); border-radius: 0.95rem; }
+.upload-label { min-height: 2.45rem; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.9rem; font-weight: 800; color: #d6b06a; white-space: nowrap; padding: 0 0.9rem; border: 1px solid rgba(210, 174, 101, 0.28); border-radius: 999px; background: rgba(210, 174, 101, 0.06); }
+.thumb-preview { width: 4.8rem; height: 3rem; object-fit: cover; border-radius: 0.45rem; background: #050403; border: 1px solid rgba(210, 174, 101, 0.18); }
+.btn-remove { min-width: 2.45rem; min-height: 2.45rem; border: 1px solid rgba(220, 90, 90, 0.35); border-radius: 999px; background: transparent; color: #e8a0a0; cursor: pointer; font-size: 1rem; padding: 0 0.65rem; }
+.btn-add { min-height: 2.7rem; width: max-content; font-size: 0.95rem; font-weight: 850; padding: 0 1rem; border: 1px solid rgba(210, 174, 101, 0.32); border-radius: 999px; background: #f8efe1; color: #0b0a09; cursor: pointer; }
+.btn-primary { min-height: 2.7rem; padding: 0 1.1rem; border: 1px solid #d6b06a; border-radius: 999px; background: #d6b06a; color: #0b0a09; font-weight: 900; cursor: pointer; }
+.btn-primary:disabled { opacity: 0.42; cursor: not-allowed; }
 .save-status { font-size: 0.85rem; color: #166534; }
+@media (max-width: 700px) {
+  .admin-page { width: 100%; }
+  .video-row { display: grid; grid-template-columns: 1fr auto; align-items: end; }
+  .video-row .flex1,
+  .video-row .w80,
+  .video-row .w140 { width: 100%; grid-column: 1 / -1; }
+  .video-row .upload-label { grid-column: 1; width: 100%; }
+  .video-row .thumb-preview,
+  .video-row .btn-remove { grid-column: 2; }
+  .form-actions { display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap; }
+}
 </style>
