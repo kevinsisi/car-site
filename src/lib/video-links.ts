@@ -107,7 +107,7 @@ async function downloadThumbnail(url: string): Promise<string | null> {
   }
 }
 
-async function writeGeneratedThumbnail(label: string): Promise<string | null> {
+async function writeGeneratedThumbnail(): Promise<string | null> {
   try {
     const today = new Date().toISOString().slice(0, 10);
     const dir = path.join(thumbnailDir, today);
@@ -126,8 +126,8 @@ async function writeGeneratedThumbnail(label: string): Promise<string | null> {
       <rect x="280" y="96" width="400" height="348" rx="92" fill="none" stroke="rgba(255,255,255,.86)" stroke-width="32"/>
       <circle cx="480" cy="270" r="82" fill="none" stroke="rgba(255,255,255,.86)" stroke-width="32"/>
       <circle cx="604" cy="176" r="24" fill="rgba(255,255,255,.92)"/>
-      <rect x="0" y="376" width="960" height="164" fill="rgba(0,0,0,.22)"/>
-      <text x="480" y="466" text-anchor="middle" font-family="Arial, sans-serif" font-size="54" font-weight="900" fill="#fff">${label}</text>
+      <circle cx="480" cy="270" r="170" fill="rgba(255,255,255,.12)"/>
+      <path d="M430 198 586 270 430 342Z" fill="rgba(255,255,255,.92)"/>
     </svg>`;
     await sharp(Buffer.from(svg)).png().toFile(path.join(resolvedDir, filename));
     return `/media/video-thumbnails/${today}/${filename}`;
@@ -178,7 +178,7 @@ export async function fetchVideoThumbnail(url: string): Promise<string | null> {
   }
 
   if (instagramFallback) {
-    return (await downloadThumbnail(instagramFallback)) || (await writeGeneratedThumbnail('Instagram Reel')) || instagramFallback;
+    return (await downloadThumbnail(instagramFallback)) || (await writeGeneratedThumbnail()) || instagramFallback;
   }
 
   return null;
