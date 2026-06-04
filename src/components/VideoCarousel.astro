@@ -1,0 +1,106 @@
+---
+import type { HeroVideo } from '@/lib/settings';
+interface Props {
+  videos: HeroVideo[];
+  title?: string;
+}
+const { videos, title } = Astro.props;
+if (!videos.length) return;
+
+function youtubeId(url: string): string | null {
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
+  return match?.[1] ?? null;
+}
+---
+
+{videos.length > 0 && (
+  <section class="video-carousel reveal-section">
+    {title && <h2 class="video-carousel__title">{title}</h2>}
+    <div class="video-carousel__stage" data-vcarousel>
+      {videos.map((video, index) => (
+        <div class={`video-carousel__item${index === 0 ? ' is-active' : ''}`} data-vitem={index}>
+          {video.type === 'youtube' && youtubeId(video.url) ? (
+            <iframe
+              src={`https://www.youtube.com/embed/${youtubeId(video.url)}?rel=0`}
+              title={video.label || `影片 ${index + 1}`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+              loading="lazy"
+            ></iframe>
+          ) : video.type === 'mp4' ? (
+            <video
+              src={video.url}
+              poster={video.thumbnailUrl || undefined}
+              controls
+              preload="none"
+              title={video.label || `影片 ${index + 1}`}
+            ></video>
+          ) : null}
+          {video.label && <p class="video-carousel__label">{video.label}</p>}
+        </div>
+      ))}
+    </div>
+
+    {videos.length > 1 && (
+      <div class="video-carousel__controls">
+        <button type="button" data-vcarousel-prev aria-label="上一段影片">‹</button>
+        <div class="video-carousel__dots">
+          {videos.map((_, i) => (
+            <button
+              type="button"
+              class={`vdot${i === 0 ? ' is-active' : ''}`}
+              data-vcarousel-dot={i}
+              aria-label={`跳到影片 ${i + 1}`}
+            ></button>
+          ))}
+        </div>
+        <button type="button" data-vcarousel-next aria-label="下一段影片">›</button>
+      </div>
+    )}
+  </section>
+)}
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-vcarousel]').forEach((stage) => {
+    const section = stage.closest('.video-carousel');
+    const items = Array.from(stage.querySelectorAll<HTMLElement>('[data-vitem]'));
+    const dots = Array.from(section?.querySelectorAll<HTMLElement>('[data-vcarousel-dot]') ?? []);
+    let current = 0;
+
+    const show = (index: number) => {
+      items[current]?.classList.remove('is-active');
+      dots[current]?.classList.remove('is-active');
+      current = (index + items.length) % items.length;
+      items[current]?.classList.add('is-active');
+      dots[current]?.classList.add('is-active');
+    };
+
+    section?.querySelector('[data-vcarousel-prev]')?.addEventListener('click', () => show(current - 1));
+    section?.querySelector('[data-vcarousel-next]')?.addEventListener('click', () => show(current + 1));
+    dots.forEach((dot, i) => dot.addEventListener('click', () => show(i)));
+  });
+</script>
+
+<style>
+.video-carousel { width: 100%; margin: var(--section-gap, 3rem) 0; }
+.video-carousel__title { text-align: center; margin-bottom: 1.5rem; }
+.video-carousel__stage { position: relative; }
+.video-carousel__item { display: none; }
+.video-carousel__item.is-active { display: block; }
+.video-carousel__item iframe,
+.video-carousel__item video {
+  width: 100%;
+  aspect-ratio: 16/9;
+  border: 0;
+  border-radius: var(--card-radius, 8px);
+  background: #000;
+  display: block;
+}
+.video-carousel__label { text-align: center; margin-top: 0.75rem; font-size: 0.9rem; color: var(--muted, #777); }
+.video-carousel__controls { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1rem; }
+.video-carousel__controls button { background: none; border: 0; font-size: 1.5rem; cursor: pointer; padding: 0.25em 0.5em; color: inherit; opacity: 0.7; }
+.video-carousel__controls button:hover { opacity: 1; }
+.video-carousel__dots { display: flex; gap: 0.5rem; }
+.vdot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted, #aaa); border: 0; padding: 0; cursor: pointer; transition: background 0.15s; }
+.vdot.is-active { background: var(--accent, #0066cc); }
+</style>
