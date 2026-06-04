@@ -3,7 +3,7 @@ import '@/styles/admin.css';
 import { getSettings } from '@/lib/settings';
 import { siteIconHref } from '@/lib/site-icon';
 import { PERMISSIONS, hasPermission } from '@/lib/permissions';
-import { styleVars } from '@/lib/theme';
+import { styleVars, styles } from '@/lib/theme';
 import type { AdminUserSession } from '@/lib/auth';
 
 interface Props {
@@ -15,6 +15,7 @@ const { user, title = '後台管理' } = Astro.props;
 const pathname = Astro.url.pathname;
 const settings = await getSettings();
 const siteIconUrl = siteIconHref(settings);
+const activeStyle = styles[settings.activeStyle];
 
 const perm = user.permissions;
 const isSuper = user.role === 'superadmin';
@@ -34,7 +35,7 @@ const canSeeAnySettings = isSuper || settingsPerms.some((p) => hasPermission(per
 ---
 
 <!doctype html>
-<html lang="zh-Hant">
+<html lang="zh-Hant" class={activeStyle.className} style={styleVars(settings.activeStyle)}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -42,7 +43,7 @@ const canSeeAnySettings = isSuper || settingsPerms.some((p) => hasPermission(per
     {settings.siteIconUrl && <link rel="apple-touch-icon" href={siteIconUrl} />}
     <title>{title}</title>
   </head>
-  <body class="admin-body" style={styleVars(settings.activeStyle)}>
+  <body class="admin-body">
 
     <!-- Mobile header -->
     <header class="admin-header">
@@ -164,14 +165,14 @@ const canSeeAnySettings = isSuper || settingsPerms.some((p) => hasPermission(per
   position: fixed; top: 0; left: 0; right: 0; z-index: 200;
   height: 56px; padding: 0 1rem;
   background: color-mix(in srgb, var(--surface) 94%, transparent);
-  color: #fff;
+  color: var(--text);
   align-items: center; justify-content: space-between;
 }
 .admin-header__hamburger {
   display: flex; flex-direction: column; gap: 4px;
   background: none; border: 0; padding: 4px; cursor: pointer;
 }
-.admin-header__hamburger span { display: block; width: 22px; height: 2px; background: #fff; border-radius: 2px; }
+.admin-header__hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; }
 .admin-header__title { font-weight: 600; font-size: 0.95rem; }
 .admin-header__user { font-size: 0.8rem; color: color-mix(in srgb, var(--muted) 78%, transparent); }
 
@@ -186,7 +187,7 @@ const canSeeAnySettings = isSuper || settingsPerms.some((p) => hasPermission(per
 }
 .admin-sidebar__top { display: flex; align-items: center; justify-content: space-between; padding: 1rem; }
 .admin-logo { color: var(--accent-strong); text-decoration: none; font-weight: 800; font-size: 0.95rem; letter-spacing: 0.08em; }
-.admin-sidebar__close { display: none; background: none; border: 0; color: #fff; font-size: 1.2rem; cursor: pointer; padding: 4px 8px; }
+.admin-sidebar__close { display: none; background: none; border: 0; color: var(--text); font-size: 1.2rem; cursor: pointer; padding: 4px 8px; }
 
 .admin-sidebar__nav { flex: 1; padding: 0.5rem 0; display: flex; flex-direction: column; gap: 2px; }
 .nav-item {

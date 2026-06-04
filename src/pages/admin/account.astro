@@ -181,16 +181,16 @@ const accounts = await db
 </AdminLayout>
 
 <style>
-  .account-current { color: #c9bda6; font-size: 0.92rem; }
-  .account-current strong { color: #d6b06a; }
-  .force-banner { border-color: rgba(220, 154, 60, 0.6); background: rgba(229, 154, 60, 0.1); }
-  .force-banner strong { color: #f0b576; font-size: 1.05rem; display: block; margin-bottom: 0.4rem; }
-  .force-banner code { padding: 0.1rem 0.35rem; background: rgba(255, 255, 255, 0.1); border-radius: 0.25rem; font-size: 0.9em; }
+  .account-current { color: var(--muted); font-size: 0.92rem; }
+  .account-current strong { color: var(--accent-strong); }
+  .force-banner { border-color: color-mix(in srgb, var(--accent) 48%, var(--line)); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+  .force-banner strong { color: var(--accent-strong); font-size: 1.05rem; display: block; margin-bottom: 0.4rem; }
+  .force-banner code { padding: 0.1rem 0.35rem; background: color-mix(in srgb, var(--surface) 82%, transparent); border-radius: 0.25rem; font-size: 0.9em; }
   .account-list { list-style: none; margin: 0 0 1.2rem; padding: 0; display: grid; gap: 0.5rem; }
-  .account-item { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.9rem 1.05rem; border: 1px solid rgba(210, 174, 101, 0.2); border-radius: 0.85rem; background: #110e0b; }
+  .account-item { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.9rem 1.05rem; border: 1px solid var(--line); border-radius: 0.85rem; background: color-mix(in srgb, var(--bg) 80%, var(--surface)); }
   .account-item > div { display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap; }
-  .account-item strong { color: #f8efe1; font-size: 1.05rem; }
-  .account-item small { display: block; flex-basis: 100%; color: #75695a; font-size: 0.78rem; margin-top: 0.18rem; }
-  .account-badge { padding: 0.18rem 0.6rem; border-radius: 999px; background: rgba(214, 176, 106, 0.15); color: #d6b06a; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; }
+  .account-item strong { color: var(--text); font-size: 1.05rem; }
+  .account-item small { display: block; flex-basis: 100%; color: color-mix(in srgb, var(--muted) 70%, transparent); font-size: 0.78rem; margin-top: 0.18rem; }
+  .account-badge { padding: 0.18rem 0.6rem; border-radius: 999px; background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent-strong); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; }
   .account-delete { min-height: 2.2rem; padding: 0 0.85rem; border-radius: 999px; cursor: pointer; }
 </style>

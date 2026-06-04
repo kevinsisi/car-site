@@ -2,6 +2,7 @@
 import '@/styles/admin.css';
 import { getSettings } from '@/lib/settings';
 import { siteIconHref } from '@/lib/site-icon';
+import { styleVars, styles } from '@/lib/theme';
 
 const params = Astro.url.searchParams;
 const hasError = params.get('error') === '1';
@@ -10,6 +11,7 @@ const isLimited = params.get('limited') === '1';
 const isSetup = params.get('setup') === '1';
 const settings = await getSettings();
 const siteIconUrl = siteIconHref(settings);
+const activeStyle = styles[settings.activeStyle];
 const errorMessage = isExpired
   ? '登入逾時，請重新登入'
   : isLimited
@@ -20,7 +22,7 @@ const errorMessage = isExpired
 ---
 
 <!doctype html>
-<html lang="zh-Hant">
+<html lang="zh-Hant" class={activeStyle.className} style={styleVars(settings.activeStyle)}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

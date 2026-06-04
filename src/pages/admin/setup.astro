@@ -4,6 +4,12 @@ import { hasAnyUsers } from '@/lib/auth';
 import { hashPassword } from '@/lib/crypto';
 import { db } from '@/db/connection';
 import { adminUsers } from '@/db/schema';
+import { getSettings } from '@/lib/settings';
+import { styleVars, styles } from '@/lib/theme';
+
+const settings = await getSettings();
+const activeStyle = styles[settings.activeStyle];
+
 if (await hasAnyUsers()) {
   return Astro.redirect('/admin/login');
 }
@@ -38,7 +44,7 @@ if (Astro.request.method === 'POST') {
 ---
 
 <!doctype html>
-<html lang="zh-Hant">
+<html lang="zh-Hant" class={activeStyle.className} style={styleVars(settings.activeStyle)}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -62,8 +68,12 @@ if (Astro.request.method === 'POST') {
           <label for="confirm">確認密碼</label>
           <input type="password" id="confirm" name="confirm" required autocomplete="new-password" />
         </div>
-        <button type="submit" class="btn-primary" style="width:100%">建立帳號並開始使用</button>
+        <button type="submit" class="btn-primary setup-submit">建立帳號並開始使用</button>
       </form>
     </div>
   </body>
 </html>
+
+<style>
+  .setup-submit { width: 100%; }
+</style>

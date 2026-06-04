@@ -95,8 +95,8 @@
         </div>
       </div>
 
-      <fieldset style="border:1px solid #ddd;border-radius:6px;padding:0.75rem;margin:1rem 0;">
-        <legend style="font-size:0.85rem;font-weight:600;padding:0 4px">功能權限</legend>
+      <fieldset class="permission-fieldset">
+        <legend>功能權限</legend>
         <div class="perm-grid">
           {#each permEntries as [key, label] (key)}
             {@const bit = permissionBits[key] ?? 0}
@@ -139,7 +139,7 @@
           <tr class:is-current={u.id === currentUserId}>
             <td>
               {u.username}
-              {#if u.id === currentUserId}<span style="color:#888;font-size:0.75rem">（你）</span>{/if}
+              {#if u.id === currentUserId}<span class="current-user-note">（你）</span>{/if}
             </td>
             <td><span class="role-badge role-badge--{u.role}">{u.role}</span></td>
             <td>{formatPerms(u.role, u.permissions)}</td>
@@ -162,7 +162,7 @@
         <div class="user-card__main">
           <span class="user-card__name">
             {u.username}
-            {#if u.id === currentUserId}<span style="color:#888;font-size:0.75rem">（你）</span>{/if}
+            {#if u.id === currentUserId}<span class="current-user-note">（你）</span>{/if}
           </span>
           <span class="role-badge role-badge--{u.role}">{u.role}</span>
         </div>
@@ -179,18 +179,21 @@
 </div>
 
 <style>
-.status-success { color: #166534; background: #dcfce7; padding: 0.5rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
-.error-text { color: #991b1b; background: #fee2e2; padding: 0.5rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
+.status-success { color: #166534; background: color-mix(in srgb, #16a34a 12%, var(--surface)); padding: 0.5rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
+.error-text { color: #991b1b; background: color-mix(in srgb, #dc5a5a 12%, var(--surface)); padding: 0.5rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
+.permission-fieldset { border: 1px solid var(--line); border-radius: 6px; padding: 0.75rem; margin: 1rem 0; }
+.permission-fieldset legend { color: var(--accent-strong); font-size: 0.85rem; font-weight: 600; padding: 0 4px; }
 .perm-label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; cursor: pointer; }
+.current-user-note { color: var(--muted); font-size: 0.75rem; }
 /* Desktop table */
 .users-table-wrap { overflow-x: auto; }
 /* Mobile cards */
 .users-cards { display: none; flex-direction: column; gap: 0.5rem; }
-.user-card { padding: 0.75rem 1rem; border: 1px solid var(--border, #e5e5e5); border-radius: 8px; background: #fff; }
-.user-card.is-current { background: var(--accent-subtle, #f0f9ff); }
+.user-card { padding: 0.75rem 1rem; border: 1px solid var(--line); border-radius: 8px; background: color-mix(in srgb, var(--surface) 94%, transparent); }
+.user-card.is-current { background: color-mix(in srgb, var(--accent) 10%, transparent); }
 .user-card__main { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem; }
 .user-card__name { font-weight: 600; font-size: 0.9rem; }
-.user-card__meta { display: flex; align-items: center; gap: 0.75rem; font-size: 0.8rem; color: var(--muted, #666); flex-wrap: wrap; }
+.user-card__meta { display: flex; align-items: center; gap: 0.75rem; font-size: 0.8rem; color: var(--muted); flex-wrap: wrap; }
 @media (max-width: 640px) {
   .users-table-wrap { display: none; }
   .users-cards { display: flex; }

@@ -80,21 +80,21 @@
 
 <style>
 .inquiry-list { display: flex; flex-direction: column; gap: 0.5rem; }
-.inquiry-item { border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; background: #fff; }
-.inquiry-item.is-unread { border-left: 3px solid #2f66ad; }
+.inquiry-item { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: color-mix(in srgb, var(--surface) 94%, transparent); }
+.inquiry-item.is-unread { border-left: 3px solid var(--accent); }
 .inquiry-summary { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; width: 100%; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.875rem; flex-wrap: wrap; }
-.inquiry-summary:hover { background: #f9f9f9; }
-.inquiry-date { color: #777; white-space: nowrap; }
+.inquiry-summary:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.inquiry-date { color: var(--muted); white-space: nowrap; }
 .inquiry-name { font-weight: 600; }
-.inquiry-vehicle { color: #666; }
+.inquiry-vehicle { color: var(--muted); }
 .inquiry-contact { margin-left: auto; }
-.inquiry-toggle { color: #aaa; }
-.badge-new { background: #dbeafe; color: #1e40af; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
-.inquiry-detail { padding: 1rem; border-top: 1px solid #e5e5e5; background: #fafafa; }
+.inquiry-toggle { color: color-mix(in srgb, var(--muted) 70%, transparent); }
+.badge-new { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent-strong); font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+.inquiry-detail { padding: 1rem; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--bg) 72%, var(--surface)); }
 .inquiry-table { border-collapse: collapse; font-size: 0.875rem; width: 100%; margin-bottom: 1rem; }
-.inquiry-table th { font-weight: 600; color: #666; padding: 3px 12px 3px 0; width: 80px; text-align: left; }
+.inquiry-table th { font-weight: 600; color: var(--muted); padding: 3px 12px 3px 0; width: 80px; text-align: left; }
 .inquiry-table td { padding: 3px 0; }
 .inquiry-photos { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
 .inquiry-photos img { width: 80px; height: 60px; object-fit: cover; border-radius: 4px; }
-.btn-mark-read { font-size: 0.8rem; padding: 4px 12px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; }
+.btn-mark-read { font-size: 0.8rem; padding: 4px 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); color: var(--text); cursor: pointer; }
 </style>

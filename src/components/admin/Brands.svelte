@@ -115,7 +115,7 @@
               <label>品牌 Icon</label>
               {#if row.iconUrl}
                 <div style="display:flex;align-items:center;gap:0.5rem">
-                  <img src={row.iconUrl} alt="" style="width:36px;height:36px;object-fit:contain;border-radius:50%;background:#fff;border:1px solid #ddd;" />
+                  <img src={row.iconUrl} alt="" class="brand-icon-preview" />
                   <button type="button" on:click={() => clearIcon(i)} class="btn-danger-sm">移除</button>
                 </div>
               {:else}
@@ -135,12 +135,13 @@
 
 <style>
 .brand-list { display: flex; flex-direction: column; gap: 0.75rem; }
-.brand-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; background: #f9f9f9; padding: 1rem; border-radius: 8px; border: 1px solid #e5e5e5; align-items: end; }
+.brand-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; background: color-mix(in srgb, var(--surface) 92%, transparent); padding: 1rem; border-radius: 8px; border: 1px solid var(--line); align-items: end; }
 @media (max-width: 480px) { .brand-row { grid-template-columns: 1fr; } }
 .form-group { display: flex; flex-direction: column; gap: 0.3rem; }
-.form-group label { font-size: 0.8rem; font-weight: 600; color: #555; }
-.form-select, .form-input { padding: 0.4rem 0.6rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.875rem; }
-.upload-label { font-size: 0.8rem; padding: 4px 10px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; background: #fff; }
-.save-status { color: #166534; background: #dcfce7; padding: 0.5rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
-.btn-secondary { font-size: 0.85rem; padding: 0.4rem 0.9rem; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; }
+.form-group label { font-size: 0.8rem; font-weight: 600; color: var(--accent-strong); }
+.form-select, .form-input { padding: 0.4rem 0.6rem; border: 1px solid var(--line); border-radius: 4px; font-size: 0.875rem; background: var(--surface); color: var(--text); }
+.upload-label { font-size: 0.8rem; padding: 4px 10px; border: 1px solid var(--line); border-radius: 4px; cursor: pointer; background: var(--surface); color: var(--accent-strong); }
+.save-status { color: #166534; background: color-mix(in srgb, #16a34a 12%, var(--surface)); padding: 0.5rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
+.btn-secondary { font-size: 0.85rem; padding: 0.4rem 0.9rem; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); color: var(--text); cursor: pointer; }
+.brand-icon-preview { width: 36px; height: 36px; object-fit: contain; border-radius: 50%; background: var(--surface); border: 1px solid var(--line); }
 </style>
