@@ -1,0 +1,73 @@
+---
+import type { VehicleImageView } from '@/lib/vehicles';
+interface Props {
+  images: VehicleImageView[];
+  title: string;
+  coverImageIndex?: number;
+}
+const { images, title, coverImageIndex = 0 } = Astro.props;
+---
+{images.length > 0 && (
+  <div class="gallery-strip reveal-section" data-strip>
+    <button
+      class="gallery-strip__main"
+      type="button"
+      data-gallery-index={coverImageIndex}
+      data-strip-main
+      aria-label="開啟封面大圖"
+    >
+      <img
+        src={images[coverImageIndex]?.url || images[0].url}
+        alt={images[coverImageIndex]?.alt || `${title} 封面照`}
+        fetchpriority="high"
+        decoding="async"
+      />
+    </button>
+    {images.length > 1 && (
+      <div class="gallery-strip__thumbs" role="list" aria-label="縮圖列表">
+        {images.map((image, index) => (
+          <button
+            class={`gallery-strip__thumb${index === coverImageIndex ? ' is-active' : ''}`}
+            type="button"
+            data-gallery-index={index}
+            data-strip-thumb={index}
+            role="listitem"
+            aria-label={`查看第 ${index + 1} 張`}
+          >
+            <img src={image.url} alt={image.alt || `${title} 第 ${index + 1} 張`} loading="lazy" decoding="async" />
+          </button>
+        ))}
+      </div>
+    )}
+  </div>
+)}
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-strip]').forEach((strip) => {
+    const main = strip.querySelector<HTMLButtonElement>('[data-strip-main]');
+    const mainImg = main?.querySelector('img');
+    const thumbs = Array.from(strip.querySelectorAll<HTMLButtonElement>('[data-strip-thumb]'));
+    let active = thumbs.findIndex((t) => t.classList.contains('is-active'));
+    if (active < 0) active = 0;
+    thumbs.forEach((thumb, i) => {
+      thumb.addEventListener('click', () => {
+        thumbs[active]?.classList.remove('is-active');
+        active = i;
+        thumb.classList.add('is-active');
+        const thumbImg = thumb.querySelector('img');
+        if (mainImg && thumbImg?.src) { mainImg.src = thumbImg.src; mainImg.alt = thumbImg.alt; }
+        if (main) main.dataset.galleryIndex = String(i);
+      });
+    });
+  });
+</script>
+
+<style>
+.gallery-strip { display: flex; flex-direction: column; gap: 0.75rem; }
+.gallery-strip__main { display: block; width: 100%; aspect-ratio: 16/9; overflow: hidden; background: var(--image-bg, #111); border-radius: var(--card-radius, 8px); border: 0; padding: 0; cursor: zoom-in; }
+.gallery-strip__main img { width: 100%; height: 100%; object-fit: cover; }
+.gallery-strip__thumbs { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+.gallery-strip__thumb { flex-shrink: 0; width: 100px; aspect-ratio: 16/9; overflow: hidden; border-radius: 4px; border: 2px solid transparent; padding: 0; background: none; cursor: pointer; transition: border-color 0.15s; }
+.gallery-strip__thumb.is-active, .gallery-strip__thumb:hover { border-color: var(--accent, #0066cc); }
+.gallery-strip__thumb img { width: 100%; height: 100%; object-fit: cover; }
+</style>
