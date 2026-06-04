@@ -75,6 +75,8 @@ export const adminUsers = sqliteTable('admin_users', {
   id: text('id').primaryKey(),
   username: text('username').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
+  role: text('role').notNull().default('admin'),
+  permissions: integer('permissions').notNull().default(0),
   createdAt: text('created_at').notNull(),
 });
 
