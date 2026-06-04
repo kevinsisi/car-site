@@ -41,20 +41,20 @@ const mapEmbedSrc = mapQuery ? `https://www.google.com/maps?q=${mapQuery}&output
     </div>
   </section>
 
-  <section class="salon-note reveal-section">
-    <p>{settings.homepageNote}</p>
-  </section>
-
-  <section class="section-heading reveal-section">
+  <section class="section-heading section-heading--featured reveal-section">
     <p class="eyebrow">{settings.featuredEyebrow}</p>
     <h2>{settings.featuredTitle}</h2>
     <a href="/cars">查看全部</a>
   </section>
   {featuredVehicles.length > 0 && (
-    <div class="vehicle-grid">
+    <div class="vehicle-grid home-featured-grid">
       {featuredVehicles.slice(0, featuredCount).map((vehicle) => <VehicleCard vehicle={vehicle} variant="featured" shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
     </div>
   )}
+
+  <section class="salon-note reveal-section">
+    <p>{settings.homepageNote}</p>
+  </section>
 
   {settings.videoSectionEnabled && settings.heroVideos.length > 0 && settings.videoSectionPosition === 'below-hero' && (
     <VideoCarousel videos={settings.heroVideos} />

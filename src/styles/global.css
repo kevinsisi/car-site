@@ -166,12 +166,14 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
 
 .section-heading { display: flex; justify-content: space-between; align-items: end; gap: 2rem; }
 
+.section-heading--featured { padding-top: clamp(1.4rem, 3.2vw, 3rem); padding-bottom: 1rem; }
 .section-heading--sold { padding-top: clamp(1rem, 4vw, 3rem); }
 
 .section-heading h2,
 .story-grid h2 { font-size: clamp(2rem, 4vw, 4rem); line-height: 1.08; letter-spacing: -0.015em; margin: 0; padding-bottom: 0.04em; }
 
 .vehicle-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(1rem, 2vw, 1.6rem); padding: 0 clamp(1.25rem, 5vw, 6rem) 5rem; }
+.home-featured-grid { padding-bottom: clamp(2.4rem, 5vw, 4rem); }
 .empty-state { display: grid; gap: 0.9rem; justify-items: start; padding: 3rem 1.5rem 4rem; border: 1px dashed color-mix(in srgb, var(--line) 90%, transparent); border-radius: 1.6rem; background: color-mix(in srgb, var(--surface) 60%, transparent); }
 .empty-state h3 { margin: 0; font-size: clamp(1.4rem, 2.6vw, 1.9rem); line-height: 1.2; }
 .empty-state p { margin: 0; color: var(--muted); line-height: 1.7; }
@@ -475,7 +477,7 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
   .site-cta__link .premium-icon { --premium-icon-size: 1.7rem; --premium-icon-glyph: 1rem; }
   .site-nav { grid-column: 1 / -1; grid-row: 2; width: 100%; font-size: 0.95rem; gap: 1rem; flex-wrap: wrap; justify-content: flex-start; }
   .hero,
-  .detail-hero { grid-template-columns: 1fr; min-height: auto; padding-top: 2rem; }
+  .detail-hero { grid-template-columns: 1fr; min-height: auto; gap: 1rem; padding-top: 1.35rem; padding-bottom: 1.45rem; }
   .hero__copy,
   .detail-copy,
   .page-hero { max-width: calc(100vw - 2.5rem); }
@@ -485,6 +487,8 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
   .hero__lead,
   .page-hero p,
   .detail-headline { line-height: 1.38; }
+  .cta-row { gap: 0.55rem; margin-top: 1rem; }
+  .cta-row .button { min-height: 2.8rem; padding: 0 1rem; font-size: 0.95rem; }
   .hero__copy { order: 2; }
   .hero__media { order: 1; }
   .hero__media img,
@@ -527,6 +531,8 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
   .vehicle-count { font-size: 0.95rem; line-height: 1.15; }
   .vehicle-grid,
   .listing-grid { grid-template-columns: 1fr; }
+  .section-heading--featured { padding-top: 1.15rem; padding-bottom: 0.75rem; }
+  .home-featured-grid { padding-bottom: 2.25rem; }
   .vehicle-card--featured { border-radius: 1.15rem; }
   .vehicle-card--featured .vehicle-card__media { aspect-ratio: 1.6; }
   .vehicle-card--featured h2 { font-size: clamp(1.15rem, 6.2vw, 1.38rem); }
