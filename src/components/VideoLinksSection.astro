@@ -98,10 +98,51 @@ function instagramEmbedUrl(url: string): string | null {
       track.scrollTo({ left: target.offsetLeft, behavior: 'auto' });
     };
 
+    // Auto-scroll pauses the moment the user touches/clicks the carousel and
+    // stays paused until they deliberately swipe it again:
+    //   running → (pointerdown / iframe focus) → paused
+    //   paused  → gesture ends + scrolling settles → armed
+    //   armed   → next user scroll → running
+    let mode: 'running' | 'paused' | 'armed' = 'running';
+    let gestureActive = false;
+    let settleTimer: number | undefined;
+
+    const pauseAuto = () => {
+      mode = 'paused';
+      if (settleTimer) clearTimeout(settleTimer);
+    };
+    const armAfterSettle = () => {
+      if (settleTimer) clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(() => {
+        if (mode === 'paused' && !gestureActive) mode = 'armed';
+      }, 300);
+    };
+
+    track.addEventListener('pointerdown', () => {
+      gestureActive = true;
+      pauseAuto();
+    }, { passive: true });
+    const endGesture = () => {
+      if (!gestureActive) return;
+      gestureActive = false;
+      if (mode === 'paused') armAfterSettle();
+    };
+    window.addEventListener('pointerup', endGesture, { passive: true });
+    window.addEventListener('pointercancel', endGesture, { passive: true });
+    // Instagram embeds swallow pointer events; a click inside one focuses the
+    // iframe and blurs the window — treat that as the pause click.
+    window.addEventListener('blur', () => {
+      const active = document.activeElement;
+      if (active instanceof HTMLIFrameElement && track.contains(active)) {
+        pauseAuto();
+        armAfterSettle();
+      }
+    });
+
     const tick = (now: number) => {
       const delta = now - lastFrame;
       lastFrame = now;
-      if (!document.hidden && items.length > 1) {
+      if (!document.hidden && items.length > 1 && mode === 'running') {
         const maxScroll = track.scrollWidth - track.clientWidth;
         track.scrollLeft = track.scrollLeft >= maxScroll - 2 ? 0 : track.scrollLeft + delta * 0.06;
         sync();
@@ -115,7 +156,15 @@ function instagramEmbedUrl(url: string): string | null {
     section.querySelector('[data-video-links-next]')?.addEventListener('click', () => {
       scrollToIndex(activeIndex() + 1);
     });
-    track.addEventListener('scroll', () => requestAnimationFrame(sync), { passive: true });
+    track.addEventListener('scroll', () => {
+      if (mode === 'armed') {
+        mode = 'running';
+      } else if (mode === 'paused' && !gestureActive) {
+        // momentum from the pausing swipe — keep waiting for it to settle
+        armAfterSettle();
+      }
+      requestAnimationFrame(sync);
+    }, { passive: true });
     sync();
     requestAnimationFrame(tick);
   });

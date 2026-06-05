@@ -27,6 +27,9 @@ function youtubeEmbedParams(videoId: string | null): string {
     params.set('playlist', videoId);
     params.set('controls', '0');
     params.set('modestbranding', '1');
+    params.set('fs', '0');
+    params.set('disablekb', '1');
+    params.set('iv_load_policy', '3');
   }
   return params.toString();
 }
@@ -42,7 +45,14 @@ function youtubeEmbedParams(videoId: string | null): string {
         const youtubeParams = youtubeEmbedParams(videoId);
         return (
         <div class={`video-carousel__item${index === 0 ? ' is-active' : ''}`} data-vitem={index}>
-          {video.type === 'youtube' && videoId ? (
+          {video.type === 'youtube' && videoId && isTopStrip ? (
+            <div
+              class="strip-embed"
+              data-embed-src={`https://www.youtube.com/embed/${videoId}?${youtubeParams}`}
+              data-embed-title={video.label || `影片 ${index + 1}`}
+              style={video.thumbnailUrl ? `background-image:url('${video.thumbnailUrl}')` : undefined}
+            ></div>
+          ) : video.type === 'youtube' && videoId ? (
             <iframe
               src={`https://www.youtube.com/embed/${videoId}?${youtubeParams}`}
               title={video.label || `影片 ${index + 1}`}
@@ -116,18 +126,44 @@ function youtubeEmbedParams(videoId: string | null): string {
       });
     };
 
+    // Banner (top-strip) YouTube embeds start as a poster div and only get the
+    // iframe injected after the page has finished loading, so the hero video
+    // never competes with first paint. Users who prefer reduced motion keep
+    // the static poster.
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const injectEmbed = (item: HTMLElement | undefined) => {
+      if (!item || prefersReducedMotion) return;
+      const holder = item.querySelector<HTMLElement>('.strip-embed');
+      if (!holder || holder.querySelector('iframe') || !holder.dataset.embedSrc) return;
+      const iframe = document.createElement('iframe');
+      iframe.src = holder.dataset.embedSrc;
+      iframe.title = holder.dataset.embedTitle || '';
+      iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+      iframe.setAttribute('tabindex', '-1');
+      iframe.setAttribute('aria-hidden', 'true');
+      iframe.addEventListener('load', syncVideoPlayback);
+      holder.appendChild(iframe);
+    };
+
     const show = (index: number) => {
       items[current]?.classList.remove('is-active');
       dots[current]?.classList.remove('is-active');
       current = (index + items.length) % items.length;
       items[current]?.classList.add('is-active');
       dots[current]?.classList.add('is-active');
+      injectEmbed(items[current]);
       syncVideoPlayback();
     };
 
     items.forEach((item) => {
       item.querySelector('iframe[src*="youtube.com/embed"]')?.addEventListener('load', syncVideoPlayback);
     });
+
+    if (document.readyState === 'complete') {
+      injectEmbed(items[current]);
+    } else {
+      window.addEventListener('load', () => injectEmbed(items[current]), { once: true });
+    }
 
     syncVideoPlayback();
 
@@ -154,11 +190,37 @@ function youtubeEmbedParams(videoId: string | null): string {
   display: block;
   object-fit: cover;
 }
-.video-carousel--top-strip .video-carousel__item iframe,
+.video-carousel--top-strip { --strip-h: clamp(22rem, 37vw, 30rem); }
+.video-carousel--top-strip .video-carousel__item {
+  position: relative;
+  height: var(--strip-h);
+  overflow: hidden;
+}
 .video-carousel--top-strip .video-carousel__item video {
-  height: clamp(22rem, 37vw, 30rem);
+  width: 100%;
+  height: var(--strip-h);
   aspect-ratio: auto;
+  object-fit: cover;
   border-radius: 0;
+  pointer-events: none;
+  user-select: none;
+}
+/* Poster shown immediately; iframe injected after page load. */
+.strip-embed {
+  position: absolute;
+  inset: 0;
+  background: #000 center / cover no-repeat;
+}
+/* Oversize the YouTube frame ~35% beyond cover so its title bar and watermark
+   sit outside the cropped viewport — the user only sees clean motion. */
+.strip-embed :global(iframe) {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: max(calc(100% * var(--strip-zoom, 1)), calc(var(--strip-h) * 2.4));
+  height: max(calc(var(--strip-h) * 1.35), calc(56.25vw * var(--strip-zoom, 1)));
+  border: 0;
   pointer-events: none;
   user-select: none;
 }
@@ -182,9 +244,8 @@ function youtubeEmbedParams(videoId: string | null): string {
 .vdot.is-active { background: var(--accent, #0066cc); }
 
 @media (max-width: 900px) {
-  .video-carousel--top-strip .video-carousel__item iframe,
-  .video-carousel--top-strip .video-carousel__item video {
-    height: clamp(11.5rem, 52vw, 14rem);
-  }
+  /* Mobile YouTube chrome (title bar / watermark) is taller relative to the
+     short strip — zoom harder so it stays cropped out of view. */
+  .video-carousel--top-strip { --strip-h: clamp(11.5rem, 52vw, 14rem); --strip-zoom: 1.6; }
 }
 </style>
