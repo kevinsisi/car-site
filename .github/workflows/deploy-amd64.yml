@@ -1,12 +1,20 @@
 name: Deploy AMD64
 
 on:
-  workflow_run:
-    workflows: ["Build and Push Docker Image"]
-    types:
-      - completed
+  push:
     branches:
       - main
+    paths:
+      - 'src/**'
+      - 'scripts/**'
+      - 'public/**'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
+      - 'astro.config.*'
+      - '.github/workflows/deploy-amd64.yml'
   workflow_dispatch:
 
 env:
@@ -15,9 +23,6 @@ env:
 jobs:
   deploy-amd64:
     runs-on: ubuntu-latest
-    if: >
-      (github.event_name == 'workflow_dispatch') ||
-      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
 
     steps:
       - name: Checkout code
@@ -46,7 +51,27 @@ jobs:
           ssh -i ~/.ssh/deploy_key "${DEPLOY_USER}@${DEPLOY_SERVER_IP}" "mkdir -p '${DEPLOY_PATH}'"
           scp -i ~/.ssh/deploy_key docker-compose.yml "${DEPLOY_USER}@${DEPLOY_SERVER_IP}:${DEPLOY_PATH}/docker-compose.yml"
 
-      - name: Deploy via SSH
+      - name: Sync source archive
+        env:
+          DEPLOY_SERVER_IP: ${{ secrets.DEPLOY_SERVER_IP }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          tar \
+            --exclude='./node_modules' \
+            --exclude='./dist' \
+            --exclude='./.astro' \
+            --exclude='./.git' \
+            --exclude='./data' \
+            --exclude='./.env' \
+            --exclude='./.env.*' \
+            --exclude='./*.tgz' \
+            --exclude='./test-results' \
+            --exclude='./playwright-*.png' \
+            -czf car-site-source.tgz .
+          scp -i ~/.ssh/deploy_key car-site-source.tgz "${DEPLOY_USER}@${DEPLOY_SERVER_IP}:${DEPLOY_PATH}/car-site-source-${GITHUB_SHA}.tgz"
+
+      - name: Build and deploy via SSH
         env:
           DEPLOY_SERVER_IP: ${{ secrets.DEPLOY_SERVER_IP }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
@@ -56,7 +81,11 @@ jobs:
             set -e
             cd '${DEPLOY_PATH}'
             test -f .env
-            docker compose pull car-site-mita
+            mkdir -p 'releases/${GITHUB_SHA}'
+            tar -xzf 'car-site-source-${GITHUB_SHA}.tgz' -C 'releases/${GITHUB_SHA}'
+            cd 'releases/${GITHUB_SHA}'
+            docker build -t car-site-mita:local .
+            cd '${DEPLOY_PATH}'
             docker compose up -d --force-recreate car-site-mita
             docker compose ps car-site-mita
           "
