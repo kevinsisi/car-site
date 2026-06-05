@@ -76,6 +76,9 @@ function instagramEmbedUrl(url: string): string | null {
     const items = Array.from(section.querySelectorAll<HTMLElement>('[data-video-links-item]'));
     const dots = Array.from(section.querySelectorAll<HTMLElement>('.video-links__dots span'));
     if (!track || !items.length) return;
+    let isPaused = false;
+    let resumeTimer: number | undefined;
+    let autoTimer: number | undefined;
 
     const activeIndex = () => {
       const left = track.scrollLeft;
@@ -97,10 +100,37 @@ function instagramEmbedUrl(url: string): string | null {
       track.scrollTo({ left: target.offsetLeft, behavior: 'smooth' });
     };
 
-    section.querySelector('[data-video-links-prev]')?.addEventListener('click', () => scrollToIndex(activeIndex() - 1));
-    section.querySelector('[data-video-links-next]')?.addEventListener('click', () => scrollToIndex(activeIndex() + 1));
+    const pauseAutoScroll = () => {
+      isPaused = true;
+      window.clearTimeout(resumeTimer);
+      resumeTimer = window.setTimeout(() => {
+        isPaused = false;
+      }, 5000);
+    };
+
+    const startAutoScroll = () => {
+      window.clearInterval(autoTimer);
+      if (items.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      autoTimer = window.setInterval(() => {
+        if (isPaused || document.hidden) return;
+        scrollToIndex(activeIndex() + 1);
+      }, 4200);
+    };
+
+    section.querySelector('[data-video-links-prev]')?.addEventListener('click', () => {
+      pauseAutoScroll();
+      scrollToIndex(activeIndex() - 1);
+    });
+    section.querySelector('[data-video-links-next]')?.addEventListener('click', () => {
+      pauseAutoScroll();
+      scrollToIndex(activeIndex() + 1);
+    });
+    track.addEventListener('pointerdown', pauseAutoScroll, { passive: true });
+    track.addEventListener('wheel', pauseAutoScroll, { passive: true });
+    track.addEventListener('focusin', pauseAutoScroll);
     track.addEventListener('scroll', () => requestAnimationFrame(sync), { passive: true });
     sync();
+    startAutoScroll();
   });
 </script>
 
