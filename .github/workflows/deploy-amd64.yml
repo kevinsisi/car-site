@@ -78,6 +78,8 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
+          # Write the archive outside the tree being tarred, otherwise GNU tar
+          # exits 1 with "file changed as we read it".
           tar \
             --exclude='./node_modules' \
             --exclude='./dist' \
@@ -89,8 +91,8 @@ jobs:
             --exclude='./*.tgz' \
             --exclude='./test-results' \
             --exclude='./playwright-*.png' \
-            -czf car-site-source.tgz .
-          scp -i ~/.ssh/deploy_key car-site-source.tgz "${DEPLOY_USER}@${DEPLOY_SERVER_IP}:${DEPLOY_PATH}/car-site-source-${GITHUB_SHA}.tgz"
+            -czf "${RUNNER_TEMP}/car-site-source.tgz" .
+          scp -i ~/.ssh/deploy_key "${RUNNER_TEMP}/car-site-source.tgz" "${DEPLOY_USER}@${DEPLOY_SERVER_IP}:${DEPLOY_PATH}/car-site-source-${GITHUB_SHA}.tgz"
 
       - name: Build and deploy via SSH
         env:
