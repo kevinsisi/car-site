@@ -9,12 +9,6 @@ const mapHref = mapQuery ? `https://www.google.com/maps/search/?api=1&query=${ma
 const mapEmbedSrc = mapQuery ? `https://www.google.com/maps?q=${mapQuery}&output=embed` : '';
 const contactItems = [
   {
-    title: '實體門市',
-    body: settings.storeAddress || '預約後提供精確位置',
-    href: mapHref,
-    icon: 'store',
-  },
-  {
     title: '預約電話',
     body: settings.phoneNumber,
     href: `tel:${settings.phoneNumber}`,
@@ -59,9 +53,9 @@ const contactItems = [
     <section class="location-section location-section--contact reveal-section" aria-labelledby="contact-location-title">
       <div class="location-section__copy">
         <p class="eyebrow">Location</p>
-        <h2 id="contact-location-title">預約賞車位置</h2>
+        <h2 id="contact-location-title">實體門市 / 預約賞車</h2>
         <p>{settings.storeAddress}</p>
-        {settings.businessHours && <span>{settings.businessHours}</span>}
+        <span>{settings.businessHours || '採預約制賞車，來訪前請先以 LINE 或電話確認時間。'}</span>
         <a href={mapHref} target="_blank" rel="noopener noreferrer">在 Google 地圖開啟</a>
       </div>
       {mapEmbedSrc && (

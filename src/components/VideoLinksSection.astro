@@ -76,9 +76,7 @@ function instagramEmbedUrl(url: string): string | null {
     const items = Array.from(section.querySelectorAll<HTMLElement>('[data-video-links-item]'));
     const dots = Array.from(section.querySelectorAll<HTMLElement>('.video-links__dots span'));
     if (!track || !items.length) return;
-    let isPaused = false;
-    let resumeTimer: number | undefined;
-    let autoTimer: number | undefined;
+    let lastFrame = performance.now();
 
     const activeIndex = () => {
       const left = track.scrollLeft;
@@ -97,40 +95,29 @@ function instagramEmbedUrl(url: string): string | null {
 
     const scrollToIndex = (index: number) => {
       const target = items[(index + items.length) % items.length];
-      track.scrollTo({ left: target.offsetLeft, behavior: 'smooth' });
+      track.scrollTo({ left: target.offsetLeft, behavior: 'auto' });
     };
 
-    const pauseAutoScroll = () => {
-      isPaused = true;
-      window.clearTimeout(resumeTimer);
-      resumeTimer = window.setTimeout(() => {
-        isPaused = false;
-      }, 5000);
-    };
-
-    const startAutoScroll = () => {
-      window.clearInterval(autoTimer);
-      if (items.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      autoTimer = window.setInterval(() => {
-        if (isPaused || document.hidden) return;
-        scrollToIndex(activeIndex() + 1);
-      }, 4200);
+    const tick = (now: number) => {
+      const delta = now - lastFrame;
+      lastFrame = now;
+      if (!document.hidden && items.length > 1) {
+        const maxScroll = track.scrollWidth - track.clientWidth;
+        track.scrollLeft = track.scrollLeft >= maxScroll - 2 ? 0 : track.scrollLeft + delta * 0.06;
+        sync();
+      }
+      requestAnimationFrame(tick);
     };
 
     section.querySelector('[data-video-links-prev]')?.addEventListener('click', () => {
-      pauseAutoScroll();
       scrollToIndex(activeIndex() - 1);
     });
     section.querySelector('[data-video-links-next]')?.addEventListener('click', () => {
-      pauseAutoScroll();
       scrollToIndex(activeIndex() + 1);
     });
-    track.addEventListener('pointerdown', pauseAutoScroll, { passive: true });
-    track.addEventListener('wheel', pauseAutoScroll, { passive: true });
-    track.addEventListener('focusin', pauseAutoScroll);
     track.addEventListener('scroll', () => requestAnimationFrame(sync), { passive: true });
     sync();
-    startAutoScroll();
+    requestAnimationFrame(tick);
   });
 </script>
 
@@ -148,12 +135,11 @@ function instagramEmbedUrl(url: string): string | null {
   list-style: none;
   padding: 0 clamp(1.25rem, 5vw, 6rem) 0.7rem; margin: 0 calc(-1 * clamp(1.25rem, 5vw, 6rem));
   overflow-x: auto;
-  scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
 .video-links__grid::-webkit-scrollbar { display: none; }
-.video-links__grid > li { flex: 0 0 min(20rem, 76vw); scroll-snap-align: center; }
+.video-links__grid > li { flex: 0 0 min(20rem, 76vw); }
 @media (min-width: 900px) { .video-links__grid > li { flex-basis: min(22rem, 25vw); } }
 .video-links__item { position: relative; display: grid; gap: 0.7rem; color: inherit; opacity: 0.82; transform: scale(0.975); transition: opacity 220ms ease, transform 220ms ease; }
 .video-links__grid > li.is-active .video-links__item,
