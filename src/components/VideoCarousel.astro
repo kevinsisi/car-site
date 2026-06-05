@@ -30,6 +30,7 @@ function youtubeEmbedParams(videoId: string | null): string {
   }
   return params.toString();
 }
+
 ---
 
 {videos.length > 0 && (
@@ -46,7 +47,6 @@ function youtubeEmbedParams(videoId: string | null): string {
               src={`https://www.youtube.com/embed/${videoId}?${youtubeParams}`}
               title={video.label || `影片 ${index + 1}`}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowfullscreen
               loading={index === 0 ? 'eager' : 'lazy'}
             ></iframe>
           ) : video.type === 'mp4' ? (
@@ -67,7 +67,7 @@ function youtubeEmbedParams(videoId: string | null): string {
       );})}
     </div>
 
-    {videos.length > 1 && (
+    {videos.length > 1 && !isTopStrip && (
       <div class="video-carousel__controls">
         <button type="button" data-vcarousel-prev aria-label="上一段影片">‹</button>
         <div class="video-carousel__dots">
@@ -152,12 +152,15 @@ function youtubeEmbedParams(videoId: string | null): string {
   border-radius: var(--card-radius, 8px);
   background: #000;
   display: block;
+  object-fit: cover;
 }
 .video-carousel--top-strip .video-carousel__item iframe,
 .video-carousel--top-strip .video-carousel__item video {
   height: clamp(22rem, 37vw, 30rem);
   aspect-ratio: auto;
   border-radius: 0;
+  pointer-events: none;
+  user-select: none;
 }
 .video-carousel--top-strip .video-carousel__label { display: none; }
 .video-carousel--top-strip .video-carousel__controls {
