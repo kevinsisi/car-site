@@ -58,8 +58,9 @@ const hasMore = images.length > INITIAL;
 </script>
 
 <style>
+.gallery-grid { width: 100%; max-width: 100%; min-width: 0; overflow: hidden; }
 .gallery-grid__count { margin-bottom: 1rem; }
-.gallery-grid__list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+.gallery-grid__list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; min-width: 0; }
 @media (max-width: 640px) { .gallery-grid__list { grid-template-columns: repeat(2, 1fr); } }
 .gallery-grid__item { position: relative; aspect-ratio: 4/3; overflow: hidden; border-radius: 4px; border: 0; padding: 0; background: var(--image-bg, #111); cursor: zoom-in; }
 .gallery-grid__item--hidden { display: none; }

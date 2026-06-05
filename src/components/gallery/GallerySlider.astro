@@ -56,13 +56,20 @@ const { images, title, coverImageIndex = 0 } = Astro.props;
 </script>
 
 <style>
-.gallery-slider { position: relative; width: 100%; }
-.gallery-slider__stage { position: relative; aspect-ratio: 16/9; overflow: hidden; background: var(--image-bg, #111); border-radius: var(--card-radius, 8px); }
+.gallery-slider { position: relative; width: 100%; max-width: 100%; min-width: 0; overflow: hidden; }
+.gallery-slider__stage { position: relative; aspect-ratio: 16/9; max-height: min(62vh, 46rem); overflow: hidden; background: var(--image-bg, #111); border-radius: var(--card-radius, 8px); }
 .gallery-slider__slide { display: none; width: 100%; height: 100%; border: 0; padding: 0; background: none; cursor: zoom-in; }
 .gallery-slider__slide.is-active { display: block; }
-.gallery-slider__slide img { width: 100%; height: 100%; object-fit: cover; }
+.gallery-slider__slide img { width: 100%; height: 100%; object-fit: contain; object-position: center; }
 .gallery-slider__arrow { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: #fff; border: 0; font-size: 2rem; line-height: 1; padding: 0.25em 0.5em; cursor: pointer; border-radius: 4px; z-index: 2; }
 .gallery-slider__arrow--prev { left: 1rem; }
 .gallery-slider__arrow--next { right: 1rem; }
 .gallery-slider__counter { position: absolute; bottom: 1rem; right: 1rem; background: rgba(0,0,0,0.5); color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; }
+
+@media (max-width: 900px) {
+  .gallery-slider__stage { border-radius: 0.85rem; max-height: 54vh; }
+  .gallery-slider__arrow { font-size: 1.5rem; padding: 0.18em 0.42em; }
+  .gallery-slider__arrow--prev { left: 0.55rem; }
+  .gallery-slider__arrow--next { right: 0.55rem; }
+}
 </style>
