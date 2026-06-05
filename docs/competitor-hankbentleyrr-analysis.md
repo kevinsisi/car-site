@@ -1,8 +1,8 @@
 # 競爭對手網站深度研究報告:HANK豪車館 (hankbentleyrr.com)
 
-> 研究日期:2026-06-05
-> 研究方式:Playwright 實機載入(桌面 1440×900 / 手機 390×844 iPhone UA)、HTML/JS 原始碼分析、互動測試(比較流程、篩選、手機選單、深淺色切換)
-> 截圖與原始資料:`D:\tmp\hank-research\`(18+ 張截圖、HTML dump、JS 原始碼、cookie/DOM dump)
+> 研究日期:2026-06-05(同日完成第二輪地毯式互動稽核)
+> 研究方式:Playwright 實機載入(桌面 1440×900 / 手機 390×844 iPhone UA)、HTML/JS 原始碼分析、全按鈕互動測試(真實加 3~5 台車比較+逐步移除、篩選全組合、排序四種實測、手機選單、深淺色切換、分享浮層、404/站內搜尋)
+> 截圖與原始資料:`D:\tmp\hank-research\`(第一輪)與 `D:\tmp\hank-research\deep\`(第二輪,30+ 張截圖、desktop-audit.json / retest-audit.json / mobile-audit.json)
 
 ---
 
@@ -86,10 +86,11 @@
 - **手機端缺陷**:iOS UA 下 YouTube 仍會顯示大型播放/暫停鈕、分享鈕與 YouTube logo 浮層,hero 看起來像「卡在那的影片播放器」而非沉浸式背景(實測截圖可證)。
 
 ### 4.2 近期入庫 NEW
-- **Elementor Pro Loop Grid + Taxonomy Filter** 組合:上方品牌 tab 列(All / Alfa Romeo / Bentley / Ferrari / Lamborghini…,可橫向捲動),點 tab 以 AJAX 過濾卡片,不換頁。
+- **Elementor Pro Loop Grid + Taxonomy Filter** 組合:上方品牌 tab 列(All / Alfa Romeo / Bentley / Ferrari / Lamborghini / Mercedes Benz / Porsche / Rolls-Royce,可橫向捲動),點 tab 以 AJAX 過濾卡片,不換頁。
+- **實測點擊各 tab(桌面+手機皆驗證)**:Bentley → 2 台(Continental GT V8 Mulliner、GTC V8S)、Ferrari → 2 台(Purosangue、F8 Tributo)、Rolls-Royce → 6 台、All → 全部在庫;切換約 1~3 秒(AJAX 延遲明顯,連點會顯示上一個結果)。
 - 卡片網格:桌面 4 欄 / 平板 2 欄 / 手機 1 欄(`elementor-grid-4 / tablet-2 / mobile-1`)。
 - Loop Grid 加 `cmz-no-sold-loop`:**首頁只顯示在庫車,排除售出**。
-- 卡片內容:棚拍照、品牌小字、車名、年份/里程等摘要。
+- 卡片內容:棚拍照、品牌小字、車名、車型、年份、里程、「電洽」。
 
 ### 4.3 車系品牌 BRAND
 - 品牌 Logo 網格(Porsche、Aston Martin、RR、Bentley、Maybach、Ferrari、Lamborghini、McLaren…)。
@@ -118,17 +119,18 @@
 ### 5.1 桌面排版
 - **左側欄(約 1/4 寬)= 篩選器,右側 = 直列式車卡(一排一台,大圖左、資訊右)**。
 - 右上:排序下拉(原生 select):最新(`?orderby=date`)/ 價格:低到高 / 價格:高到低 / 人氣排序(WooCommerce orderby)。
-- 分頁:數字分頁,共 **29 頁**(每頁 6 台,170 台)。
+- **四種排序實測皆有效且結果不同**:date 首位=Porsche 911 Targa 4 GTS(研究當天剛上架的新車——網站活躍維護中);price 升冪首位=Rolls-Royce Ghost BB;price 降冪首位=Porsche 911 Targa 4 GTS。**price 排序會改變順序 ⇒ 每台車後台都有隱藏價格欄位**,只是前台不顯示(全部「電洽」)。
+- 分頁:數字分頁,共 **29 頁**(每頁 6 台,170 台);實測第 29 頁 = 最舊上架(Rolls-Royce Wraith Black Badge / Wraith SPOFEC)。
 
 ### 5.2 篩選器(Filter Everything + 客製)
-| 區塊 | UI | 行為 |
+| 區塊 | UI | 行為(實測) |
 |---|---|---|
-| 品牌(select2) | child theme 動態建立的「選取車款」多選輸入框 | 實際上**程式強制單選**:選新品牌時先清掉所有已勾 checkbox 再勾新值;清除時觸發 wpc reset |
-| 在庫狀況 | 「在庫 15」「售出 155」兩顆 chip(label 樣式) | URL `?car_inv=1 / 0`,點選後 AJAX 重載並更新所有計數 |
-| 品牌 | checkbox 清單 + 即時數量 | `?brand=<slug>`,可複選 |
-| 車型 | checkbox 清單 + 數量(敞篷車21/旗艦轎車29/休旅車58/商旅車1/雙門跑車59/電動車1/掀背車1) | `?type=<slug>` |
-| 動作 | 「清除條件」白鈕 +「搜尋」藍鈕 | Filter Everything 的 apply 模式(選好按搜尋才套用) |
-- 篩選為 **GET 參數型**(`/products/?brand=ferrari&type=suv`),對 SEO 與分享友善;選項間計數會交叉更新。
+| 品牌(select2) | child theme 動態建立的「選取車款」tag 輸入框 | **僅手機顯示**(桌面 `display:none`);程式意圖單選(選新品牌先清舊勾選),但因 Filter Everything AJAX 重建側欄的競態,**實測變成多選疊加**(× Ferrari × Bentley 兩個 tag 並存且兩個 checkbox 都勾) |
+| 在庫狀況 | 「在庫 15」「售出 155」兩顆 chip | 點選即時 AJAX 過濾並更新所有計數;入口連結用 `?car_inv=1/0` |
+| 品牌 | checkbox 清單 + 即時數量 | **點 checkbox 立即套用(AJAX),無需按搜尋**;可複選(實測 Bentley+Ferrari 同時生效);頂部出現「Reset all × / Bentley × / Ferrari ×」chips 可逐一移除 |
+| 車型 | checkbox 清單 + 數量(敞篷車21/旗艦轎車29/休旅車58/商旅車1/雙門跑車59/電動車1/掀背車1) | 同上即時套用;可與品牌交叉(實測 Bentley+Ferrari+休旅車 → 即時縮到對應結果),所有計數聯動更新 |
+| 動作 | 「清除條件」白鈕 +「搜尋」藍鈕 | 兩顆**只在手機版顯示**;桌面是即時套用模式。搜尋鈕內部文字實為動態的「Show (N)」 |
+- **桌面篩選是 AJAX 即時套用,URL 不變**(停留在 `/products/`);`?brand=` `?type=` GET 參數只作為入口連結(首頁品牌 Logo、選單)使用——對 SEO/分享其實不利(篩完的狀態無法複製網址)。
 - 「搜尋」按鈕是**藍色**(#2196F3 系)——全站唯一脫離黑金配色的元素,疑似外掛預設色沒改,視覺突兀。
 
 ### 5.3 車卡內容(`.cmz-product-single`)
@@ -137,8 +139,8 @@
 - 規格 chips:**年份 / 里程 / 顏色 / 缸數** 四欄小字
 - 右上:黃色「**電洽**」膠囊鈕 → `tel:0912-178095`
 - 下方兩顆灰鈕:
-  - 「⚖ 比較車款」(`.cmz-c-btn`,data-product=WooCommerce product ID;已在比較清單時 `data-button-state="active"` 星號變色)
-  - 「分享車款」→ AddToAny 浮層(Facebook/LINE/Threads/Email);JS 會把卡片連結寫進 `data-a2a-url`,確保分享的是該車網址而非列表頁
+  - 「⚖ 比較車款」(`.cmz-c-btn`,data-product=WooCommerce product ID;已在比較清單時 `data-button-state="active"` 星號變色,**再點一次可取消**)
+  - 「分享車款」→ 點擊實測:開啟 **AddToAny 全螢幕浮層選單**(`#a2a_overlay` + addtoany iframe);每張卡內藏 `.a2a_kit`(Facebook / Line / Threads / Email 直連 + 「分享」萬用鈕),JS 把卡片連結寫進 `data-a2a-url`,確保分享的是該車網址而非列表頁
 - **售出車卡與在庫車卡外觀無差異**(無「售出」蓋章/角標),只能靠篩選器區分——對訪客是個資訊缺陷。
 
 ### 5.4 手機排版
@@ -156,9 +158,10 @@
 URL 規則:`/products/p23/`、`/products/b181/`、`/products/259/`(自訂貨號 slug:疑似 b=Bentley 進貨批、p=、a=…+ 流水號)。
 
 ### 6.1 桌面排版(Elementor Pro 單品模板,`data-elementor-type="product"`)
-- **左 2/3:相簿輪播** — Elementor Image Carousel(Swiper):
-  - loop 模式(slide 複製)、左右箭頭(inside)、底部圓點分頁(outside,可點)
-  - 一次顯示 1 張大圖;**無縮圖列、無 lightbox 放大、無影片混入相簿**
+- **左 2/3:相簿輪播** — Elementor Image Carousel(Swiper),實測設定與行為:
+  - loop 無限循環、左右箭頭(inside,**手機也顯示**)、底部圓點分頁(outside,可點,實測點擊跳轉正常)
+  - **自動輪播**:`autoplay: 5000ms`、hover 暫停、互動後暫停(實測 6 秒內 active slide 自動前進,確認生效)
+  - 一次顯示 1 張大圖;每台約 9~10 張實照;**點擊圖片無 lightbox 放大**(實測確認 false)、無縮圖列、無影片混入相簿
   - 圖片為 webp,檔名直接沿用 LINE 相簿匯出名(`LINE_ALBUM_B179...webp`)→ 工作流是 LINE 相簿 → WP 上傳
 - **右 1/3:規格表(深色表格)**,欄位:
   | 欄位 | 範例 |
@@ -173,8 +176,9 @@ URL 規則:`/products/p23/`、`/products/b181/`、`/products/259/`(自訂貨號 
   | 車門乘客 | 5門5座 |
   | 缸數 | 12 / 8 |
   | 馬力 | 571匹馬力(HP) / 725 |
-- 規格表下:黃色大顆「**電洽**」+「比較車款」「分享車款」兩顆次要鈕(與卡片同元件)。
-- **無價格欄位、無年式選配表、無貸款試算、無預約賞車表單。**
+- 規格「表」實際上不是 `<table>`,是 Elementor heading 兩兩成對排版(標籤/值),樣式做成表格感。
+- 規格表下:黃色大顆「**電洽**」(`tel:0912-178095`)+「比較車款」「分享車款」兩顆次要鈕(與卡片同元件;實測詳情頁點「比較車款」→ cookie 寫入 + 左下比較列即時浮現)。
+- **無價格欄位、無年式選配表、無貸款試算、無預約賞車表單。**(但 price 排序實測證明後台有隱藏價格欄位,見 5.1)
 
 ### 6.2 車輛描述區
 - 標題「車輛描述」(黃底黑字標籤)+ 白底黑字內容區(深色頁中唯一白底塊)。
@@ -203,17 +207,35 @@ URL 規則:`/products/p23/`、`/products/b181/`、`/products/259/`(自訂貨號 
 - Blocksy 設定為 `data-behaviour="modal"`(原生支援彈窗比較),但站方改用獨立頁。
 - 手機版:縮圖列縮小在左下,比較鈕變圓形 icon 在右下,不擋內容。
 
-### 7.3 比較頁 `/compare/`(child theme 自寫)
-- 頁面含 `#compare-table-container`,流程:
-  1. 讀 cookie 取得 id 陣列;空 → 顯示「尚未加入任何產品比較清單」+ Browse products 連結
+### 7.3 比較頁(child theme 自寫)— **`/compare/` 與 `/compare-list/` 雙頁並存**
+- 浮動「比較車款」鈕實際導向 **`/compare-list/`**;`/compare/` 是另一個內容相同的頁(同樣含 `#compare-table-container`,還殘留 Blocksy 預設的英文空狀態文案「You don't have any products in your compare list yet.」與中文「尚未加入任何產品比較清單。」並存)→ 建置時的重複頁沒清乾淨。
+- 渲染流程:
+  1. 讀 cookie 取得 id 陣列;空 → 顯示空狀態 + Browse products 連結
   2. `POST /wp-admin/admin-ajax.php`,`action=get_compare_products&product_ids[]=...`(自訂 AJAX endpoint)
   3. 回傳每台車 `{title, permalink, thumbnail, meta:{brand, year, warranty, hp, cylinder}}`
   4. JS 動態 render 比較表
 - **表格列(屬性為列、車輛為欄)**:縮圖(280px,可點進詳情)→ 品牌 → 車款(連結)→ 年份 → 保固 → 馬力 → 汽缸數 → 移除鈕。
-- **移除互動**:點「移除」→ 該欄先 `display:none`、300ms 後真正 deleteCell;同步移除左下 bar 的縮圖、改寫 cookie;欄位歸零時顯示空清單訊息。
-- 欄數**無上限**(程式裡 MAX_COLS=4 被註解掉)→ 可加 N 台。
-- **手機版重大缺陷(實測)**:比較表無橫向捲動容器,390px 寬只看得到「屬性欄+第一台車」,第二台被硬截斷,無任何捲動提示 → **手機上比較功能實質壞掉**。
+- **移除互動(實測)**:點「移除」→ 該欄先 `display:none`、300ms 後真正 deleteCell;同步移除左下 bar 的縮圖、改寫 cookie;欄位歸零時顯示空清單訊息。
+- 欄數**無上限**(程式裡 MAX_COLS=4 被註解掉)。
 - 比較欄位**不含價格、里程、顏色**(年份/保固/馬力/汽缸數而已),資訊量偏少。
+
+### 7.4 真實多車比較實測(逐步加 5 台 + 移除)
+| 步驟 | cookie 內容 | 左下比較列 |
+|---|---|---|
+| 第 1 頁點第 1 台(4635) | `[{4635}]` | 1 張縮圖 ✅ |
+| 點第 2 台(4656) | `[{4635},{4656}]` | 2 ✅ |
+| 點第 3 台(3308) | `[{4635},{4656},{3308}]` | 3 ✅ |
+| **翻到第 2 頁** | cookie 仍是 3 台 ✅ | **0 張(比較列完全沒渲染)❌** |
+| 第 2 頁點第 4 台(3562) | **`[{3562}]` — 前 3 台全被清空!❌** | 1 |
+| 點第 5 台(3346) | `[{3562},{3346}]` | 2 |
+
+**重大缺陷:跨頁比較會遺失清單。** 同一頁內加減完全正常,但換頁後:(a) 比較列/浮動鈕不會依 cookie 重新渲染;(b) 在新頁面再點任何「比較車款」,前端以「空清單」狀態覆寫 cookie,舊選擇全部消失。真實使用者「第 1 頁勾 2 台、第 2 頁再勾 1 台」的基本流程會默默丟資料。唯一安全路徑是同頁勾完直接進比較頁。
+(按鈕 active 狀態的回填邏輯倒是正常——child JS 讀 cookie 標記,但 Blocksy 比較列本身不會。)
+
+### 7.5 手機版比較表(修正第一輪結論)
+- 比較表容器 `overflow-x: auto`,實測 `scrollWidth 813 vs clientWidth 390`,**可以橫向捲動**(程式捲到 423px 後第二台車完整可見)——非「壞掉」。
+- 但**初載畫面第二台車被硬切在邊緣、無捲動提示**(無陰影漸層、無箭頭、無「滑動查看」hint),第一印象仍像壞掉;表格手機欄寬 ~400px,3 台以上要連續橫滑。
+- 手機畫面上「移除」鈕位於可視範圍外,需先橫滑才能操作。
 
 ---
 
@@ -229,10 +251,13 @@ URL 規則:`/products/p23/`、`/products/b181/`、`/products/259/`(自訂貨號 
 | (潛在能力)跑馬燈 Shorts 版 | child JS `.iframe-embed[data-key]` 注入 342×512 YouTube iframe | ✅ mute 自動播 | ✅ playlist 技巧 | ❌ | 程式碼已備好、首頁未啟用 |
 | 車輛詳情頁 | **無影片**(純相片輪播) | — | — | — | 車輛影片只存在社群,未進詳情頁 |
 
+全站影片嵌入完整清單(實測):hero=`Ko_LPi8dbrw`;YOUTUBE影片區 4 支=`IXGZAufXjJw`(大)、`2KdTZgaJ7AM`、`gw9kW577xIE`、`sitXeGjm4Mc`(小×3,皆 Elementor Video Widget、controls=yes、無 autoplay);IG Reels 跑馬燈 6 支 reel 連結(站內僅截圖)。除此之外**任何頁面(詳情/關於/聯絡/列表)都沒有影片**。
+
 關鍵 takeaway:
 1. **YouTube `loop=1` 必搭 `playlist=同ID`** 的循環 hack 全站重複使用。
 2. 行銷主軸是「把網站流量導去 YouTube/IG」,而不是把影片內容留在站內(詳情頁連影片都沒有)。
-3. 跑馬燈 hover 不暫停、不可點停,純氛圍裝飾。
+3. 跑馬燈 hover 不暫停;實測卡片持續位移,點擊命中率低(Playwright 兩次點擊都因元素移出視窗失敗)——真人要點中也得碰運氣,**這區實質是裝飾,不是有效導流元件**。
+4. 詳情頁的「自動輪播」是相簿(Swiper autoplay 5s),不是影片。
 
 ---
 
@@ -241,14 +266,33 @@ URL 規則:`/products/p23/`、`/products/b181/`、`/products/259/`(自訂貨號 
 ### 關於我們 `/about-us/`
 - Hero 大圖(夜拍 Rolls-Royce 門市照)
 - 三張 USP 卡:頂級車況交付(交車前美容/檢測)、提供自營保修廠(**全車一年不限額保固**)、高於市場行情(高價收購+舊換新)
-- **動態計數器**(滾動觸發,Elementor counter):129 輛豪車過戶 / 432 則私訊詢問 / 42% 顧客滿意度(42% 這數字很怪,疑似填錯)
-- CTA:「我要賣車」「我要買車」兩顆鈕
+- **動態計數器**(滾動觸發,Elementor counter),最終值實測:**299 輛豪車過戶 / 1,000 則私訊詢問 / 98% 顧客滿意度**(第一輪抓到的 129/432/42% 是動畫中間值,已更正)
+- CTA:「我要賣車」「我要買車」兩顆鈕 — **實測兩顆都連到同一個 LINE 個人連結 `line.me/ti/p/8Oy07RcOuZ`**(不是 LINE OA)
 - 底部品牌 Logo 跑馬燈(McLaren/Bentley/Porsche/Ferrari/RR/Maybach)
 
 ### 聯絡我們 `/contact-us/`
-- 三張資訊卡:實體門市(地址)/ 預約電話 / 官方LINE(LINE ID)
-- 全寬 Google Map iframe(內湖門市)
+- 三張資訊卡**全部可點**(實測):實體門市 → Google Maps 短連結(`maps.app.goo.gl/...`)/ 預約電話 → `tel:0912-178095` / 官方LINE → `line.me/R/ti/p/@hank_bentley_rr`(LINE OA)
+- 全寬 Google Map iframe(`maps.google.com/maps?q=台北市內湖區行忠路57號&output=embed`,免 API key 的 embed 模式)
 - **無表單**——線索全走電話/LINE。
+
+### 全站聯絡資訊/外部連結完整盤點(實測抓取)
+| 位置 | 項目 | 目標 |
+|---|---|---|
+| 頂部資訊列+footer+抽屜 | 電話(全站共 9 處 tel 連結) | `tel:0912-178095` |
+| 頂部資訊列 | 地址文字 | 台北市內湖區行忠路57號(純文字,不可點) |
+| header 社群 ×5 | Facebook | `facebook.com/profile.php?id=61570658382398` |
+| | LINE | `line.me/ti/p/8Oy07RcOuZ`(個人) |
+| | Threads | `threads.com/@hank_bentley_rr` |
+| | Instagram | `instagram.com/hank_bentley_rr` |
+| | TikTok | `tiktok.com/@hank67658` |
+| footer | Logo→首頁、電話、Facebook、LINE(個人) | 僅 2 個社群 icon |
+| 聯絡頁三卡 | 門市 → Google Maps 短連結 / 電話 → tel / 官方LINE → OA | 三卡皆可點 |
+| 關於頁 CTA | 我要賣車、我要買車 | 都導向個人 LINE |
+
+### LINE 雙軌並存(實測盤點)
+- **個人 LINE**(`line.me/ti/p/8Oy07RcOuZ`):header/footer/抽屜選單的 LINE icon、關於頁「我要賣車/我要買車」
+- **LINE OA**(`@hank_bentley_rr`):只有聯絡頁「官方LINE」卡
+- → 主要轉換動線其實導向老闆**個人 LINE**,廠商貼文宣傳的 LINE OA(自動回覆+圖文選單)只掛在聯絡頁一處。
 
 ---
 
@@ -266,8 +310,9 @@ WooCommerce product +:
 
 - **外掛堆疊重**:jQuery + jQuery Migrate + Elementor ×2 + WooCommerce 全套 + Blocksy bundles + select2 + tiny-slider;首頁同時載 6 支 YouTube iframe(1 hero + 4 影片區 + iframe_api)→ 首屏負載大。
 - 圖片有做 webp + srcset + lazyload(Blocksy/WP 原生),是少數效能亮點。
-- **無 sitemap、無 SEO 外掛**;title 結構靠預設(`車名 – HANK豪車館`);無 JSON-LD 結構化資料(Vehicle/Product schema 全缺)→ 自然搜尋幾乎裸奔,流量應主要靠社群與 Google Ads(有 AW- 轉換追蹤)。
-- 售出/在庫無視覺標示、手機比較表截斷、手機篩選器佔首屏、hero 手機露控制列、「搜尋」鈕配色突兀 —— 細節完成度中等。
+- **SEO 全面缺失(第二輪逐頁實測)**:無 sitemap、`meta description` 為 null、**OG tags 0 個、JSON-LD 0 個**(首頁與詳情頁皆然)→ 分享到 FB/LINE 不會有漂亮預覽卡(只能靠平台自抓),Vehicle/Product schema 全缺;title 靠預設(`車名 – HANK豪車館`)。流量主要靠社群與 Google Ads(AW- 轉換追蹤)。
+- **隱藏功能**:WP 站內搜尋其實可用(`/?s=cullinan` 回傳正確車輛列表)但 header **沒有搜尋框**,訪客無從使用;404 頁為 Blocksy 預設文案(無自訂導購)。
+- 售出/在庫無視覺標示、跨頁比較清單遺失(7.4)、手機比較表無捲動提示(7.5)、手機篩選器佔首屏、hero 手機露控制列、「搜尋」鈕配色突兀、`/compare/` 重複頁殘留 —— 細節完成度中等。
 - 無多語、無會員、無收藏(wishlist 未啟用)、無詢價表單、無 blog/SEO 內容。
 
 ---
@@ -282,14 +327,16 @@ WooCommerce product +:
 5. 首頁「近期入庫」品牌 tab 即時過濾(Loop Grid + Taxonomy Filter 模式)。
 6. 關於頁動態計數器 + 三 USP 卡的信任建構結構。
 
-**可輕鬆超越的弱點**
-1. 手機比較表壞掉(無橫向捲動)→ 本站比較功能做好 RWD 即勝出。
-2. 售出車無標示、與在庫混排。
-3. 詳情頁無影片、無 lightbox、無縮圖列、無相關車款推薦。
-4. 手機列表頁篩選器佔掉整個首屏(該用抽屜)。
-5. SEO 全缺(無 sitemap、無 schema、無內容行銷)→ 結構化資料 + 車款 SEO 頁能拿走自然流量。
-6. 無詢價表單/預約賞車 → 線上轉換動線只有電話與 LINE。
-7. 比較表欄位太少(無價格、里程、顏色)。
+**可輕鬆超越的弱點**(依嚴重度排序,均經第二輪實測確認)
+1. **跨頁比較清單會遺失**(7.4):換頁後比較列不渲染、再點即清空 cookie——基本流程默默丟資料。本站做對「跨頁保留 + 比較列全站常駐」即直接勝出。
+2. 手機比較表可橫向捲動但**無任何捲動提示**,第一印象像壞掉;「移除」鈕在可視範圍外。
+3. 售出車無標示、與在庫混排(列表/詳情皆無「售出」視覺)。
+4. SEO 全缺:無 sitemap、無 meta description、**0 個 OG tag、0 個 JSON-LD**→ 社群分享無預覽卡、自然搜尋裸奔。
+5. 詳情頁無影片、無 lightbox、無縮圖列、無相關車款推薦。
+6. 手機列表頁篩選器佔掉整個首屏(該用抽屜);桌面篩選後 URL 不變,狀態無法分享。
+7. 無詢價表單/預約賞車;主要 LINE 動線是個人帳號而非 OA(雙軌混亂)。
+8. 比較表欄位太少(無價格、里程、顏色);`/compare/` 與 `/compare-list/` 重複頁殘留。
+9. 站內搜尋功能存在但無入口;404 頁無導購。
 
 ---
 
@@ -312,8 +359,9 @@ WooCommerce product +:
 
 ### 13.3 重要落差:「業務分享比較連結給客戶」
 - 廠商貼文宣稱:「**比較頁不只給顧客用,業務也能直接分享比較連結給客戶**」。
-- **實測不成立**:比較清單存在訪客自己瀏覽器的 cookie(`blc_products_compare_list`),`/compare/` URL 不帶任何車輛參數。業務把 `/compare/` 傳給客戶,客戶打開只會看到自己的(空)清單。
-- → 本站若實作「**可分享的比較連結**」(如 `/compare?ids=a,b,c`),即直接補上對手「想做但沒做到」的功能,且正中其行銷話術。
+- **實測不成立**:比較清單存在訪客自己瀏覽器的 cookie(`blc_products_compare_list`),`/compare/`、`/compare-list/` URL 都不帶任何車輛參數。業務把連結傳給客戶,客戶打開只會看到自己的(空)清單。
+- 再疊加 7.4 的跨頁遺失 bug,對手的比較功能實際可用範圍只有「單頁勾選 → 立即比較」。
+- → 本站若實作「**可分享的比較連結**」(如 `/compare?ids=a,b,c`)+ 跨頁保留,即直接補上對手「想做但沒做到」的功能,且正中其行銷話術。
 
 ### 13.4 網站之外的整體服務設計(對手的完整漏斗)
 洛克科技給 HANK 的方案是三件套:**#網站架設 + #官方LINE建置 + #廣告投放**:
@@ -330,7 +378,12 @@ WooCommerce product +:
 
 ---
 
-## 附錄:研究產物清單(`D:\tmp\hank-research\`)
+## 附錄:研究產物清單
 
+第一輪 `D:\tmp\hank-research\`:
 - 截圖:`home-desktop/mobile`(全頁)、`home-top-mobile`、`home-yt-section`、`home-marquee-section`、`home-lightmode`、`products-top-desktop/mobile`、`products-sold-desktop`、`detail-top-desktop/mobile`、`detail-full-desktop/mobile`、`detail-sold-desktop`、`compare-bar-desktop2/mobile`、`compare-page-desktop/mobile`、`mobile-menu2`、`brand-rr-desktop`、`about-full-desktop`、`contact-full-desktop`
 - 資料:各頁 `*.html` dump、`*.json`(links/scripts/iframes)、`child-script.js`(客製 JS 原始碼)、`compare-page-table.json`、`cookies.json`、`marquee-info.json`、`about-text.txt`、`contact-text.txt`
+
+第二輪(地毯式互動稽核)`D:\tmp\hank-research\deep\`:
+- 結構化稽核結果:`desktop-audit.json`(首頁 tab 點擊/品牌 Logo/YT widgets/footer/排序四種/分頁/404/搜尋/taxonomy)、`retest-audit.json`(比較 cookie 逐步實測/雙比較頁/篩選組合/分享浮層/詳情深掘/header 盤點)、`mobile-audit.json`(抽屜選單/select2 多選/手機比較捲動/聯絡卡連結)
+- 截圖 30+ 張:`d-*`(桌面)、`r-*`(重測)、`m-*`(手機),含比較列 3/5 台、比較頁移除前後、雙品牌+車型篩選、select2 開啟、分享浮層、光亮模式全頁、404、站內搜尋結果等
