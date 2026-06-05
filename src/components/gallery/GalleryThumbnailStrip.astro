@@ -31,7 +31,6 @@ const { images, title, coverImageIndex = 0 } = Astro.props;
           <button
             class={`gallery-strip__thumb${index === coverImageIndex ? ' is-active' : ''}`}
             type="button"
-            data-gallery-index={index}
             data-strip-thumb={index}
             role="listitem"
             aria-label={`查看第 ${index + 1} 張`}
