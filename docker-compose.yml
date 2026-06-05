@@ -1,0 +1,18 @@
+services:
+  car-site-mita:
+    image: ${CAR_SITE_IMAGE:-kevin950805/car-site:latest}
+    container_name: ${CAR_SITE_CONTAINER_NAME:-car-site-mita}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3000
+      DATABASE_PATH: /app/data/car-site.db
+      SESSION_SECRET: ${SESSION_SECRET:-change-this-session-secret}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-change-me-now}
+      IMPORT_API_TOKEN: ${IMPORT_API_TOKEN:-}
+    ports:
+      - "${CAR_SITE_HOST_BIND:-100.73.52.37:5325}:3000"
+    volumes:
+      - ${CAR_SITE_DATA_DIR:-/srv/data4tb/car-site-mita/data}:/app/data
