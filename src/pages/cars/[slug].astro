@@ -83,6 +83,42 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
 
 <PublicLayout title={`${vehicle.title}｜${settings.siteName}`} description={vehicle.headline || vehicle.description} shareText={shareText} shareUrl={shareUrl} ogImage={vehicle.coverImage?.url} ogType="product" jsonLd={[vehicleJsonLd, breadcrumbJsonLd]}>
   <article class="detail-page luxury-enter">
+    <div class="detail-gallery-top">
+      {settings.galleryMode === 'slider' ? (
+        <GallerySlider images={vehicle.images} title={vehicle.title} coverImageIndex={coverImageIndex} />
+      ) : settings.galleryMode === 'thumbnail-strip' ? (
+        <GalleryThumbnailStrip images={vehicle.images} title={vehicle.title} coverImageIndex={coverImageIndex} />
+      ) : settings.galleryMode === 'grid' ? (
+        <>
+          {vehicle.coverImage && (
+            <button class="detail-cover" type="button" data-gallery-index={coverImageIndex} aria-label="開啟封面大圖">
+              <img src={vehicle.coverImage.url} alt={vehicle.coverImage.alt || `${vehicle.title} 封面照`} fetchpriority="high" decoding="async" />
+            </button>
+          )}
+          <GalleryGrid images={vehicle.images} title={vehicle.title} />
+        </>
+      ) : (
+        <>
+          {vehicle.images.length > 0 && (
+            <div class="gallery-header reveal-section">
+              <span>車輛實拍</span>
+              <span>共 {vehicle.images.length} 張</span>
+            </div>
+          )}
+          <section class="gallery reveal-section">
+            {vehicle.images.map((image, index) => (
+              <button class="gallery-item" type="button" data-gallery-index={index} aria-label={`開啟第 ${index + 1} 張大圖`}>
+                <img src={image.url} alt={image.alt || `${vehicle.title} 圖片 ${index + 1} / ${vehicle.images.length}`} loading={index === coverImageIndex ? 'eager' : 'lazy'} decoding="async" />
+                <span class="gallery-item__zoom" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" stroke="currentColor" stroke-width="2" fill="none" /></svg>
+                </span>
+                <span class="gallery-item__index" aria-hidden="true">{index + 1} / {vehicle.images.length}</span>
+              </button>
+            ))}
+          </section>
+        </>
+      )}
+    </div>
     <section class="detail-hero">
       <div class="detail-copy">
         <p class="eyebrow">
@@ -105,13 +141,6 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
           <ShareButton class="detail-share-button" title={vehicle.title} url={shareUrl} text={shareText} />
         </div>
       </div>
-      {settings.galleryMode === 'slider' || settings.galleryMode === 'thumbnail-strip' ? null : vehicle.coverImage ? (
-        <button class="detail-cover" type="button" data-gallery-index={coverImageIndex} aria-label="開啟封面大圖">
-          <img src={vehicle.coverImage.url} alt={vehicle.coverImage.alt || `${vehicle.title} 封面照`} fetchpriority="high" decoding="async" />
-        </button>
-      ) : (
-        <div class="detail-cover"></div>
-      )}
     </section>
     <section class="detail-section reveal-section">
       <div class="section-kicker">
@@ -132,40 +161,6 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
         <p class="advisor-note__signature">— {settings.salespersonName}</p>
       </div>
     </section>
-    {settings.galleryMode === 'slider' ? (
-      <GallerySlider images={vehicle.images} title={vehicle.title} coverImageIndex={coverImageIndex} />
-    ) : settings.galleryMode === 'thumbnail-strip' ? (
-      <GalleryThumbnailStrip images={vehicle.images} title={vehicle.title} coverImageIndex={coverImageIndex} />
-    ) : settings.galleryMode === 'grid' ? (
-      <>
-        {vehicle.coverImage && (
-          <button class="detail-cover" type="button" data-gallery-index={coverImageIndex} aria-label="開啟封面大圖">
-            <img src={vehicle.coverImage.url} alt={vehicle.coverImage.alt || `${vehicle.title} 封面照`} fetchpriority="high" decoding="async" />
-          </button>
-        )}
-        <GalleryGrid images={vehicle.images} title={vehicle.title} />
-      </>
-    ) : (
-      <>
-        {vehicle.images.length > 0 && (
-          <div class="gallery-header reveal-section">
-            <span>車輛實拍</span>
-            <span>共 {vehicle.images.length} 張</span>
-          </div>
-        )}
-        <section class="gallery reveal-section">
-          {vehicle.images.map((image, index) => (
-            <button class="gallery-item" type="button" data-gallery-index={index} aria-label={`開啟第 ${index + 1} 張大圖`}>
-              <img src={image.url} alt={image.alt || `${vehicle.title} 圖片 ${index + 1} / ${vehicle.images.length}`} loading="lazy" decoding="async" />
-              <span class="gallery-item__zoom" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" stroke="currentColor" stroke-width="2" fill="none" /></svg>
-              </span>
-              <span class="gallery-item__index" aria-hidden="true">{index + 1} / {vehicle.images.length}</span>
-            </button>
-          ))}
-        </section>
-      </>
-    )}
     <nav class="detail-pager reveal-section" aria-label="車輛切換">
       {prevVehicle ? (
         <a class="detail-pager__link detail-pager__link--prev" href={`/cars/${prevVehicle.slug}`} rel="prev">

@@ -111,6 +111,21 @@ img.image-error::after { content: attr(alt); }
   padding: clamp(2rem, 5.5vw, 4.5rem) clamp(1.25rem, 5vw, 6rem);
 }
 
+.detail-gallery-top {
+  display: grid;
+  gap: 1rem;
+  padding: clamp(1rem, 3vw, 2rem) 0 clamp(1.25rem, 3vw, 2.25rem);
+}
+
+.detail-hero {
+  grid-template-columns: minmax(0, 1fr);
+  min-height: auto;
+  padding-top: clamp(1.25rem, 3.5vw, 2.5rem);
+  padding-bottom: clamp(1.25rem, 3.5vw, 2.75rem);
+}
+
+.detail-copy { max-width: 58rem; }
+
 .hero h1,
 .page-hero h1,
 .detail-copy h1 { font-size: clamp(2.35rem, 6.4vw, 5.6rem); line-height: 1.04; letter-spacing: -0.02em; margin: 0.5rem 0 1.25rem; overflow-wrap: anywhere; padding-bottom: 0.06em; }
