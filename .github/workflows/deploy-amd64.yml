@@ -31,7 +31,7 @@ jobs:
       - name: Check required secrets
         run: |
           missing=0
-          for name in TS_OAUTH_CLIENT_ID TS_OAUTH_SECRET DEPLOY_SSH_KEY DEPLOY_SERVER_IP DEPLOY_USER DEPLOY_PATH SESSION_SECRET ADMIN_PASSWORD; do
+          for name in TS_OAUTH_CLIENT_ID TS_OAUTH_SECRET DEPLOY_SSH_KEY DEPLOY_SERVER_IP DEPLOY_USER DEPLOY_PATH; do
             value="${!name}"
             if [ -z "$value" ]; then
               echo "Missing required secret: $name"
@@ -48,8 +48,6 @@ jobs:
           DEPLOY_SERVER_IP: ${{ secrets.DEPLOY_SERVER_IP }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
 
       - name: Connect to Tailscale
         uses: tailscale/github-action@v4
@@ -109,17 +107,40 @@ jobs:
           CAR_SITE_DATA_DIR: ${{ secrets.CAR_SITE_DATA_DIR || '/srv/data4tb/car-site-mita/data' }}
         run: |
           quote() { printf '%q' "$1"; }
-          remote_env="SESSION_SECRET=$(quote "$SESSION_SECRET") ADMIN_USERNAME=$(quote "$ADMIN_USERNAME") ADMIN_PASSWORD=$(quote "$ADMIN_PASSWORD") IMPORT_API_TOKEN=$(quote "$IMPORT_API_TOKEN") CAR_SITE_HOST_BIND=$(quote "$CAR_SITE_HOST_BIND") CAR_SITE_DATA_DIR=$(quote "$CAR_SITE_DATA_DIR") CAR_SITE_IMAGE=car-site-mita:local"
           ssh -i ~/.ssh/deploy_key "${DEPLOY_USER}@${DEPLOY_SERVER_IP}" "
             set -e
+            SESSION_SECRET=$(quote "$SESSION_SECRET")
+            ADMIN_USERNAME=$(quote "$ADMIN_USERNAME")
+            ADMIN_PASSWORD=$(quote "$ADMIN_PASSWORD")
+            IMPORT_API_TOKEN=$(quote "$IMPORT_API_TOKEN")
+            CAR_SITE_HOST_BIND=$(quote "$CAR_SITE_HOST_BIND")
+            CAR_SITE_DATA_DIR=$(quote "$CAR_SITE_DATA_DIR")
+            CAR_SITE_IMAGE=car-site-mita:local
+
+            container_env() {
+              docker inspect car-site-mita --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null | awk -F= -v key=\"\$1\" '\$1 == key { sub(/^[^=]*=/, \"\"); print; exit }'
+            }
+
+            if [ -z \"\$SESSION_SECRET\" ]; then SESSION_SECRET=\"\$(container_env SESSION_SECRET)\"; fi
+            if [ -z \"\$ADMIN_USERNAME\" ]; then ADMIN_USERNAME=\"\$(container_env ADMIN_USERNAME)\"; fi
+            if [ -z \"\$ADMIN_USERNAME\" ]; then ADMIN_USERNAME=admin; fi
+            if [ -z \"\$ADMIN_PASSWORD\" ]; then ADMIN_PASSWORD=\"\$(container_env ADMIN_PASSWORD)\"; fi
+            if [ -z \"\$IMPORT_API_TOKEN\" ]; then IMPORT_API_TOKEN=\"\$(container_env IMPORT_API_TOKEN)\"; fi
+
+            if [ -z \"\$SESSION_SECRET\" ] || [ -z \"\$ADMIN_PASSWORD\" ]; then
+              echo 'ERROR: SESSION_SECRET and ADMIN_PASSWORD are required for first deploy when no existing container is available.'
+              exit 1
+            fi
+
+            export SESSION_SECRET ADMIN_USERNAME ADMIN_PASSWORD IMPORT_API_TOKEN CAR_SITE_HOST_BIND CAR_SITE_DATA_DIR CAR_SITE_IMAGE
             cd '${DEPLOY_PATH}'
             mkdir -p 'releases/${GITHUB_SHA}'
             tar -xzf 'car-site-source-${GITHUB_SHA}.tgz' -C 'releases/${GITHUB_SHA}'
             cd 'releases/${GITHUB_SHA}'
             docker build -t car-site-mita:local .
             cd '${DEPLOY_PATH}'
-            ${remote_env} docker compose up -d --force-recreate car-site-mita
-            ${remote_env} docker compose ps car-site-mita
+            docker compose up -d --force-recreate car-site-mita
+            docker compose ps car-site-mita
           "
 
       - name: Health check

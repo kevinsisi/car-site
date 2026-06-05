@@ -19,8 +19,8 @@ This repository deploys `main` to the amd64 `car-site-mita` host through GitHub 
 - `DEPLOY_USER`, for example `kevin`
 - `DEPLOY_PATH`, for example `/home/kevin/DockerCompose/car-site-mita`
 - `DEPLOY_PORT` optional; defaults to `5325`
-- `SESSION_SECRET`
-- `ADMIN_PASSWORD`
+- `SESSION_SECRET` optional if an existing `car-site-mita` container already has it
+- `ADMIN_PASSWORD` optional if an existing `car-site-mita` container already has it
 - `ADMIN_USERNAME` optional; defaults to `admin`
 - `IMPORT_API_TOKEN` optional
 - `CAR_SITE_HOST_BIND` optional; defaults to `100.73.52.37:5325`
@@ -28,7 +28,7 @@ This repository deploys `main` to the amd64 `car-site-mita` host through GitHub 
 
 ## Runtime Secrets
 
-The deploy workflow does not require or write a host `.env` file. Runtime secrets are injected into `docker compose` from GitHub Secrets during deployment.
+The deploy workflow does not require or write a host `.env` file. Runtime secrets are injected into `docker compose` from GitHub Secrets during deployment. If `SESSION_SECRET` or `ADMIN_PASSWORD` are not configured in GitHub Secrets, the workflow preserves them from the existing `car-site-mita` container environment.
 
 Equivalent runtime values:
 
