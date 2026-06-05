@@ -19,6 +19,15 @@
 
 <script>
   const bar = document.getElementById('compare-bar')!;
+  // The compare page IS the compare list — the floating bar would only cover
+  // the table it duplicates, so drop it there entirely.
+  if (location.pathname.replace(/\/+$/, '') === '/cars/compare') {
+    bar.remove();
+  } else {
+    initCompareBar();
+  }
+
+  function initCompareBar() {
   const itemsEl = document.getElementById('compare-bar-items')!;
   const labelEl = document.getElementById('compare-bar-label')!;
   const goBtn = document.getElementById('compare-go') as HTMLAnchorElement;
@@ -46,7 +55,7 @@
       const el = document.createElement('div');
       el.className = 'compare-bar__item';
       el.innerHTML = `
-        ${thumb ? `<img src="${thumb}" alt="${title}" />` : ''}
+        ${thumb ? `<img src="${thumb}" alt="" width="36" height="24" onerror="this.remove()" />` : ''}
         <span>${title}</span>
         <button type="button" data-remove="${slug}" aria-label="移除 ${title}">✕</button>
       `;
@@ -83,9 +92,13 @@
   window.addEventListener('compare-changed', render);
   window.addEventListener('storage', (e) => { if (e.key === 'compare_slugs') render(); });
   render();
+  }
 </script>
 
-<style>
+{/* is:global because bar items are injected at runtime (innerHTML) and would
+    never match Astro's scoped data-astro-cid selectors. Class names are
+    namespaced with compare-bar__ so nothing leaks. */}
+<style is:global>
 .compare-bar {
   position: fixed;
   bottom: -120px;
@@ -101,12 +114,13 @@
 .compare-bar__inner {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.875rem 1.5rem;
+  gap: 0.75rem;
+  /* Single slim row — never wraps taller no matter how many cars are added. */
+  flex-wrap: nowrap;
+  padding: 0.5rem 1rem;
   background: var(--surface, #fff);
   border-top: 2px solid var(--accent, #2f66ad);
   box-shadow: 0 -4px 24px rgba(0,0,0,0.12);
-  flex-wrap: wrap;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -118,24 +132,30 @@
 }
 .compare-bar__items {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.5rem;
   flex: 1;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
+.compare-bar__items::-webkit-scrollbar { display: none; }
 .compare-bar__item {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 4px 8px 4px 4px;
+  padding: 3px 7px 3px 3px;
   background: var(--surface-soft, #f5f5f5);
   border-radius: 6px;
-  font-size: 0.8rem;
-  max-width: 160px;
+  font-size: 0.78rem;
+  max-width: 150px;
+  flex-shrink: 0;
 }
 .compare-bar__item img {
-  width: 40px;
-  height: 28px;
+  width: 36px;
+  height: 24px;
   object-fit: cover;
   border-radius: 3px;
   flex-shrink: 0;
@@ -183,30 +203,15 @@
 /* ── Mobile — 橫向滑動，縮圖縮小 ── */
 @media (max-width: 640px) {
   .compare-bar__inner {
-    padding: 0.6rem 0.75rem;
+    padding: 0.45rem 0.7rem;
     gap: 0.5rem;
-    flex-wrap: nowrap;
-    align-items: center;
   }
   .compare-bar__label {
     font-size: 0.75rem;
     white-space: nowrap;
     flex-shrink: 0;
   }
-  /* Items row: horizontal scroll, no wrap */
-  .compare-bar__items {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
-    gap: 0.4rem;
-    flex: 1;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-  }
-  .compare-bar__items::-webkit-scrollbar { display: none; }
-  /* Smaller item cards on mobile */
   .compare-bar__item {
-    flex-shrink: 0;
     max-width: 100px;
     padding: 3px 6px 3px 3px;
     gap: 0.3rem;
@@ -216,8 +221,7 @@
     height: 22px;
   }
   .compare-bar__item span { font-size: 0.72rem; max-width: 52px; }
-  /* Smaller action buttons */
-  .compare-bar__actions { flex-shrink: 0; gap: 0.35rem; }
+  .compare-bar__actions { gap: 0.35rem; }
   .compare-bar__go { font-size: 0.78rem; padding: 0.35rem 0.75rem; white-space: nowrap; }
   .compare-bar__clear { font-size: 0.75rem; padding: 0.3rem 0.5rem; white-space: nowrap; }
 }

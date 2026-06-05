@@ -92,7 +92,8 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
             <div class="search-suggestions" role="listbox" aria-label="搜尋建議"></div>
           </div>
         </div>
-        <div class="compare-add-grid" id="compare-add-list">
+        <p class="compare-add-hint" id="compare-add-hint">輸入品牌或型號開始搜尋,符合的車輛會顯示在這裡。</p>
+        <div class="compare-add-grid" id="compare-add-list" hidden>
           {availableVehicles.map((v) => (
             <a
               href={addUrl(v.slug)}
@@ -189,13 +190,28 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
 
   const searchInput = document.getElementById('compare-search') as HTMLInputElement | null;
   const list = document.getElementById('compare-add-list');
+  const hint = document.getElementById('compare-add-hint');
 
+  // The candidate grid only appears while the user is actually searching —
+  // an always-on wall of cards just pushes the compare table off-screen.
   searchInput?.addEventListener('input', () => {
     const q = searchInput.value.toLowerCase().trim();
+    if (!q) {
+      if (list) list.hidden = true;
+      if (hint) { hint.hidden = false; hint.textContent = '輸入品牌或型號開始搜尋,符合的車輛會顯示在這裡。'; }
+      return;
+    }
+    let matches = 0;
     list?.querySelectorAll<HTMLElement>('.compare-add-card').forEach((item) => {
-      const match = !q || (item.dataset.search || '').includes(q);
+      const match = (item.dataset.search || '').includes(q);
       item.style.display = match ? '' : 'none';
+      if (match) matches++;
     });
+    if (list) list.hidden = matches === 0;
+    if (hint) {
+      hint.hidden = matches > 0;
+      if (matches === 0) hint.textContent = '找不到符合的車輛,換個關鍵字試試。';
+    }
   });
 
   const setupSearchSuggestions = (input: HTMLInputElement) => {
@@ -300,6 +316,8 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
   border-radius: 8px;
   font-size: 0.9rem;
 }
+.compare-add-hint { margin: 0; font-size: 0.85rem; color: var(--muted, #888); }
+.compare-add-hint[hidden] { display: none; }
 .compare-add-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -307,7 +325,9 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
   max-height: 300px;
   overflow-y: auto;
   padding-right: 4px;
+  margin-top: 0.85rem;
 }
+.compare-add-grid[hidden] { display: none; }
 .compare-add-card {
   position: relative;
   display: grid;
