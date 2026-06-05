@@ -59,9 +59,27 @@ fs.mkdirSync(path.dirname(databasePath), { recursive: true });
 const sqlite = new Database(databasePath);
 sqlite.pragma('foreign_keys = ON');
 
+function applyBrandIcons(sqlite) {
+  // Bundled brand icons ship inside the client build. Fill icon_url only when
+  // it is still NULL so admin-uploaded icons are never overwritten.
+  const iconDir = path.resolve(cwd, 'dist', 'client', 'brand-icons');
+  if (!fs.existsSync(iconDir)) return;
+  const update = sqlite.prepare(
+    'UPDATE brand_aliases SET icon_url = ?, updated_at = ? WHERE url_slug = ? AND icon_url IS NULL'
+  );
+  let applied = 0;
+  for (const file of fs.readdirSync(iconDir)) {
+    if (!file.endsWith('.png')) continue;
+    const slug = file.slice(0, -4);
+    applied += update.run(`/brand-icons/${file}`, now, slug).changes;
+  }
+  if (applied > 0) console.log(`Applied ${applied} bundled brand icon(s)`);
+}
+
 try {
   runMigrations(sqlite);
   seedRuntimeDefaults(sqlite);
+  applyBrandIcons(sqlite);
 } finally {
   sqlite.close();
 }

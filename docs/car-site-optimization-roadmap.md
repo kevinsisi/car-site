@@ -104,6 +104,25 @@ Week 4+(P1):vehicles.videoUrl 單車影片 + 車型/在庫篩選與計數
 不做:chat widget、車輛富結果加碼、以否決數據為依據的任何功能
 ```
 
+## 7. 2026-06-05 全站 UI/UX 自我稽核結果(vs 對手)
+
+Playwright 全頁掃描(9 頁 × 桌面/手機、橫向溢出偵測、觸控目標、console error、fixed 元素行為):
+
+**當日已修**
+- CompareBar:三台車時桌面 152px→56px、手機 410px→49px(單列橫捲);根因是 runtime 注入節點不吃 Astro scoped styles(改 `is:global`)+ 壞縮圖 alt 文字撐高(`onerror` 自移除)
+- 比較頁移除浮動 CompareBar(與頁面內容重複互蓋)
+- 比較頁「加入車輛」改打字才出現(預設提示文字,zero-match 顯示找不到)
+- 手機 header nav 與 footer 快捷連結觸控目標 <32px → 加大到 ~44px
+- IG 輪播:點擊暫停/再滑恢復;卡片只露影片(裁掉 IG header 與按讚列)、禁內部捲動;標題留白 fallback「精選好車」
+- Banner:開場零播放器元件(poster 蓋到 chrome 退場)、多影片循序播放、單影片自循環
+- 全站無橫向溢出(桌面+手機 9 頁全過)
+
+**對手仍領先(內容/營運面,非程式)**
+- 全車統一棚拍場景的視覺一致性;1M YouTube 社群證明數據牆
+- 深色奢華視覺(本站現用 carsmeet-blue 淺色;admin 有 champagne-black 可切換,屬營運選擇)
+
+**結論:程式排版與互動層面已無輸給對手之處;剩餘差距集中在攝影規範與社群內容資產。**
+
 ## 附:研究方法與品質聲明
 
 - 比較 UX 結論來自 Baymard(326 站基準)/NN.g 一手可用性研究,但測試對象是一般規格型電商(筆電/家電),推論到豪車屬合理外推而非直接量測。

@@ -484,7 +484,9 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
   .site-cta__link--phone { width: 2.25rem; padding: 0; }
   .site-cta__link--phone > span:not(.premium-icon) { display: none; }
   .site-cta__link .premium-icon { --premium-icon-size: 1.7rem; --premium-icon-glyph: 1rem; }
-  .site-nav { grid-column: 1 / -1; grid-row: 2; width: 100%; font-size: 0.95rem; gap: 1rem; flex-wrap: wrap; justify-content: flex-start; }
+  .site-nav { grid-column: 1 / -1; grid-row: 2; width: 100%; font-size: 0.95rem; gap: 0.35rem; flex-wrap: wrap; justify-content: flex-start; }
+  /* Comfortable thumb targets (~44px) without changing the visual weight. */
+  .site-nav a { padding: 0.6rem 0.55rem; margin: -0.25rem 0; }
   .hero,
   .detail-hero { grid-template-columns: 1fr; min-height: auto; gap: 1rem; padding-top: 1.35rem; padding-bottom: 1.45rem; }
   .hero__copy,
@@ -628,7 +630,8 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
   .detail-pager__placeholder { display: none; }
   .gallery-header { padding: 1.6rem clamp(1.25rem, 5vw, 6rem) 0.7rem; }
   .empty-state { padding: 2rem 1.1rem; }
-  .footer-links { flex-wrap: wrap; }
+  .footer-links { flex-wrap: wrap; gap: 0.4rem; }
+  .footer-links a { padding: 0.55rem 0.55rem; margin: -0.3rem 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
