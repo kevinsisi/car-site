@@ -141,10 +141,9 @@ function stripPosterStyle(video: HeroVideo, videoId: string | null): string | un
       });
     };
 
-    // Banner (top-strip) YouTube embeds start as a poster div and only get the
-    // iframe injected after the page has finished loading, so the hero video
-    // never competes with first paint. Users who prefer reduced motion keep
-    // the static poster.
+    // Banner (top-strip) YouTube embeds start as a poster div, then inject the
+    // active iframe immediately so the hero starts moving as soon as possible.
+    // Users who prefer reduced motion keep the static poster.
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const injectEmbed = (item: HTMLElement | undefined) => {
       if (!item || prefersReducedMotion) return;
@@ -160,9 +159,7 @@ function stripPosterStyle(video: HeroVideo, videoId: string | null): string | un
         // Subscribe to player events (needed to detect when a video ends).
         iframe.contentWindow?.postMessage(JSON.stringify({ event: 'listening', id: 'strip', channel: 'widget' }), '*');
         syncVideoPlayback();
-        // YouTube paints its branding/controls during the first moments of
-        // autoplay; keep the poster on top until that chrome has faded.
-        window.setTimeout(() => iframe.classList.add('is-ready'), 2200);
+        iframe.classList.add('is-ready');
       });
       holder.appendChild(iframe);
     };
@@ -181,11 +178,7 @@ function stripPosterStyle(video: HeroVideo, videoId: string | null): string | un
       item.querySelector('iframe[src*="youtube.com/embed"]')?.addEventListener('load', syncVideoPlayback);
     });
 
-    if (document.readyState === 'complete') {
-      injectEmbed(items[current]);
-    } else {
-      window.addEventListener('load', () => injectEmbed(items[current]), { once: true });
-    }
+    injectEmbed(items[current]);
 
     // Banner playlist behaviour: when the active video ends, advance to the
     // next one (wrapping back to the first). A single video self-loops via
@@ -259,7 +252,7 @@ function stripPosterStyle(video: HeroVideo, videoId: string | null): string | un
   pointer-events: none;
   user-select: none;
 }
-/* Poster shown immediately; iframe injected after page load. */
+/* Poster shown immediately; iframe injected right away for the active banner. */
 .strip-embed {
   position: absolute;
   inset: 0;
@@ -277,9 +270,8 @@ function stripPosterStyle(video: HeroVideo, videoId: string | null): string | un
   border: 0;
   pointer-events: none;
   user-select: none;
-  /* Hidden behind the poster until YouTube's startup chrome has faded. */
   opacity: 0;
-  transition: opacity 600ms ease;
+  transition: opacity 220ms ease;
 }
 .strip-embed :global(iframe.is-ready) {
   opacity: 1;
