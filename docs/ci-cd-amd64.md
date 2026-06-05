@@ -30,6 +30,8 @@ This repository deploys `main` to the amd64 `car-site-mita` host through GitHub 
 
 The deploy workflow does not require or write a host `.env` file. Runtime secrets are injected into `docker compose` from GitHub Secrets during deployment. If `SESSION_SECRET` or `ADMIN_PASSWORD` are not configured in GitHub Secrets, the workflow preserves them from the existing `car-site-mita` container environment.
 
+The workflow performs the required secret guard before `docker compose up`. The compose file itself allows empty interpolation so host-side maintenance commands such as `docker compose ps` keep working without a `.env` file.
+
 Equivalent runtime values:
 
 ```env
