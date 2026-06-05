@@ -23,15 +23,29 @@ function youtubeEmbedParams(videoId: string | null): string {
   });
   if (isTopStrip && videoId) {
     params.set('autoplay', '1');
-    params.set('loop', '1');
-    params.set('playlist', videoId);
     params.set('controls', '0');
     params.set('modestbranding', '1');
     params.set('fs', '0');
     params.set('disablekb', '1');
     params.set('iv_load_policy', '3');
+    if (videos.length === 1) {
+      // Single banner video loops itself; with multiple videos the video must
+      // be allowed to end so we can advance to the next one.
+      params.set('loop', '1');
+      params.set('playlist', videoId);
+    }
   }
   return params.toString();
+}
+
+function stripPosterStyle(video: HeroVideo, videoId: string | null): string | undefined {
+  if (video.thumbnailUrl) return `background-image:url('${video.thumbnailUrl}')`;
+  if (videoId) {
+    // No custom thumbnail — fall back to YouTube's own stills (maxres first,
+    // hq as a guaranteed-to-exist backup layer).
+    return `background-image:url('https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg'), url('https://i.ytimg.com/vi/${videoId}/hqdefault.jpg')`;
+  }
+  return undefined;
 }
 
 ---
@@ -50,7 +64,7 @@ function youtubeEmbedParams(videoId: string | null): string {
               class="strip-embed"
               data-embed-src={`https://www.youtube.com/embed/${videoId}?${youtubeParams}`}
               data-embed-title={video.label || `影片 ${index + 1}`}
-              style={video.thumbnailUrl ? `background-image:url('${video.thumbnailUrl}')` : undefined}
+              style={stripPosterStyle(video, videoId)}
             ></div>
           ) : video.type === 'youtube' && videoId ? (
             <iframe
@@ -66,7 +80,7 @@ function youtubeEmbedParams(videoId: string | null): string {
               controls={!isTopStrip}
               autoplay={isTopStrip}
               muted
-              loop={isTopStrip}
+              loop={isTopStrip && videos.length === 1}
               playsinline={isTopStrip}
               preload={isTopStrip ? 'auto' : 'none'}
               title={video.label || `影片 ${index + 1}`}
@@ -115,6 +129,7 @@ function youtubeEmbedParams(videoId: string | null): string {
         if (iframe?.contentWindow) {
           iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), '*');
           iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [0] }), '*');
+          iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: index === current ? 'playVideo' : 'pauseVideo', args: [] }), '*');
         }
         if (!video) return;
         if (index === current) {
@@ -141,7 +156,14 @@ function youtubeEmbedParams(videoId: string | null): string {
       iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
       iframe.setAttribute('tabindex', '-1');
       iframe.setAttribute('aria-hidden', 'true');
-      iframe.addEventListener('load', syncVideoPlayback);
+      iframe.addEventListener('load', () => {
+        // Subscribe to player events (needed to detect when a video ends).
+        iframe.contentWindow?.postMessage(JSON.stringify({ event: 'listening', id: 'strip', channel: 'widget' }), '*');
+        syncVideoPlayback();
+        // YouTube paints its branding/controls during the first moments of
+        // autoplay; keep the poster on top until that chrome has faded.
+        window.setTimeout(() => iframe.classList.add('is-ready'), 2200);
+      });
       holder.appendChild(iframe);
     };
 
@@ -163,6 +185,38 @@ function youtubeEmbedParams(videoId: string | null): string {
       injectEmbed(items[current]);
     } else {
       window.addEventListener('load', () => injectEmbed(items[current]), { once: true });
+    }
+
+    // Banner playlist behaviour: when the active video ends, advance to the
+    // next one (wrapping back to the first). A single video self-loops via
+    // the loop/playlist embed params instead.
+    if (section?.classList.contains('video-carousel--top-strip') && items.length > 1) {
+      window.addEventListener('message', (event) => {
+        if (typeof event.data !== 'string') return;
+        let originHost = '';
+        try {
+          originHost = new URL(event.origin).hostname;
+        } catch {
+          return;
+        }
+        if (!/(^|\.)youtube(-nocookie)?\.com$/.test(originHost)) return;
+        const activeIframe = items[current]?.querySelector('iframe');
+        if (!activeIframe || event.source !== activeIframe.contentWindow) return;
+        try {
+          const data = JSON.parse(event.data);
+          // The widget protocol reports state either as a dedicated
+          // onStateChange event or inside infoDelivery payloads; 0 = ended.
+          const ended =
+            (data.event === 'onStateChange' && data.info === 0) ||
+            (data.event === 'infoDelivery' && data.info?.playerState === 0);
+          if (ended) show(current + 1);
+        } catch {
+          /* not a player event */
+        }
+      });
+      items.forEach((item) => {
+        item.querySelector('video')?.addEventListener('ended', () => show(current + 1));
+      });
     }
 
     syncVideoPlayback();
@@ -223,6 +277,12 @@ function youtubeEmbedParams(videoId: string | null): string {
   border: 0;
   pointer-events: none;
   user-select: none;
+  /* Hidden behind the poster until YouTube's startup chrome has faded. */
+  opacity: 0;
+  transition: opacity 600ms ease;
+}
+.strip-embed :global(iframe.is-ready) {
+  opacity: 1;
 }
 .video-carousel--top-strip .video-carousel__label { display: none; }
 .video-carousel--top-strip .video-carousel__controls {

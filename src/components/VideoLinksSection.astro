@@ -43,8 +43,9 @@ function instagramEmbedUrl(url: string): string | null {
               {showInstagramEmbed ? (
                 <iframe
                   src={instagramEmbed}
-                  title={link.title || 'Instagram 影片'}
+                  title={link.title || '精選好車'}
                   loading="lazy"
+                  scrolling="no"
                   allowtransparency="true"
                   allow="encrypted-media; clipboard-write"
                 ></iframe>
@@ -59,7 +60,7 @@ function instagramEmbedUrl(url: string): string | null {
                 <svg viewBox="0 0 24 24" width="36" height="36"><circle cx="12" cy="12" r="11" fill="rgba(0,0,0,0.5)"/><path d="M10 8l6 4-6 4V8z" fill="#fff" /></svg>
               </span>}
             </div>
-            <a href={link.url} target="_blank" rel="noopener noreferrer" class="video-links__title">{link.title || '在 Instagram 查看影片'}</a>
+            <a href={link.url} target="_blank" rel="noopener noreferrer" class="video-links__title">{link.title || '精選好車'}</a>
           </div>
         </li>
       )})}
@@ -205,7 +206,22 @@ function instagramEmbedUrl(url: string): string | null {
 }
 .video-links__thumb::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(255,255,255,0.12), transparent 28%, rgba(0,0,0,0.16)); }
 .video-links__thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.24s; }
-.video-links__thumb iframe { width: 100%; height: 100%; border: 0; display: block; background: #fff; }
+/* Instagram embed: crop away the IG header (top) and the like/comment rows
+   (bottom) so the card shows only the video itself; scrolling="no" plus the
+   fixed-height window stops the embed from scrolling vertically inside. */
+.video-links__thumb iframe {
+  /* Wider than the card so the embedded media scales up and fills the card
+     height — the likes / add-a-comment rows get pushed below the crop line,
+     keeping at most video + actions + "View more on Instagram" visible. */
+  width: 130%;
+  margin-left: -15%;
+  height: calc(100% + 3.4rem);
+  margin-top: -3.4rem;
+  border: 0;
+  display: block;
+  background: #fff;
+  overflow: hidden;
+}
 .video-links__item:hover .video-links__thumb img { transform: scale(1.04); }
 .video-links__thumb-placeholder { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--muted, #777); }
 .video-links__play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }

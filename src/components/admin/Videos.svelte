@@ -174,7 +174,7 @@
       <div class="video-list">
         {#each links as link, i (i)}
           <div class="video-row">
-            <input type="text" bind:value={link.title} placeholder="標題" on:input={() => (linksDirty = true)} class="form-input w140" />
+            <input type="text" bind:value={link.title} placeholder="標題(留白顯示:精選好車)" on:input={() => (linksDirty = true)} class="form-input w140" />
             <input type="text" bind:value={link.url} placeholder="IG Reel / YouTube URL" on:input={() => (linksDirty = true)} class="form-input flex1" />
             <label class="upload-label">
               縮圖
