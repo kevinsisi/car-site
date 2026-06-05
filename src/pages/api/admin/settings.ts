@@ -3,10 +3,15 @@ import { getAdminOrResponse } from '@/lib/auth';
 import { PERMISSIONS } from '@/lib/permissions';
 import { detailSpecFieldOptions } from '@/lib/detail-spec-fields';
 import { sanitizeImageUrl, sanitizePublicHref } from '@/lib/safe-url';
-import { parseSocialIcons, setSettings } from '@/lib/settings';
+import { parseSocialIcons, setSettings, type GalleryMode, type SiteSettings } from '@/lib/settings';
 import { resolveStyle, resolveTemplate } from '@/lib/theme';
 
 const allowedDetailSpecFields = new Set<string>(detailSpecFieldOptions.map((field) => field.key));
+const galleryModes = new Set<GalleryMode>(['lightbox', 'slider', 'thumbnail-strip', 'grid']);
+
+function hasOwn(body: Record<string, unknown>, key: keyof SiteSettings): boolean {
+  return Object.prototype.hasOwnProperty.call(body, key);
+}
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   const _user = await getAdminOrResponse(cookies);
@@ -16,47 +21,60 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   if (user.role !== 'superadmin' && (user.permissions & settingsPerms) === 0) {
     return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403, headers: { 'content-type': 'application/json' } });
   }
-  const body = await request.json();
-  await setSettings({
-    siteName: String(body.siteName || ''),
-    siteIconUrl: sanitizeImageUrl(body.siteIconUrl),
-    salespersonName: String(body.salespersonName || ''),
-    lineUrl: sanitizePublicHref(body.lineUrl),
-    instagramUrl: sanitizePublicHref(body.instagramUrl),
-    facebookUrl: sanitizePublicHref(body.facebookUrl),
-    threadsUrl: sanitizePublicHref(body.threadsUrl),
-    tiktokUrl: sanitizePublicHref(body.tiktokUrl),
-    phoneNumber: String(body.phoneNumber || ''),
-    storeAddress: String(body.storeAddress || ''),
-    businessHours: String(body.businessHours || ''),
-    homepageEyebrow: String(body.homepageEyebrow || ''),
-    homepageTitle: String(body.homepageTitle || ''),
-    homepageLead: String(body.homepageLead || ''),
-    homepageNote: String(body.homepageNote || ''),
-    homepageBadge: String(body.homepageBadge || ''),
-    featuredEyebrow: String(body.featuredEyebrow || ''),
-    featuredTitle: String(body.featuredTitle || ''),
-    featuredCount: (() => {
-      const n = Number.parseInt(String(body.featuredCount ?? ''), 10);
-      return Number.isFinite(n) && n >= 1 && n <= 12 ? String(n) : '3';
-    })(),
-    listingEyebrow: String(body.listingEyebrow || ''),
-    listingTitle: String(body.listingTitle || ''),
-    listingLead: String(body.listingLead || ''),
-    cardTitleTemplate: String(body.cardTitleTemplate || ''),
-    detailNotesEyebrow: String(body.detailNotesEyebrow || ''),
-    detailNotesTitle: String(body.detailNotesTitle || ''),
-    shareMessageTemplate: String(body.shareMessageTemplate || ''),
-    detailSpecFields: Array.isArray(body.detailSpecFields)
+  const body = await request.json() as Record<string, unknown>;
+  const updates: Partial<Record<keyof SiteSettings, unknown>> = {};
+
+  if (hasOwn(body, 'siteName')) updates.siteName = String(body.siteName || '');
+  if (hasOwn(body, 'siteIconUrl')) updates.siteIconUrl = sanitizeImageUrl(body.siteIconUrl);
+  if (hasOwn(body, 'salespersonName')) updates.salespersonName = String(body.salespersonName || '');
+  if (hasOwn(body, 'lineUrl')) updates.lineUrl = sanitizePublicHref(body.lineUrl);
+  if (hasOwn(body, 'instagramUrl')) updates.instagramUrl = sanitizePublicHref(body.instagramUrl);
+  if (hasOwn(body, 'facebookUrl')) updates.facebookUrl = sanitizePublicHref(body.facebookUrl);
+  if (hasOwn(body, 'threadsUrl')) updates.threadsUrl = sanitizePublicHref(body.threadsUrl);
+  if (hasOwn(body, 'tiktokUrl')) updates.tiktokUrl = sanitizePublicHref(body.tiktokUrl);
+  if (hasOwn(body, 'phoneNumber')) updates.phoneNumber = String(body.phoneNumber || '');
+  if (hasOwn(body, 'storeAddress')) updates.storeAddress = String(body.storeAddress || '');
+  if (hasOwn(body, 'businessHours')) updates.businessHours = String(body.businessHours || '');
+  if (hasOwn(body, 'homepageEyebrow')) updates.homepageEyebrow = String(body.homepageEyebrow || '');
+  if (hasOwn(body, 'homepageTitle')) updates.homepageTitle = String(body.homepageTitle || '');
+  if (hasOwn(body, 'homepageLead')) updates.homepageLead = String(body.homepageLead || '');
+  if (hasOwn(body, 'homepageNote')) updates.homepageNote = String(body.homepageNote || '');
+  if (hasOwn(body, 'homepageBadge')) updates.homepageBadge = String(body.homepageBadge || '');
+  if (hasOwn(body, 'featuredEyebrow')) updates.featuredEyebrow = String(body.featuredEyebrow || '');
+  if (hasOwn(body, 'featuredTitle')) updates.featuredTitle = String(body.featuredTitle || '');
+  if (hasOwn(body, 'featuredCount')) {
+    const n = Number.parseInt(String(body.featuredCount ?? ''), 10);
+    updates.featuredCount = Number.isFinite(n) && n >= 1 && n <= 12 ? String(n) : '3';
+  }
+  if (hasOwn(body, 'listingEyebrow')) updates.listingEyebrow = String(body.listingEyebrow || '');
+  if (hasOwn(body, 'listingTitle')) updates.listingTitle = String(body.listingTitle || '');
+  if (hasOwn(body, 'listingLead')) updates.listingLead = String(body.listingLead || '');
+  if (hasOwn(body, 'cardTitleTemplate')) updates.cardTitleTemplate = String(body.cardTitleTemplate || '');
+  if (hasOwn(body, 'detailNotesEyebrow')) updates.detailNotesEyebrow = String(body.detailNotesEyebrow || '');
+  if (hasOwn(body, 'detailNotesTitle')) updates.detailNotesTitle = String(body.detailNotesTitle || '');
+  if (hasOwn(body, 'shareMessageTemplate')) updates.shareMessageTemplate = String(body.shareMessageTemplate || '');
+  if (hasOwn(body, 'detailSpecFields')) {
+    updates.detailSpecFields = Array.isArray(body.detailSpecFields)
       ? body.detailSpecFields.filter((field: unknown): field is string => typeof field === 'string' && allowedDetailSpecFields.has(field))
-      : undefined,
-    footerDisclaimer: String(body.footerDisclaimer || ''),
-    heroVehicleSlug: String(body.heroVehicleSlug || ''),
-    activeTemplate: resolveTemplate(body.activeTemplate),
-    activeStyle: resolveStyle(body.activeStyle),
-    importBehavior: ['draft_first', 'auto_publish', 'import_only'].includes(body.importBehavior) ? body.importBehavior : 'draft_first',
-    showSoldVehicles: body.showSoldVehicles === true,
-    socialIcons: parseSocialIcons(typeof body.socialIcons === 'string' ? body.socialIcons : JSON.stringify(body.socialIcons ?? {})),
-  });
+      : undefined;
+  }
+  if (hasOwn(body, 'footerDisclaimer')) updates.footerDisclaimer = String(body.footerDisclaimer || '');
+  if (hasOwn(body, 'heroVehicleSlug')) updates.heroVehicleSlug = String(body.heroVehicleSlug || '');
+  if (hasOwn(body, 'activeTemplate')) updates.activeTemplate = resolveTemplate(String(body.activeTemplate || ''));
+  if (hasOwn(body, 'activeStyle')) updates.activeStyle = resolveStyle(String(body.activeStyle || ''));
+  if (hasOwn(body, 'importBehavior')) updates.importBehavior = ['draft_first', 'auto_publish', 'import_only'].includes(String(body.importBehavior)) ? body.importBehavior : 'draft_first';
+  if (hasOwn(body, 'showSoldVehicles')) updates.showSoldVehicles = body.showSoldVehicles === true;
+  if (hasOwn(body, 'socialIcons')) updates.socialIcons = parseSocialIcons(typeof body.socialIcons === 'string' ? body.socialIcons : JSON.stringify(body.socialIcons ?? {}));
+  if (hasOwn(body, 'galleryMode')) {
+    if (!galleryModes.has(body.galleryMode as GalleryMode)) {
+      return new Response(JSON.stringify({ error: 'invalid galleryMode' }), { status: 400, headers: { 'content-type': 'application/json' } });
+    }
+    updates.galleryMode = body.galleryMode;
+  }
+  if (hasOwn(body, 'notificationEmail')) updates.notificationEmail = String(body.notificationEmail || '');
+  if (hasOwn(body, 'gmailUser')) updates.gmailUser = String(body.gmailUser || '');
+  if (hasOwn(body, 'gmailAppPassword')) updates.gmailAppPassword = String(body.gmailAppPassword || '');
+
+  await setSettings(updates);
   return Response.json({ ok: true });
 };
