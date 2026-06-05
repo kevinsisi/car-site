@@ -123,6 +123,19 @@ Playwright 全頁掃描(9 頁 × 桌面/手機、橫向溢出偵測、觸控目�
 
 **結論:程式排版與互動層面已無輸給對手之處;剩餘差距集中在攝影規範與社群內容資產。**
 
+### 7.1 Admin 設定全量生效驗證(2026-06-05 第二輪)
+
+以 API round-trip(改值 → 前台斷言 → 還原)逐項驗證,**47/47 全部生效**:
+- 基本面板 9 項(站名/顧問名/電話/LINE/地址/營業時間/IG/FB/免責)✅
+- 首頁文案 7 項(eyebrow/標題/lead/badge/note/精選標題組)✅
+- 列表/詳情文案 4 項 + `detailSpecFields` 欄位開關(含排除驗證)✅
+- `featuredCount`、3 種模板、5 種風格、`showSoldVehicles`、4 種相簿模式 ✅
+- 影片:標題/4 個版位/開關、IG 區開關(走 `/api/admin/video-settings`)✅
+- 品牌別名:改名即時反映於前台、icon 渲染、還原乾淨 ✅
+- 模板×風格抽樣 10 組截圖(含 champagne-black 深色全套):零橫向溢出、零破版
+
+驗證方法備忘:dev 模式 Astro 會把元件 CSS 內嵌進 HTML,**驗證渲染必須用 DOM 查詢,不能用 HTML substring**;影片相關設定走 `video-settings` 端點而非 `settings`。
+
 ## 附:研究方法與品質聲明
 
 - 比較 UX 結論來自 Baymard(326 站基準)/NN.g 一手可用性研究,但測試對象是一般規格型電商(筆電/家電),推論到豪車屬合理外推而非直接量測。
