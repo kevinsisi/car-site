@@ -99,6 +99,11 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
         </>
       ) : (
         <>
+          {vehicle.coverImage && (
+            <button class="detail-cover" type="button" data-gallery-index={coverImageIndex} aria-label="開啟封面大圖">
+              <img src={vehicle.coverImage.url} alt={vehicle.coverImage.alt || `${vehicle.title} 封面照`} fetchpriority="high" decoding="async" />
+            </button>
+          )}
           {vehicle.images.length > 0 && (
             <div class="gallery-header reveal-section">
               <span>車輛實拍</span>
@@ -106,7 +111,9 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
             </div>
           )}
           <section class="gallery reveal-section">
-            {vehicle.images.map((image, index) => (
+            {vehicle.images.filter((image) => image.id !== vehicle.coverImage?.id).map((image) => {
+              const index = vehicle.images.findIndex((candidate) => candidate.id === image.id);
+              return (
               <button class="gallery-item" type="button" data-gallery-index={index} aria-label={`開啟第 ${index + 1} 張大圖`}>
                 <img src={image.url} alt={image.alt || `${vehicle.title} 圖片 ${index + 1} / ${vehicle.images.length}`} loading={index === coverImageIndex ? 'eager' : 'lazy'} decoding="async" />
                 <span class="gallery-item__zoom" aria-hidden="true">
@@ -114,7 +121,7 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
                 </span>
                 <span class="gallery-item__index" aria-hidden="true">{index + 1} / {vehicle.images.length}</span>
               </button>
-            ))}
+            )})}
           </section>
         </>
       )}
