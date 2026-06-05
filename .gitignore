@@ -9,6 +9,7 @@ data/
 *.db-wal
 *.tgz
 viewport-*.png
+playwright-*.png
 
 # Playwright
 /test-results/
