@@ -7,7 +7,7 @@
 
 * { box-sizing: border-box; }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
 body {
   margin: 0;
@@ -293,7 +293,9 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
 .spec-copy span { color: color-mix(in srgb, var(--muted) 82%, transparent); font-size: 0.78rem; font-weight: 760; letter-spacing: 0.08em; text-transform: uppercase; }
 .spec-copy strong { color: var(--text); font-size: 1rem; font-weight: 760; overflow-wrap: anywhere; }
 
-.card-footer { display: flex; justify-content: space-between; gap: 1rem; color: var(--accent-strong); font-weight: 800; margin-top: 1.2rem; }
+.card-footer { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; min-width: 0; color: var(--accent-strong); font-weight: 800; margin-top: 1.2rem; }
+.card-footer span { min-width: 0; line-height: 1.15; overflow-wrap: anywhere; }
+.card-footer span:last-child { flex: 0 0 auto; white-space: nowrap; text-align: right; }
 
 .vehicle-card--featured { border-radius: 1.25rem; }
 .vehicle-card--featured .vehicle-card__media { aspect-ratio: 1.48; }
@@ -580,7 +582,9 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
   .home-featured-grid .vehicle-card--featured .spec-icon { display: none; }
   .home-featured-grid .vehicle-card--featured .spec-copy span { font-size: 0.58rem; letter-spacing: 0.05em; }
   .home-featured-grid .vehicle-card--featured .spec-copy strong { font-size: 0.72rem; line-height: 1.15; }
-  .home-featured-grid .vehicle-card--featured .card-footer { align-items: center; margin-top: 0.55rem; padding-right: 0; font-size: 0.82rem; line-height: 1.1; }
+  .home-featured-grid .vehicle-card--featured .card-footer { align-items: center; flex-wrap: wrap; margin-top: 0.55rem; padding-right: 0; font-size: 0.82rem; line-height: 1.1; }
+  .home-featured-grid .vehicle-card--featured .card-footer span:first-child { flex: 1 1 auto; }
+  .home-featured-grid .vehicle-card--featured .card-footer span:last-child { flex: 0 0 auto; font-size: 0.78rem; }
   .home-featured-grid .vehicle-card--featured .vehicle-share { top: 0.55rem; right: 0.55rem; width: 2.05rem; height: 2.05rem; }
   .home-featured-grid .vehicle-card--featured .vehicle-share svg { width: 1.22rem; height: 1.22rem; }
   .home-featured-grid .vehicle-card--featured .compare-btn { position: static; justify-self: end; margin: -0.48rem 0.72rem 0.64rem 0; font-size: 0.68rem; padding: 3px 9px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 88%, transparent); color: var(--muted); }
@@ -593,7 +597,9 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
   .vehicle-card--listing .spec-item { padding: 0.45rem 0.5rem; }
   .vehicle-card--listing .spec-copy span { font-size: 0.62rem; }
   .vehicle-card--listing .spec-copy strong { font-size: 0.78rem; }
-  .vehicle-card--listing .card-footer { margin-top: 0.65rem; font-size: 0.86rem; }
+  .vehicle-card--listing .card-footer { flex-wrap: wrap; margin-top: 0.65rem; font-size: 0.86rem; }
+  .vehicle-card--listing .card-footer span:first-child { flex: 1 1 auto; }
+  .vehicle-card--listing .card-footer span:last-child { flex: 0 0 auto; font-size: 0.8rem; }
   .vehicle-card--listing .compare-btn { right: 0.85rem; bottom: 0.7rem; font-size: 0.72rem; padding: 2px 8px; }
   .location-section { grid-template-columns: 1fr; margin-bottom: 3rem; border-radius: 1.1rem; }
   .location-section__map { min-height: 16rem; border-radius: 0.85rem; }
