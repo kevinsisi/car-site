@@ -89,16 +89,21 @@ const settings = await getSettings();
 </script>
 
 <style>
-.sell-page { max-width: 800px; margin: 0 auto; padding: 2rem 1rem; }
-.sell-page__header { margin-bottom: 2rem; }
-.sell-page__header h1 { margin: 0.5rem 0 0.75rem; }
+.sell-page { width: 100%; max-width: 800px; min-width: 0; margin: 0 auto; padding: 2rem 1rem; box-sizing: border-box; overflow: hidden; }
+.sell-page__header { min-width: 0; margin-bottom: 2rem; }
+.sell-page__header h1 { max-width: 100%; margin: 0.5rem 0 0.75rem; overflow-wrap: anywhere; }
 .sell-page__desc { color: var(--muted, #777); }
-.sell-form__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+.sell-form { width: 100%; max-width: 100%; min-width: 0; }
+.sell-form__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.25rem; min-width: 0; }
 @media (max-width: 640px) { .sell-form__grid { grid-template-columns: 1fr; } }
-.form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+.form-group { min-width: 0; display: flex; flex-direction: column; gap: 0.35rem; }
 .form-group--full { grid-column: 1 / -1; }
 .form-group label { font-size: 0.875rem; font-weight: 600; }
 .form-group input, .form-group textarea, .form-group select {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--border, #ddd);
   border-radius: 6px;
@@ -108,7 +113,8 @@ const settings = await getSettings();
 }
 .form-group textarea { resize: vertical; }
 .form-group small { color: var(--muted, #888); font-size: 0.8rem; }
-.checkbox-label { display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.875rem; cursor: pointer; font-weight: normal; }
+.checkbox-label { display: flex; align-items: flex-start; gap: 0.5rem; min-width: 0; font-size: 0.875rem; cursor: pointer; font-weight: normal; }
+.checkbox-label input { width: auto; flex: 0 0 auto; }
 .sell-form__submit { margin-top: 1.5rem; }
 .sell-form__status { margin-top: 0.75rem; font-size: 0.9rem; }
 </style>
