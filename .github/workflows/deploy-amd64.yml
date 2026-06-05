@@ -103,7 +103,11 @@ jobs:
           ssh -i ~/.ssh/deploy_key "${DEPLOY_USER}@${DEPLOY_SERVER_IP}" "
             set -e
             cd '${DEPLOY_PATH}'
-            test -f .env
+            if [ ! -f .env ]; then
+              echo 'ERROR: ${DEPLOY_PATH}/.env is missing on the host.'
+              echo 'Create it once per docs/ci-cd-amd64.md (SESSION_SECRET / ADMIN_PASSWORD / CAR_SITE_HOST_BIND / CAR_SITE_DATA_DIR ...).'
+              exit 1
+            fi
             mkdir -p 'releases/${GITHUB_SHA}'
             tar -xzf 'car-site-source-${GITHUB_SHA}.tgz' -C 'releases/${GITHUB_SHA}'
             cd 'releases/${GITHUB_SHA}'
