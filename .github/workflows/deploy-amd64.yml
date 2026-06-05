@@ -31,7 +31,7 @@ jobs:
       - name: Check required secrets
         run: |
           missing=0
-          for name in TS_OAUTH_CLIENT_ID TS_OAUTH_SECRET DEPLOY_SSH_KEY DEPLOY_SERVER_IP DEPLOY_USER DEPLOY_PATH; do
+          for name in TS_OAUTH_CLIENT_ID TS_OAUTH_SECRET DEPLOY_SSH_KEY DEPLOY_SERVER_IP DEPLOY_USER DEPLOY_PATH SESSION_SECRET ADMIN_PASSWORD; do
             value="${!name}"
             if [ -z "$value" ]; then
               echo "Missing required secret: $name"
@@ -48,6 +48,8 @@ jobs:
           DEPLOY_SERVER_IP: ${{ secrets.DEPLOY_SERVER_IP }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
 
       - name: Connect to Tailscale
         uses: tailscale/github-action@v4
@@ -99,22 +101,25 @@ jobs:
           DEPLOY_SERVER_IP: ${{ secrets.DEPLOY_SERVER_IP }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME || 'admin' }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          IMPORT_API_TOKEN: ${{ secrets.IMPORT_API_TOKEN }}
+          CAR_SITE_HOST_BIND: ${{ secrets.CAR_SITE_HOST_BIND || '100.73.52.37:5325' }}
+          CAR_SITE_DATA_DIR: ${{ secrets.CAR_SITE_DATA_DIR || '/srv/data4tb/car-site-mita/data' }}
         run: |
+          quote() { printf '%q' "$1"; }
+          remote_env="SESSION_SECRET=$(quote "$SESSION_SECRET") ADMIN_USERNAME=$(quote "$ADMIN_USERNAME") ADMIN_PASSWORD=$(quote "$ADMIN_PASSWORD") IMPORT_API_TOKEN=$(quote "$IMPORT_API_TOKEN") CAR_SITE_HOST_BIND=$(quote "$CAR_SITE_HOST_BIND") CAR_SITE_DATA_DIR=$(quote "$CAR_SITE_DATA_DIR") CAR_SITE_IMAGE=car-site-mita:local"
           ssh -i ~/.ssh/deploy_key "${DEPLOY_USER}@${DEPLOY_SERVER_IP}" "
             set -e
             cd '${DEPLOY_PATH}'
-            if [ ! -f .env ]; then
-              echo 'ERROR: ${DEPLOY_PATH}/.env is missing on the host.'
-              echo 'Create it once per docs/ci-cd-amd64.md (SESSION_SECRET / ADMIN_PASSWORD / CAR_SITE_HOST_BIND / CAR_SITE_DATA_DIR ...).'
-              exit 1
-            fi
             mkdir -p 'releases/${GITHUB_SHA}'
             tar -xzf 'car-site-source-${GITHUB_SHA}.tgz' -C 'releases/${GITHUB_SHA}'
             cd 'releases/${GITHUB_SHA}'
             docker build -t car-site-mita:local .
             cd '${DEPLOY_PATH}'
-            docker compose up -d --force-recreate car-site-mita
-            docker compose ps car-site-mita
+            ${remote_env} docker compose up -d --force-recreate car-site-mita
+            ${remote_env} docker compose ps car-site-mita
           "
 
       - name: Health check
