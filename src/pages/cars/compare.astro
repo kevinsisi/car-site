@@ -133,7 +133,12 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
             <tr>
               <th class="compare-label-col"></th>
               {vehicles.map((v) => (
-                <th class="compare-vehicle-col">
+                <th
+                  class="compare-vehicle-col"
+                  data-meta-slug={v!.slug}
+                  data-meta-title={v!.cardTitle}
+                  data-meta-thumb={v!.coverImage?.thumbUrl || v!.coverImage?.url || ''}
+                >
                   <div class="compare-vehicle-header">
                     <a href={`/cars/${v!.slug}`} class="compare-vehicle-img-link">
                       {v!.coverImage
@@ -183,8 +188,24 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
       location.replace(`/cars/compare?ids=${stored.join(',')}`);
     }
   } else {
-    // Sync URL slugs back to localStorage so CompareBar stays in sync
-    localStorage.setItem('compare_slugs', JSON.stringify(urlIds.split(',').filter(Boolean)));
+    // Sync URL slugs back to localStorage so CompareBar stays in sync.
+    // Backfill title/thumb metadata from the server-rendered table — vehicles
+    // added via the compare page's add-links (or a shared URL) would otherwise
+    // show up in the floating bar as bare slugs without thumbnails. Slugs the
+    // server could not resolve (deleted/renamed cars) are pruned.
+    const requested = urlIds.split(',').filter(Boolean);
+    const resolvedEls = [...document.querySelectorAll<HTMLElement>('[data-meta-slug]')];
+    const resolved = new Set(resolvedEls.map((el) => el.dataset.metaSlug!));
+    const kept = requested.filter((slug) => resolved.has(slug));
+    localStorage.setItem('compare_slugs', JSON.stringify(kept));
+    try {
+      const meta: Record<string, { title: string; thumb: string }> = JSON.parse(localStorage.getItem('compare_meta') || '{}');
+      resolvedEls.forEach((el) => {
+        const slug = el.dataset.metaSlug!;
+        meta[slug] = { title: el.dataset.metaTitle || slug, thumb: el.dataset.metaThumb || '' };
+      });
+      localStorage.setItem('compare_meta', JSON.stringify(meta));
+    } catch { /* corrupt meta — leave as-is */ }
     window.dispatchEvent(new CustomEvent('compare-changed'));
   }
 
