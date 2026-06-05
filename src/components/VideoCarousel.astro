@@ -13,6 +13,23 @@ function youtubeId(url: string): string | null {
   const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
   return match?.[1] ?? null;
 }
+
+function youtubeEmbedParams(videoId: string | null): string {
+  const params = new URLSearchParams({
+    rel: '0',
+    mute: '1',
+    playsinline: '1',
+    enablejsapi: '1',
+  });
+  if (isTopStrip && videoId) {
+    params.set('autoplay', '1');
+    params.set('loop', '1');
+    params.set('playlist', videoId);
+    params.set('controls', '0');
+    params.set('modestbranding', '1');
+  }
+  return params.toString();
+}
 ---
 
 {videos.length > 0 && (
@@ -21,9 +38,7 @@ function youtubeId(url: string): string | null {
     <div class="video-carousel__stage" data-vcarousel>
       {videos.map((video, index) => {
         const videoId = video.type === 'youtube' ? youtubeId(video.url) : null;
-        const youtubeParams = isTopStrip && videoId
-          ? `rel=0&autoplay=1&mute=1&loop=1&playlist=${videoId}&playsinline=1&controls=0&modestbranding=1`
-          : 'rel=0';
+        const youtubeParams = youtubeEmbedParams(videoId);
         return (
         <div class={`video-carousel__item${index === 0 ? ' is-active' : ''}`} data-vitem={index}>
           {video.type === 'youtube' && videoId ? (
@@ -40,7 +55,7 @@ function youtubeId(url: string): string | null {
               poster={video.thumbnailUrl || undefined}
               controls={!isTopStrip}
               autoplay={isTopStrip}
-              muted={isTopStrip}
+              muted
               loop={isTopStrip}
               playsinline={isTopStrip}
               preload={isTopStrip ? 'auto' : 'none'}
@@ -81,6 +96,16 @@ function youtubeId(url: string): string | null {
     const syncVideoPlayback = () => {
       items.forEach((item, index) => {
         const video = item.querySelector('video');
+        const iframe = item.querySelector<HTMLIFrameElement>('iframe[src*="youtube.com/embed"]');
+        if (video) {
+          video.muted = true;
+          video.defaultMuted = true;
+          video.volume = 0;
+        }
+        if (iframe?.contentWindow) {
+          iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), '*');
+          iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [0] }), '*');
+        }
         if (!video) return;
         if (index === current) {
           video.play().catch(() => undefined);
@@ -99,6 +124,10 @@ function youtubeId(url: string): string | null {
       dots[current]?.classList.add('is-active');
       syncVideoPlayback();
     };
+
+    items.forEach((item) => {
+      item.querySelector('iframe[src*="youtube.com/embed"]')?.addEventListener('load', syncVideoPlayback);
+    });
 
     syncVideoPlayback();
 
