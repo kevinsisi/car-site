@@ -26,6 +26,12 @@ const { images, title, coverImageIndex = 0 } = Astro.props;
       />
     </button>
     {images.length > 1 && (
+      <div class="gallery-strip__nav" aria-label="照片切換">
+        <button class="gallery-strip__nav-button gallery-strip__nav-button--prev" type="button" data-strip-prev aria-label="上一張照片">‹</button>
+        <button class="gallery-strip__nav-button gallery-strip__nav-button--next" type="button" data-strip-next aria-label="下一張照片">›</button>
+      </div>
+    )}
+    {images.length > 1 && (
       <div class="gallery-strip__thumbs" role="list" aria-label="縮圖列表">
         {images.map((image, index) => (
           <button
@@ -50,33 +56,42 @@ const { images, title, coverImageIndex = 0 } = Astro.props;
     const thumbs = Array.from(strip.querySelectorAll<HTMLButtonElement>('[data-strip-thumb]'));
     let active = thumbs.findIndex((t) => t.classList.contains('is-active'));
     if (active < 0) active = 0;
+    const setActive = (index: number) => {
+      if (!thumbs.length) return;
+      thumbs[active]?.classList.remove('is-active');
+      active = (index + thumbs.length) % thumbs.length;
+      const thumb = thumbs[active];
+      thumb.classList.add('is-active');
+      const thumbImg = thumb.querySelector('img');
+      const fullSrc = thumbImg?.dataset.full || thumbImg?.src;
+      if (mainImg && fullSrc) { mainImg.src = fullSrc; mainImg.alt = thumbImg?.alt ?? ''; }
+      if (main) main.dataset.galleryIndex = String(active);
+      thumb.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+    };
     thumbs.forEach((thumb, i) => {
-      thumb.addEventListener('click', () => {
-        thumbs[active]?.classList.remove('is-active');
-        active = i;
-        thumb.classList.add('is-active');
-        const thumbImg = thumb.querySelector('img');
-        // Use full-res url from data-full if available, else fall back to thumb src
-        const fullSrc = thumbImg?.dataset.full || thumbImg?.src;
-        if (mainImg && fullSrc) { mainImg.src = fullSrc; mainImg.alt = thumbImg?.alt ?? ''; }
-        if (main) main.dataset.galleryIndex = String(i);
-      });
+      thumb.addEventListener('click', () => setActive(i));
     });
+    strip.querySelector('[data-strip-prev]')?.addEventListener('click', () => setActive(active - 1));
+    strip.querySelector('[data-strip-next]')?.addEventListener('click', () => setActive(active + 1));
   });
 </script>
 
 <style>
-.gallery-strip { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; max-width: 100%; min-width: 0; overflow: hidden; }
-.gallery-strip__main { display: block; width: 100%; max-width: 100%; aspect-ratio: 16/9; max-height: min(62vh, 46rem); overflow: hidden; background: var(--image-bg, #111); border-radius: var(--card-radius, 8px); border: 0; padding: 0; cursor: zoom-in; }
+.gallery-strip { position: relative; display: flex; flex-direction: column; gap: 0.75rem; width: min(100%, 72rem); max-width: 100%; min-width: 0; margin: 0 auto; overflow: hidden; }
+.gallery-strip__main { display: block; width: 100%; max-width: 100%; aspect-ratio: 3/2; max-height: min(72vh, 48rem); overflow: hidden; background: color-mix(in srgb, var(--surface-soft) 78%, var(--surface)); border-radius: var(--card-radius, 8px); border: 1px solid color-mix(in srgb, var(--line) 72%, transparent); padding: 0; cursor: zoom-in; }
 .gallery-strip__main img { width: 100%; height: 100%; object-fit: contain; object-position: center; }
-.gallery-strip__thumbs { display: flex; gap: 0.5rem; width: 100%; max-width: 100%; min-width: 0; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; overscroll-behavior-inline: contain; }
-.gallery-strip__thumb { flex-shrink: 0; width: 100px; aspect-ratio: 16/9; overflow: hidden; border-radius: 4px; border: 2px solid transparent; padding: 0; background: none; cursor: pointer; transition: border-color 0.15s; }
+.gallery-strip__nav { pointer-events: none; position: absolute; inset: 0 0 auto; aspect-ratio: 3/2; z-index: 3; display: flex; align-items: center; justify-content: space-between; padding: 0 clamp(0.7rem, 1.8vw, 1.2rem); }
+.gallery-strip__nav-button { pointer-events: auto; width: 3rem; height: 3rem; border: 1px solid color-mix(in srgb, var(--line) 72%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--surface) 84%, transparent); color: var(--accent-strong); font-size: 2rem; line-height: 1; box-shadow: 0 0.8rem 1.8rem rgba(0, 0, 0, 0.16); backdrop-filter: blur(16px); cursor: pointer; }
+.gallery-strip__nav-button:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--accent) 52%, var(--line)); background: var(--surface); }
+.gallery-strip__thumbs { display: flex; gap: 0.5rem; width: 100%; max-width: 100%; min-width: 0; overflow-x: auto; padding: 0 0 4px; scrollbar-width: thin; overscroll-behavior-inline: contain; }
+.gallery-strip__thumb { flex-shrink: 0; width: clamp(5.5rem, 9vw, 7rem); aspect-ratio: 3/2; overflow: hidden; border-radius: 0.55rem; border: 2px solid transparent; padding: 0; background: color-mix(in srgb, var(--surface-soft) 80%, var(--surface)); cursor: pointer; transition: border-color 0.15s; }
 .gallery-strip__thumb.is-active, .gallery-strip__thumb:hover { border-color: var(--accent, #0066cc); }
-.gallery-strip__thumb img { width: 100%; height: 100%; object-fit: cover; }
+.gallery-strip__thumb img { width: 100%; height: 100%; object-fit: contain; }
 
 @media (max-width: 900px) {
-  .gallery-strip { gap: 0.55rem; }
+  .gallery-strip { width: 100%; gap: 0.55rem; }
   .gallery-strip__main { border-radius: 0.85rem; max-height: 54vh; }
+  .gallery-strip__nav { display: none; }
   .gallery-strip__thumb { width: clamp(4.25rem, 24vw, 6rem); }
 }
 </style>
