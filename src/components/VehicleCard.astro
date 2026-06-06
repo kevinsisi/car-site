@@ -8,9 +8,10 @@ interface Props {
   vehicle: VehicleView;
   shareText?: string;
   variant?: 'featured' | 'listing';
+  compareEnabled?: boolean;
 }
 
-const { vehicle, shareText, variant = 'featured' } = Astro.props;
+const { vehicle, shareText, variant = 'featured', compareEnabled = true } = Astro.props;
 const image = vehicle.coverImage;
 const imageSrc = image ? (variant === 'featured' ? image.url : image.thumbUrl) : '';
 const statusBadge = vehicle.status !== 'published' ? vehicleStatusLabels[vehicle.status] : '';
@@ -70,46 +71,50 @@ const specs = [
     </div>
   </a>
   <ShareButton class="vehicle-share" title={vehicle.title} url={`/cars/${vehicle.slug}`} text={shareText} />
-  <button
-    type="button"
-    class="compare-btn"
-    data-compare-slug={vehicle.slug}
-    data-compare-title={vehicle.cardTitle}
-    data-compare-thumb={vehicle.coverImage?.thumbUrl || vehicle.coverImage?.url || ''}
-    aria-label={`加入比較：${vehicle.title}`}
-  >
-    ＋ 比較
-  </button>
+  {compareEnabled && (
+    <button
+      type="button"
+      class="compare-btn"
+      data-compare-slug={vehicle.slug}
+      data-compare-title={vehicle.cardTitle}
+      data-compare-thumb={vehicle.coverImage?.thumbUrl || vehicle.coverImage?.url || ''}
+      aria-label={`加入比較：${vehicle.title}`}
+    >
+      ＋ 比較
+    </button>
+  )}
 </article>
 
-<script>
-  // Update button state from localStorage on load and on changes
-  function refreshCompareButtons() {
-    const stored = JSON.parse(localStorage.getItem('compare_slugs') || '[]') as string[];
+{compareEnabled && (
+  <script>
+    // Update button state from localStorage on load and on changes
+    function refreshCompareButtons() {
+      const stored = JSON.parse(localStorage.getItem('compare_slugs') || '[]') as string[];
+      document.querySelectorAll<HTMLButtonElement>('[data-compare-slug]').forEach((btn) => {
+        const slug = btn.dataset.compareSlug!;
+        const active = stored.includes(slug);
+        btn.classList.toggle('compare-btn--active', active);
+        btn.textContent = active ? '✓ 已加入' : '＋ 比較';
+      });
+    }
+
     document.querySelectorAll<HTMLButtonElement>('[data-compare-slug]').forEach((btn) => {
-      const slug = btn.dataset.compareSlug!;
-      const active = stored.includes(slug);
-      btn.classList.toggle('compare-btn--active', active);
-      btn.textContent = active ? '✓ 已加入' : '＋ 比較';
+      btn.addEventListener('click', () => {
+        const slug = btn.dataset.compareSlug!;
+        const stored: string[] = JSON.parse(localStorage.getItem('compare_slugs') || '[]');
+        const idx = stored.indexOf(slug);
+        if (idx >= 0) stored.splice(idx, 1);
+        else stored.push(slug);
+        localStorage.setItem('compare_slugs', JSON.stringify(stored));
+        window.dispatchEvent(new CustomEvent('compare-changed', { detail: stored }));
+        refreshCompareButtons();
+      });
     });
-  }
 
-  document.querySelectorAll<HTMLButtonElement>('[data-compare-slug]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const slug = btn.dataset.compareSlug!;
-      const stored: string[] = JSON.parse(localStorage.getItem('compare_slugs') || '[]');
-      const idx = stored.indexOf(slug);
-      if (idx >= 0) stored.splice(idx, 1);
-      else stored.push(slug);
-      localStorage.setItem('compare_slugs', JSON.stringify(stored));
-      window.dispatchEvent(new CustomEvent('compare-changed', { detail: stored }));
-      refreshCompareButtons();
-    });
-  });
-
-  refreshCompareButtons();
-  window.addEventListener('compare-changed', refreshCompareButtons);
-</script>
+    refreshCompareButtons();
+    window.addEventListener('compare-changed', refreshCompareButtons);
+  </script>
+)}
 
 <style>
   .compare-btn {

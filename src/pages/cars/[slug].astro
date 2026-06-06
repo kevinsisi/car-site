@@ -4,6 +4,7 @@ import PremiumIcon from '@/components/PremiumIcon.astro';
 import BrandIcon from '@/components/BrandIcon.astro';
 import ShareButton from '@/components/ShareButton.astro';
 import { getSettings } from '@/lib/settings';
+import { resolveFrontFeatures } from '@/lib/front-features';
 import { formatVehicleShareText, shareOriginFromRequest, vehicleShareUrl } from '@/lib/vehicle-share';
 import { getVehicleBySlug, listPublicVehicles, publicVehicleStatus } from '@/lib/vehicles';
 import { devPlaceholderSpecs } from '@/lib/dev-placeholder-vehicle-specs';
@@ -13,6 +14,7 @@ import GalleryGrid from '@/components/gallery/GalleryGrid.astro';
 
 const vehicle = await getVehicleBySlug(Astro.params.slug || '');
 const settings = await getSettings();
+const features = resolveFrontFeatures(settings);
 if (!vehicle || !publicVehicleStatus(vehicle.status, settings.showSoldVehicles)) {
   return new Response('Not found', { status: 404 });
 }
@@ -22,7 +24,7 @@ const shareText = formatVehicleShareText(vehicle, settings.shareMessageTemplate,
 const known = devPlaceholderSpecs[vehicle.slug] || {};
 const legacyImportDescription = '此車由 carsmeet 現有庫存匯入，已附實拍照片。詳細來源、車況、保養與配備請直接 LINE 或電話洽詢。';
 const advisorDescription = vehicle.description === legacyImportDescription
-  ? `${vehicle.title} 實拍現車，專人介紹車況、配備與保養紀錄，歡迎透過 LINE 或電話預約賞車。`
+  ? `${vehicle.title} 實拍現車，專人介紹車況、配備與保養紀錄${features.directContact ? '，歡迎透過 LINE 或電話預約賞車' : ''}。`
   : vehicle.description.replace(/carsmeet/gi, settings.siteName);
 const allVehicles = await listPublicVehicles();
 const currentIndex = allVehicles.findIndex((v) => v.id === vehicle.id);
@@ -137,14 +139,18 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
         <h1>{vehicle.title}</h1>
         <p class="detail-headline">{vehicle.headline || vehicle.condition}</p>
         <div class="detail-actions">
-          <a class="button button--primary detail-contact-button" href={settings.lineUrl} aria-label="LINE 洽詢此車">
-            <PremiumIcon platform="line" label="LINE" customIcon={settings.socialIcons.line} />
-            <span>LINE 洽詢此車</span>
-          </a>
-          <a class="button button--ghost detail-contact-button" href={`tel:${settings.phoneNumber}`} aria-label="電話聯絡">
-            <PremiumIcon platform="phone" label="電話" customIcon={settings.socialIcons.phone} />
-            <span>電話聯絡</span>
-          </a>
+          {features.directContact && settings.lineUrl && settings.lineUrl !== '#' && (
+            <a class="button button--primary detail-contact-button" href={settings.lineUrl} aria-label="LINE 洽詢此車">
+              <PremiumIcon platform="line" label="LINE" customIcon={settings.socialIcons.line} />
+              <span>LINE 洽詢此車</span>
+            </a>
+          )}
+          {features.directContact && settings.phoneNumber && (
+            <a class="button button--ghost detail-contact-button" href={`tel:${settings.phoneNumber}`} aria-label="電話聯絡">
+              <PremiumIcon platform="phone" label="電話" customIcon={settings.socialIcons.phone} />
+              <span>電話聯絡</span>
+            </a>
+          )}
           <ShareButton class="detail-share-button" title={vehicle.title} url={shareUrl} text={shareText} />
         </div>
       </div>

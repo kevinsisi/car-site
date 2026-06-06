@@ -4,6 +4,7 @@ import PremiumIcon from '@/components/PremiumIcon.astro';
 import CompareBar from '@/components/CompareBar.astro';
 import VideoCarousel from '@/components/VideoCarousel.astro';
 import { getSettings } from '@/lib/settings';
+import { getPublicNavItems, resolveFrontFeatures } from '@/lib/front-features';
 import { siteIconHref } from '@/lib/site-icon';
 import { styleVars, styles, templates } from '@/lib/theme';
 import { shareOriginFromRequest } from '@/lib/vehicle-share';
@@ -22,6 +23,7 @@ interface Props {
 }
 
 const settings = await getSettings();
+const features = resolveFrontFeatures(settings);
 const title = Astro.props.title || settings.siteName;
 const description = Astro.props.description || '私人高級車顧問，嚴選高端中古車款。';
 const pageShareText = Astro.props.shareText || description;
@@ -51,22 +53,26 @@ const themeColors: Record<typeof settings.activeStyle, string> = {
 };
 const themeColor = themeColors[settings.activeStyle] || '#070605';
 const pathname = Astro.url.pathname;
-const showHeaderVideo = pathname === '/' && settings.videoSectionEnabled && settings.videoSectionPosition === 'above-header' && settings.heroVideos.length > 0;
+const showHeaderVideo = pathname === '/' && features.heroVideos && settings.videoSectionPosition === 'above-header' && settings.heroVideos.length > 0;
 const isCurrentPath = (test: string) => {
+  if (test === '/') return pathname === '/';
   if (test === '/cars') return pathname === '/cars' || pathname.startsWith('/cars/');
   return pathname === test;
 };
 const copyrightYear = new Date().getFullYear();
 const socialLinks = [
-  { platform: 'line', href: settings.lineUrl, label: 'LINE' },
-  { platform: 'instagram', href: settings.instagramUrl, label: 'Instagram' },
-  { platform: 'facebook', href: settings.facebookUrl, label: 'Facebook' },
-  { platform: 'threads', href: settings.threadsUrl, label: 'Threads' },
-  { platform: 'tiktok', href: settings.tiktokUrl, label: 'TikTok' },
+  ...(features.directContact ? [{ platform: 'line' as const, href: settings.lineUrl, label: 'LINE' }] : []),
+  ...(features.socialIcons ? [
+    { platform: 'instagram' as const, href: settings.instagramUrl, label: 'Instagram' },
+    { platform: 'facebook' as const, href: settings.facebookUrl, label: 'Facebook' },
+    { platform: 'threads' as const, href: settings.threadsUrl, label: 'Threads' },
+    { platform: 'tiktok' as const, href: settings.tiktokUrl, label: 'TikTok' },
+  ] : []),
 ].filter((item) => item.href && item.href !== '#') as { platform: 'line' | 'instagram' | 'facebook' | 'threads' | 'tiktok'; href: string; label: string }[];
 const socialIcons = settings.socialIcons || {};
 const mapQuery = settings.storeAddress ? encodeURIComponent(settings.storeAddress) : '';
 const mapHref = mapQuery ? `https://www.google.com/maps/search/?api=1&query=${mapQuery}` : '';
+const navItems = getPublicNavItems(features);
 ---
 
 <!doctype html>
@@ -100,10 +106,7 @@ const mapHref = mapQuery ? `https://www.google.com/maps/search/?api=1&query=${ma
     <header class="site-header">
       <a class="brand-mark" href="/" aria-current={pathname === '/' ? 'page' : undefined}>{settings.siteName}</a>
       <nav class="site-nav" aria-label="主選單">
-        <a href="/cars" aria-current={isCurrentPath('/cars') ? 'page' : undefined}>車輛收藏</a>
-        <a href="/sell" aria-current={isCurrentPath('/sell') ? 'page' : undefined}>賣車詢問</a>
-        <a href="/about" aria-current={isCurrentPath('/about') ? 'page' : undefined}>關於</a>
-        <a href="/contact" aria-current={isCurrentPath('/contact') ? 'page' : undefined}>聯絡</a>
+        {navItems.map((item) => <a href={item.href} aria-current={isCurrentPath(item.activeMatch) ? 'page' : undefined}>{item.label}</a>)}
       </nav>
       <div class="site-cta">
         {mapHref && (
@@ -112,30 +115,31 @@ const mapHref = mapQuery ? `https://www.google.com/maps/search/?api=1&query=${ma
             <span class="site-address__text">{settings.storeAddress}</span>
           </a>
         )}
-        <a class="site-cta__link site-cta__link--line" href={settings.lineUrl}>
-          <PremiumIcon platform="line" label="LINE" customIcon={socialIcons.line} />
-          <span>LINE 洽詢</span>
-        </a>
-        <a class="site-cta__link site-cta__link--phone" href={`tel:${settings.phoneNumber}`} aria-label="電話聯絡">
-          <PremiumIcon platform="phone" label="電話" customIcon={socialIcons.phone} />
-          <span>電話</span>
-        </a>
+        {features.directContact && settings.lineUrl && settings.lineUrl !== '#' && (
+          <a class="site-cta__link site-cta__link--line" href={settings.lineUrl}>
+            <PremiumIcon platform="line" label="LINE" customIcon={socialIcons.line} />
+            <span>LINE 洽詢</span>
+          </a>
+        )}
+        {features.directContact && settings.phoneNumber && (
+          <a class="site-cta__link site-cta__link--phone" href={`tel:${settings.phoneNumber}`} aria-label="電話聯絡">
+            <PremiumIcon platform="phone" label="電話" customIcon={socialIcons.phone} />
+            <span>電話</span>
+          </a>
+        )}
       </div>
     </header>
     <main id="main">
       <slot />
     </main>
-    <CompareBar />
+    {features.compare && <CompareBar />}
     <footer class="site-footer">
       <div class="site-footer__col site-footer__col--info">
         <strong>{settings.salespersonName}</strong>
         {settings.storeAddress && <span>地址：{settings.storeAddress}</span>}
         {settings.businessHours && <span>營業時間：{settings.businessHours}</span>}
         <nav class="footer-links" aria-label="頁尾選單">
-          <a href="/cars">車輛收藏</a>
-          <a href="/sell">賣車詢問</a>
-          <a href="/about">關於</a>
-          <a href="/contact">聯絡</a>
+          {navItems.map((item) => <a href={item.href}>{item.label}</a>)}
         </nav>
       </div>
       <div class="footer-meta">
@@ -154,7 +158,7 @@ const mapHref = mapQuery ? `https://www.google.com/maps/search/?api=1&query=${ma
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 19V5M6.5 10.5 12 5l5.5 5.5" /></svg>
       </a>
     )}
-    {showMobileActions && (
+    {showMobileActions && features.directContact && (
       <div class="mobile-contact-bar" aria-label="快速聯絡">
         <button class="mobile-action mobile-action--share" type="button" data-share-title={title} data-share-text={pageShareText} data-share-url={pageShareUrl} aria-label="分享目前頁面">
           <PremiumIcon platform="share" label="分享" customIcon={socialIcons.share} />

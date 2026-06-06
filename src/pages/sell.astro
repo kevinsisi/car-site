@@ -1,16 +1,19 @@
 ---
 import PublicLayout from '@/layouts/PublicLayout.astro';
 import { getSettings } from '@/lib/settings';
+import { resolveFrontFeatures } from '@/lib/front-features';
 const settings = await getSettings();
+const features = resolveFrontFeatures(settings);
 ---
 <PublicLayout title={`賣車詢問｜${settings.siteName}`} description="填寫車輛資訊，讓我們為您評估">
   <div class="sell-page">
     <div class="sell-page__header">
       <p class="eyebrow">賣車詢問</p>
       <h1>我想賣車</h1>
-      <p class="sell-page__desc">填寫以下資訊，我們會盡快與您聯絡評估。</p>
+      <p class="sell-page__desc">{features.sellInquiry ? '填寫以下資訊，我們會盡快與您聯絡評估。' : '此網站目前未開放線上賣車詢問。'}</p>
     </div>
 
+    {features.sellInquiry ? (
     <form class="sell-form" id="sell-form" novalidate>
       <div class="sell-form__grid">
         <div class="form-group">
@@ -61,6 +64,18 @@ const settings = await getSettings();
       <button type="submit" class="button button--primary sell-form__submit">送出詢問</button>
       <p class="sell-form__status" id="sell-status" aria-live="polite"></p>
     </form>
+    ) : (
+      <section class="feature-unavailable" aria-label="賣車詢問未開放">
+        <h2>目前未開放線上表單</h2>
+        <p>您仍可瀏覽現有車輛；若有其他需求，請使用網站提供的聯絡方式。</p>
+        {features.directContact && (
+          <div class="cta-row">
+            {settings.lineUrl && settings.lineUrl !== '#' && <a class="button button--primary" href={settings.lineUrl}>LINE 洽詢</a>}
+            {settings.phoneNumber && <a class="button button--ghost" href={`tel:${settings.phoneNumber}`}>立即來電</a>}
+          </div>
+        )}
+      </section>
+    )}
   </div>
 </PublicLayout>
 
@@ -117,4 +132,7 @@ const settings = await getSettings();
 .checkbox-label input { width: auto; flex: 0 0 auto; }
 .sell-form__submit { margin-top: 1.5rem; }
 .sell-form__status { margin-top: 0.75rem; font-size: 0.9rem; }
+.feature-unavailable { padding: 2rem; border: 1px solid var(--border, #e5e5e5); border-radius: 16px; background: var(--surface, #fff); }
+.feature-unavailable h2 { margin: 0 0 0.75rem; }
+.feature-unavailable p { color: var(--muted, #777); }
 </style>

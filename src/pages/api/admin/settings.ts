@@ -64,6 +64,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   if (hasOwn(body, 'activeStyle')) updates.activeStyle = resolveStyle(String(body.activeStyle || ''));
   if (hasOwn(body, 'importBehavior')) updates.importBehavior = ['draft_first', 'auto_publish', 'import_only'].includes(String(body.importBehavior)) ? body.importBehavior : 'draft_first';
   if (hasOwn(body, 'showSoldVehicles')) updates.showSoldVehicles = body.showSoldVehicles === true;
+  if (hasOwn(body, 'featureCompareEnabled')) updates.featureCompareEnabled = body.featureCompareEnabled === true;
+  if (hasOwn(body, 'featureSellInquiryEnabled')) updates.featureSellInquiryEnabled = body.featureSellInquiryEnabled === true;
+  if (hasOwn(body, 'featureContactPageEnabled')) updates.featureContactPageEnabled = body.featureContactPageEnabled === true;
+  if (hasOwn(body, 'featureAboutPageEnabled')) updates.featureAboutPageEnabled = body.featureAboutPageEnabled === true;
+  if (hasOwn(body, 'featureSocialIconsEnabled')) updates.featureSocialIconsEnabled = body.featureSocialIconsEnabled === true;
+  if (hasOwn(body, 'featureDirectContactEnabled')) updates.featureDirectContactEnabled = body.featureDirectContactEnabled === true;
   if (hasOwn(body, 'socialIcons')) updates.socialIcons = parseSocialIcons(typeof body.socialIcons === 'string' ? body.socialIcons : JSON.stringify(body.socialIcons ?? {}));
   if (hasOwn(body, 'galleryMode')) {
     if (!galleryModes.has(body.galleryMode as GalleryMode)) {

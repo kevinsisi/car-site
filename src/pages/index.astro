@@ -5,11 +5,13 @@ import BrandStrip from '@/components/BrandStrip.astro';
 import VideoCarousel from '@/components/VideoCarousel.astro';
 import VideoLinksSection from '@/components/VideoLinksSection.astro';
 import { getSettings } from '@/lib/settings';
+import { resolveFrontFeatures } from '@/lib/front-features';
 import { formatVehicleShareText, shareOriginFromRequest, vehicleShareUrl } from '@/lib/vehicle-share';
 import { listPublicVehicles, listSoldCaseVehicles, listPublicBrands } from '@/lib/vehicles';
 import { listVideoLinks } from '@/lib/video-links';
 
 const settings = await getSettings();
+const features = resolveFrontFeatures(settings);
 const vehicles = await listPublicVehicles();
 const soldCaseVehicles = await listSoldCaseVehicles(6);
 const brands = await listPublicBrands();
@@ -31,10 +33,12 @@ const quickBrands = brands
       <p class="eyebrow">{settings.homepageEyebrow}</p>
       <h1>{settings.homepageTitle}</h1>
       <p class="hero__lead">{settings.homepageLead}</p>
-      <div class="cta-row">
-        <a class="button button--primary" href={settings.lineUrl}>LINE 洽詢</a>
-        <a class="button button--ghost" href={`tel:${settings.phoneNumber}`}>立即來電</a>
-      </div>
+      {features.directContact && (
+        <div class="cta-row">
+          {settings.lineUrl && settings.lineUrl !== '#' && <a class="button button--primary" href={settings.lineUrl}>LINE 洽詢</a>}
+          {settings.phoneNumber && <a class="button button--ghost" href={`tel:${settings.phoneNumber}`}>立即來電</a>}
+        </div>
+      )}
     </div>
     <div class="hero__media">
       {hero?.coverImage && <img src={hero.coverImage.url} alt={hero.title} fetchpriority="high" decoding="async" />}
@@ -64,7 +68,7 @@ const quickBrands = brands
   </section>
   {featuredVehicles.length > 0 && (
     <div class="vehicle-grid home-featured-grid">
-      {featuredVehicles.slice(0, featuredCount).map((vehicle) => <VehicleCard vehicle={vehicle} variant="featured" shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
+      {featuredVehicles.slice(0, featuredCount).map((vehicle) => <VehicleCard vehicle={vehicle} variant="featured" compareEnabled={features.compare} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
     </div>
   )}
 
@@ -72,13 +76,13 @@ const quickBrands = brands
     <p>{settings.homepageNote}</p>
   </section>
 
-  {settings.videoSectionEnabled && settings.heroVideos.length > 0 && settings.videoSectionPosition === 'below-hero' && (
+  {features.heroVideos && settings.heroVideos.length > 0 && settings.videoSectionPosition === 'below-hero' && (
     <VideoCarousel videos={settings.heroVideos} />
   )}
 
   <BrandStrip brands={brands} eyebrow="車系品牌" />
 
-  {settings.videoSectionEnabled && settings.heroVideos.length > 0 && settings.videoSectionPosition === 'below-featured' && (
+  {features.heroVideos && settings.heroVideos.length > 0 && settings.videoSectionPosition === 'below-featured' && (
     <VideoCarousel videos={settings.heroVideos} />
   )}
 
@@ -90,16 +94,16 @@ const quickBrands = brands
         <a href="/cars">瀏覽車庫</a>
       </section>
       <div class="vehicle-grid sold-case-grid">
-        {soldCaseVehicles.map((vehicle) => <VehicleCard vehicle={vehicle} variant="featured" shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
+        {soldCaseVehicles.map((vehicle) => <VehicleCard vehicle={vehicle} variant="featured" compareEnabled={features.compare} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
       </div>
     </>
   )}
 
-  {settings.videoSectionEnabled && settings.heroVideos.length > 0 && settings.videoSectionPosition === 'above-footer' && (
+  {features.heroVideos && settings.heroVideos.length > 0 && settings.videoSectionPosition === 'above-footer' && (
     <VideoCarousel videos={settings.heroVideos} />
   )}
 
-  {settings.videoLinksEnabled && videoLinks.length > 0 && (
+  {features.videoLinks && videoLinks.length > 0 && (
     <VideoLinksSection links={videoLinks} sectionTitle={settings.videoLinksSectionTitle} />
   )}
 </PublicLayout>

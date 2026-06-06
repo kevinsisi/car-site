@@ -66,6 +66,12 @@
     heroVehicleSlug: settings.heroVehicleSlug,
     showSoldVehicles: settings.showSoldVehicles,
     importBehavior: settings.importBehavior,
+    featureCompareEnabled: settings.featureCompareEnabled,
+    featureSellInquiryEnabled: settings.featureSellInquiryEnabled,
+    featureContactPageEnabled: settings.featureContactPageEnabled,
+    featureAboutPageEnabled: settings.featureAboutPageEnabled,
+    featureSocialIconsEnabled: settings.featureSocialIconsEnabled,
+    featureDirectContactEnabled: settings.featureDirectContactEnabled,
   });
 
   let originalForm = $state(JSON.stringify(form));
@@ -310,6 +316,19 @@
         </div>
       </div>
       <label>頁尾提醒 <textarea data-autoresize bind:value={form.footerDisclaimer}></textarea></label>
+    </div>
+  </details>
+
+  <details class="settings-section">
+    <summary>前台功能開關</summary>
+    <div class="settings-section__body">
+      <p class="form-hint">控制公開網站要顯示哪些入口與互動功能。關閉後不會讓頁面 404，只會讓相關入口、按鈕或表單依情境收起。</p>
+      <label class="checkbox-row"><input type="checkbox" bind:checked={form.featureCompareEnabled} /> 顯示比車功能（車卡比較按鈕、浮動比車列、比較頁新增車輛）</label>
+      <label class="checkbox-row"><input type="checkbox" bind:checked={form.featureSellInquiryEnabled} /> 顯示賣車詢問入口與線上表單</label>
+      <label class="checkbox-row"><input type="checkbox" bind:checked={form.featureContactPageEnabled} /> 顯示聯絡頁入口</label>
+      <label class="checkbox-row"><input type="checkbox" bind:checked={form.featureAboutPageEnabled} /> 顯示關於頁入口</label>
+      <label class="checkbox-row"><input type="checkbox" bind:checked={form.featureSocialIconsEnabled} /> 顯示社群 icon（Instagram、Facebook、Threads、TikTok）</label>
+      <label class="checkbox-row"><input type="checkbox" bind:checked={form.featureDirectContactEnabled} /> 顯示直接聯絡（LINE、電話、行動快速列）</label>
     </div>
   </details>
 

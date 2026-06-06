@@ -126,6 +126,12 @@ export interface SiteSettings {
   videoSectionPosition: VideoSectionPosition;
   videoLinksEnabled: boolean;
   videoLinksSectionTitle: string;
+  featureCompareEnabled: boolean;
+  featureSellInquiryEnabled: boolean;
+  featureContactPageEnabled: boolean;
+  featureAboutPageEnabled: boolean;
+  featureSocialIconsEnabled: boolean;
+  featureDirectContactEnabled: boolean;
   notificationEmail: string;
   gmailUser: string;
   gmailAppPassword: string;
@@ -172,6 +178,12 @@ const defaults: SiteSettings = {
   videoSectionPosition: 'below-hero',
   videoLinksEnabled: false,
   videoLinksSectionTitle: '精選影片',
+  featureCompareEnabled: true,
+  featureSellInquiryEnabled: true,
+  featureContactPageEnabled: true,
+  featureAboutPageEnabled: true,
+  featureSocialIconsEnabled: true,
+  featureDirectContactEnabled: true,
   notificationEmail: '',
   gmailUser: '',
   gmailAppPassword: '',
@@ -257,6 +269,12 @@ export async function getSettings(): Promise<SiteSettings> {
     })(),
     videoLinksEnabled: map.get('videoLinksEnabled') === 'true',
     videoLinksSectionTitle: map.get('videoLinksSectionTitle') || defaults.videoLinksSectionTitle,
+    featureCompareEnabled: map.get('featureCompareEnabled') !== 'false',
+    featureSellInquiryEnabled: map.get('featureSellInquiryEnabled') !== 'false',
+    featureContactPageEnabled: map.get('featureContactPageEnabled') !== 'false',
+    featureAboutPageEnabled: map.get('featureAboutPageEnabled') !== 'false',
+    featureSocialIconsEnabled: map.get('featureSocialIconsEnabled') !== 'false',
+    featureDirectContactEnabled: map.get('featureDirectContactEnabled') !== 'false',
     notificationEmail: map.get('notificationEmail') || '',
     gmailUser: map.get('gmailUser') || '',
     gmailAppPassword: map.get('gmailAppPassword') || '',

@@ -1,8 +1,10 @@
 ---
 import PublicLayout from '@/layouts/PublicLayout.astro';
 import { getSettings } from '@/lib/settings';
+import { resolveFrontFeatures } from '@/lib/front-features';
 
 const settings = await getSettings();
+const features = resolveFrontFeatures(settings);
 const promises = [
   {
     title: '車況先行',
@@ -55,11 +57,13 @@ const promises = [
       </article>
     ))}
   </section>
-  <section class="contact-strip reveal-section">
-    <div>
-      <p class="eyebrow">私人預約</p>
-      <h2>預約賞車前，先用 LINE 說明需求。</h2>
-    </div>
-    <a class="button button--primary" href={settings.lineUrl}>LINE 洽詢</a>
-  </section>
+  {features.directContact && settings.lineUrl && settings.lineUrl !== '#' && (
+    <section class="contact-strip reveal-section">
+      <div>
+        <p class="eyebrow">私人預約</p>
+        <h2>預約賞車前，先用 LINE 說明需求。</h2>
+      </div>
+      <a class="button button--primary" href={settings.lineUrl}>LINE 洽詢</a>
+    </section>
+  )}
 </PublicLayout>

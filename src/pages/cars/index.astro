@@ -3,10 +3,12 @@ import VehicleCard from '@/components/VehicleCard.astro';
 import BrandIcon from '@/components/BrandIcon.astro';
 import PublicLayout from '@/layouts/PublicLayout.astro';
 import { getSettings } from '@/lib/settings';
+import { resolveFrontFeatures } from '@/lib/front-features';
 import { formatVehicleShareText, shareOriginFromRequest, vehicleShareUrl } from '@/lib/vehicle-share';
 import { listMonthlyRecommendedVehicles, listPublicBrands, listPublicInventoryVehicles, listPublicVehiclesByBrand, listSoldVehicles } from '@/lib/vehicles';
 
 const settings = await getSettings();
+const features = resolveFrontFeatures(settings);
 const activeBrand = Astro.url.searchParams.get('brand') || '';
 const tabParam = Astro.url.searchParams.get('tab');
 const searchQuery = (Astro.url.searchParams.get('q') || '').trim();
@@ -147,12 +149,12 @@ const vehicles = sortedVehicles;
         <div class="empty-state">
           <p class="eyebrow">目前無符合車輛</p>
           <h3>這個分類暫時沒有上架的車輛</h3>
-          <p>歡迎透過 <a href={settings.lineUrl}>LINE 洽詢</a> 告訴我們想找的品牌、年份或預算，我們會主動協助尋車。</p>
+          <p>{features.directContact && settings.lineUrl && settings.lineUrl !== '#' ? <Fragment>歡迎透過 <a href={settings.lineUrl}>LINE 洽詢</a> 告訴我們想找的品牌、年份或預算，我們會主動協助尋車。</Fragment> : '可以先調整品牌、關鍵字或排序條件，查看目前公開車輛。'}</p>
           <a class="button button--ghost" href="/cars">查看全部車輛</a>
         </div>
       ) : (
         <div class="vehicle-grid listing-grid">
-          {vehicles.map((vehicle) => <VehicleCard vehicle={vehicle} variant="listing" shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
+          {vehicles.map((vehicle) => <VehicleCard vehicle={vehicle} variant="listing" compareEnabled={features.compare} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
         </div>
       )}
     </div>
