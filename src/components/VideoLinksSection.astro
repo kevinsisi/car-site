@@ -234,4 +234,8 @@ function instagramEmbedUrl(url: string): string | null {
   .video-links__controls button { width: 2.2rem; height: 2.2rem; }
   .video-links__grid > li { flex-basis: min(17.5rem, 72vw); }
 }
+
+@media (hover: none) and (pointer: coarse) {
+  .video-links__thumb iframe { display: none; }
+}
 </style>
