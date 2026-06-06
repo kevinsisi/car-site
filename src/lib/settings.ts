@@ -13,6 +13,11 @@ export interface HeroVideo {
   type: 'youtube' | 'mp4';
   thumbnailUrl: string;
   label: string;
+  sourceUrl?: string;
+  localUrl?: string;
+  conversionStatus?: 'idle' | 'pending' | 'processing' | 'completed' | 'failed';
+  conversionError?: string;
+  convertedAt?: string;
 }
 
 export type VideoSectionPosition = 'above-header' | 'below-hero' | 'below-featured' | 'above-footer';
@@ -256,7 +261,8 @@ export async function getSettings(): Promise<SiteSettings> {
     heroVideos: (() => {
       try {
         const parsed = JSON.parse(map.get('heroVideos') || '[]');
-        return Array.isArray(parsed) ? parsed : [];
+        if (!Array.isArray(parsed)) return [];
+        return parsed.filter((item): item is HeroVideo => Boolean(item && typeof item === 'object' && typeof item.url === 'string'));
       } catch {
         return [];
       }

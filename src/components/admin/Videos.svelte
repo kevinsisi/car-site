@@ -14,6 +14,7 @@
   let carouselDirty = false;
   let carouselSaving = false;
   let carouselStatus = '';
+  let pollTimer: ReturnType<typeof setInterval> | null = null;
 
   let links: VideoLinkView[] = [...videoLinks];
   let videoLinksEnabled = settings.videoLinksEnabled ?? false;
@@ -55,9 +56,58 @@
     carouselSaving = false;
     const json = await res.json().catch(() => null);
     carouselStatus = res.ok ? '已儲存' : json?.error || '儲存失敗';
-    if (res.ok) carouselDirty = false;
+    if (res.ok) {
+      if (json?.heroVideos) heroVideos = json.heroVideos;
+      carouselDirty = false;
+      startConversionPolling();
+    }
     setTimeout(() => (carouselStatus = ''), 2500);
   }
+
+  function conversionLabel(video: HeroVideo) {
+    if (video.type !== 'youtube') return video.url.startsWith('/media/') ? '本站 MP4' : '外部 MP4';
+    if (video.localUrl && video.conversionStatus === 'completed') return '已轉成本站 MP4';
+    if (video.conversionStatus === 'processing') return '轉檔中';
+    if (video.conversionStatus === 'pending') return '等待轉檔';
+    if (video.conversionStatus === 'failed') return '轉檔失敗';
+    return 'YouTube fallback';
+  }
+
+  function hasActiveConversions() {
+    return heroVideos.some((video) => video.type === 'youtube' && (video.conversionStatus === 'pending' || video.conversionStatus === 'processing'));
+  }
+
+  async function refreshConversions() {
+    const res = await fetch('/api/admin/video-settings');
+    if (!res.ok) return;
+    const json = await res.json().catch(() => null);
+    if (json?.heroVideos) heroVideos = json.heroVideos;
+    if (!hasActiveConversions() && pollTimer) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+    }
+  }
+
+  function startConversionPolling() {
+    if (!hasActiveConversions() || pollTimer) return;
+    pollTimer = setInterval(refreshConversions, 3500);
+  }
+
+  async function retryConversion(video: HeroVideo) {
+    video.conversionStatus = 'pending';
+    video.conversionError = '';
+    heroVideos = [...heroVideos];
+    const res = await fetch(`/api/admin/hero-video-conversions/${encodeURIComponent(video.id)}`, { method: 'POST' });
+    if (!res.ok) {
+      video.conversionStatus = 'failed';
+      video.conversionError = '重試失敗';
+      heroVideos = [...heroVideos];
+      return;
+    }
+    startConversionPolling();
+  }
+
+  $: if (hasActiveConversions()) startConversionPolling();
 
   function addLink() {
     links = [...links, { id: '', title: '', url: '', thumbnailUrl: null, sortOrder: links.length }];
@@ -143,6 +193,12 @@
               {#if video.thumbnailUrl}
                 <img src={video.thumbnailUrl} alt="" class="thumb-preview" />
               {/if}
+              <div class:status-failed={video.conversionStatus === 'failed'} class:status-complete={video.localUrl && video.conversionStatus === 'completed'} class="conversion-status">
+                <span>{conversionLabel(video)}</span>
+                {#if video.localUrl && video.conversionStatus === 'completed'}<small>{video.localUrl}</small>{/if}
+                {#if video.conversionStatus === 'failed' && video.conversionError}<small>{video.conversionError}</small>{/if}
+                {#if video.type === 'youtube' && video.conversionStatus === 'failed'}<button type="button" on:click={() => retryConversion(video)}>重試</button>{/if}
+              </div>
               <button type="button" class="btn-remove" on:click={() => removeVideo(i)}>✕</button>
             </div>
           {/each}
@@ -215,6 +271,12 @@
 .video-row { display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap; background: color-mix(in srgb, var(--bg) 78%, var(--surface)); padding: 0.75rem; border: 1px solid var(--line); border-radius: 0.95rem; }
 .upload-label { min-height: 2.45rem; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.9rem; font-weight: 800; color: var(--accent-strong); white-space: nowrap; padding: 0 0.9rem; border: 1px solid var(--line); border-radius: 999px; background: color-mix(in srgb, var(--accent) 8%, transparent); }
 .thumb-preview { width: 4.8rem; height: 3rem; object-fit: cover; border-radius: 0.45rem; background: var(--surface-soft); border: 1px solid var(--line); }
+.conversion-status { min-width: min(100%, 12rem); display: grid; gap: 0.18rem; color: var(--muted); font-size: 0.78rem; line-height: 1.25; }
+.conversion-status span { font-weight: 850; color: var(--accent-strong); }
+.conversion-status small { max-width: 18rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.conversion-status button { width: max-content; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 999px; background: transparent; color: var(--accent-strong); font: inherit; font-size: 0.72rem; font-weight: 850; padding: 0.12rem 0.55rem; cursor: pointer; }
+.status-complete span { color: #2f8b57; }
+.status-failed span { color: #c25555; }
 .btn-remove { min-width: 2.45rem; min-height: 2.45rem; border: 1px solid color-mix(in srgb, #dc5a5a 45%, var(--line)); border-radius: 999px; background: transparent; color: #c25555; cursor: pointer; font-size: 1rem; padding: 0 0.65rem; }
 .btn-add { min-height: 2.7rem; width: max-content; font-size: 0.95rem; font-weight: 850; padding: 0 1rem; border: 1px solid color-mix(in srgb, var(--accent) 44%, var(--line)); border-radius: 999px; background: var(--accent); color: var(--bg); cursor: pointer; }
 .btn-primary { min-height: 2.7rem; padding: 0 1.1rem; border: 1px solid var(--accent); border-radius: 999px; background: var(--accent); color: var(--bg); font-weight: 900; cursor: pointer; }
@@ -227,6 +289,7 @@
   .video-row .w80,
   .video-row .w140 { width: 100%; grid-column: 1 / -1; }
   .video-row .upload-label { grid-column: 1; width: 100%; }
+  .video-row .conversion-status { grid-column: 1 / -1; }
   .video-row .thumb-preview,
   .video-row .btn-remove { grid-column: 2; }
   .form-actions { display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap; }

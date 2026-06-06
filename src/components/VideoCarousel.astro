@@ -55,27 +55,29 @@ function stripPosterStyle(video: HeroVideo, videoId: string | null): string | un
     {title && <h2 class="video-carousel__title">{title}</h2>}
     <div class="video-carousel__stage" data-vcarousel>
       {videos.map((video, index) => {
-        const videoId = video.type === 'youtube' ? youtubeId(video.url) : null;
+        const effectiveType = video.localUrl && video.conversionStatus === 'completed' ? 'mp4' : video.type;
+        const effectiveUrl = effectiveType === 'mp4' ? (video.localUrl || video.url) : video.url;
+        const videoId = effectiveType === 'youtube' ? youtubeId(effectiveUrl) : null;
         const youtubeParams = youtubeEmbedParams(videoId);
         return (
         <div class={`video-carousel__item${index === 0 ? ' is-active' : ''}`} data-vitem={index}>
-          {video.type === 'youtube' && videoId && isTopStrip ? (
+          {effectiveType === 'youtube' && videoId && isTopStrip ? (
             <div
               class="strip-embed"
               data-embed-src={`https://www.youtube.com/embed/${videoId}?${youtubeParams}`}
               data-embed-title={video.label || `影片 ${index + 1}`}
               style={stripPosterStyle(video, videoId)}
             ></div>
-          ) : video.type === 'youtube' && videoId ? (
+          ) : effectiveType === 'youtube' && videoId ? (
             <iframe
               src={`https://www.youtube.com/embed/${videoId}?${youtubeParams}`}
               title={video.label || `影片 ${index + 1}`}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               loading={index === 0 ? 'eager' : 'lazy'}
             ></iframe>
-          ) : video.type === 'mp4' ? (
+          ) : effectiveType === 'mp4' ? (
             <video
-              src={video.url}
+              src={effectiveUrl}
               poster={video.thumbnailUrl || undefined}
               controls={!isTopStrip}
               autoplay={isTopStrip}
