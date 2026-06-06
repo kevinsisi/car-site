@@ -177,8 +177,15 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
     <nav class="detail-pager reveal-section" aria-label="車輛切換">
       {prevVehicle ? (
         <a class="detail-pager__link detail-pager__link--prev" href={`/cars/${prevVehicle.slug}`} rel="prev">
-          <span class="eyebrow">上一台</span>
-          <strong>{prevVehicle.title}</strong>
+          {prevVehicle.coverImage && (
+            <span class="detail-pager__thumb" aria-hidden="true">
+              <img src={prevVehicle.coverImage.thumbUrl || prevVehicle.coverImage.url} alt="" loading="lazy" decoding="async" />
+            </span>
+          )}
+          <span class="detail-pager__copy">
+            <span class="eyebrow">上一台</span>
+            <strong>{prevVehicle.title}</strong>
+          </span>
         </a>
       ) : (<span class="detail-pager__placeholder" aria-hidden="true"></span>)}
       <a class="detail-pager__home" href="/cars">
@@ -187,8 +194,15 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
       </a>
       {nextVehicle ? (
         <a class="detail-pager__link detail-pager__link--next" href={`/cars/${nextVehicle.slug}`} rel="next">
-          <span class="eyebrow">下一台</span>
-          <strong>{nextVehicle.title}</strong>
+          <span class="detail-pager__copy">
+            <span class="eyebrow">下一台</span>
+            <strong>{nextVehicle.title}</strong>
+          </span>
+          {nextVehicle.coverImage && (
+            <span class="detail-pager__thumb" aria-hidden="true">
+              <img src={nextVehicle.coverImage.thumbUrl || nextVehicle.coverImage.url} alt="" loading="lazy" decoding="async" />
+            </span>
+          )}
         </a>
       ) : (<span class="detail-pager__placeholder" aria-hidden="true"></span>)}
     </nav>
