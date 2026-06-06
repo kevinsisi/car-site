@@ -408,6 +408,11 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
 .image-lightbox__toolbar button { width: 2.25rem; height: 2.25rem; font-size: 1.15rem; }
 .image-lightbox__toolbar span { min-width: 2.4rem; text-align: center; font-weight: 800; }
 
+@media (hover: none) and (pointer: coarse) {
+  .image-lightbox__toolbar { display: none; }
+  .image-lightbox__stage img { transition: none; }
+}
+
 .site-footer { display: flex; justify-content: space-between; gap: 2rem; padding: 1.4rem clamp(1.25rem, 5vw, 6rem) 1.7rem; color: var(--muted); border-top: 1px solid color-mix(in srgb, var(--line) 72%, transparent); font-size: 0.82rem; line-height: 1.6; }
 .site-footer__col,
 .footer-meta { display: grid; gap: 0.3rem; }

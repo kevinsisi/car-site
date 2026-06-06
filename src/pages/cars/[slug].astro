@@ -220,6 +220,7 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
     let translateY = 0;
     let dragStart = null;
     let pinchStart = null;
+    let touchMoved = false;
     let lastTapTime = 0;
 
     const clampScale = (value) => Math.min(4, Math.max(1, value));
@@ -276,6 +277,10 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
       applyTransform();
     };
     const touchDistance = (touches) => Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
+    const touchCenter = (touches) => ({
+      x: (touches[0].clientX + touches[1].clientX) / 2,
+      y: (touches[0].clientY + touches[1].clientY) / 2,
+    });
 
     galleryButtons.forEach((button) => {
       button.addEventListener('click', () => openLightbox(Number(button.dataset.galleryIndex || 0)));
@@ -297,11 +302,13 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
       zoomBy(event.deltaY < 0 ? 0.25 : -0.25);
     }, { passive: false });
     stage?.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'touch') return;
       if (scale <= 1) return;
       stage.setPointerCapture(event.pointerId);
       dragStart = { x: event.clientX, y: event.clientY, translateX, translateY };
     });
     stage?.addEventListener('pointermove', (event) => {
+      if (event.pointerType === 'touch') return;
       if (!dragStart) return;
       translateX = dragStart.translateX + event.clientX - dragStart.x;
       translateY = dragStart.translateY + event.clientY - dragStart.y;
@@ -310,17 +317,45 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
     stage?.addEventListener('pointerup', () => { dragStart = null; });
     stage?.addEventListener('pointercancel', () => { dragStart = null; });
     stage?.addEventListener('touchstart', (event) => {
-      if (event.touches.length === 2) pinchStart = { distance: touchDistance(event.touches), scale };
-    }, { passive: true });
+      touchMoved = false;
+      if (event.touches.length === 2) {
+        const center = touchCenter(event.touches);
+        pinchStart = { distance: touchDistance(event.touches), scale, translateX, translateY, centerX: center.x, centerY: center.y };
+        dragStart = null;
+      } else if (event.touches.length === 1 && scale > 1) {
+        const touch = event.touches[0];
+        dragStart = { x: touch.clientX, y: touch.clientY, translateX, translateY };
+      }
+    }, { passive: false });
     stage?.addEventListener('touchmove', (event) => {
-      if (event.touches.length !== 2 || !pinchStart) return;
-      event.preventDefault();
-      scale = clampScale(pinchStart.scale * (touchDistance(event.touches) / pinchStart.distance));
-      applyTransform();
+      touchMoved = true;
+      if (event.touches.length === 2 && pinchStart) {
+        event.preventDefault();
+        const center = touchCenter(event.touches);
+        scale = clampScale(pinchStart.scale * (touchDistance(event.touches) / pinchStart.distance));
+        translateX = pinchStart.translateX + center.x - pinchStart.centerX;
+        translateY = pinchStart.translateY + center.y - pinchStart.centerY;
+        applyTransform();
+        return;
+      }
+      if (event.touches.length === 1 && dragStart && scale > 1) {
+        event.preventDefault();
+        const touch = event.touches[0];
+        translateX = dragStart.translateX + touch.clientX - dragStart.x;
+        translateY = dragStart.translateY + touch.clientY - dragStart.y;
+        applyTransform();
+      }
     }, { passive: false });
     stage?.addEventListener('touchend', (event) => {
+      if (event.touches.length === 1 && scale > 1) {
+        const touch = event.touches[0];
+        dragStart = { x: touch.clientX, y: touch.clientY, translateX, translateY };
+        pinchStart = null;
+        return;
+      }
       pinchStart = null;
-      if (event.touches.length || event.changedTouches.length !== 1) return;
+      dragStart = null;
+      if (event.touches.length || event.changedTouches.length !== 1 || touchMoved) return;
       const now = Date.now();
       if (now - lastTapTime < 320) {
         event.preventDefault();
