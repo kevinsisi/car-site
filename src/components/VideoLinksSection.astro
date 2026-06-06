@@ -38,16 +38,15 @@ function instagramEmbedUrl(url: string): string | null {
         <li data-video-links-item>
           <div class="video-links__item">
             <span class="video-links__index">{String(index + 1).padStart(2, '0')}</span>
-            {link.thumbnailUrl ? (
-            <a class="video-links__thumb" href={link.url} target="_blank" rel="noopener noreferrer" aria-label={`在 Instagram 開啟 ${link.title || '精選好車'}`}>
-              <img src={link.thumbnailUrl} alt={link.title} loading="lazy" decoding="async" />
-              <span class="video-links__play" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="36" height="36"><circle cx="12" cy="12" r="11" fill="rgba(0,0,0,0.5)"/><path d="M10 8l6 4-6 4V8z" fill="#fff" /></svg>
-              </span>
-            </a>
-            ) : (
             <div class="video-links__thumb" data-video-embed-shell>
-              {instagramEmbed ? (
+              {link.thumbnailUrl ? (
+                <>
+                  <img src={link.thumbnailUrl} alt={link.title} loading="lazy" decoding="async" />
+                  <a class="video-links__play" href={link.url} target="_blank" rel="noopener noreferrer" aria-label={`在 Instagram 開啟 ${link.title || '精選好車'}`}>
+                    <svg viewBox="0 0 24 24" width="36" height="36"><circle cx="12" cy="12" r="11" fill="rgba(0,0,0,0.5)"/><path d="M10 8l6 4-6 4V8z" fill="#fff" /></svg>
+                  </a>
+                </>
+              ) : instagramEmbed ? (
                 <iframe
                   src={instagramEmbed}
                   title={link.title || '精選好車'}
@@ -56,13 +55,12 @@ function instagramEmbedUrl(url: string): string | null {
                   allowtransparency="true"
                   allow="encrypted-media; clipboard-write"
                 ></iframe>
-              ) : null}
-              <div class="video-links__thumb-placeholder">
-                <svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true"><path d="M5 3l14 9-14 9V3z" fill="currentColor" /></svg>
-              </div>
-              <a class="video-links__fallback-link" href={link.url} target="_blank" rel="noopener noreferrer">在 Instagram 開啟</a>
+              ) : (
+                <a class="video-links__thumb-placeholder" href={link.url} target="_blank" rel="noopener noreferrer" aria-label={`在 Instagram 開啟 ${link.title || '精選好車'}`}>
+                  <svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true"><path d="M5 3l14 9-14 9V3z" fill="currentColor" /></svg>
+                </a>
+              )}
             </div>
-            )}
             <a href={link.url} target="_blank" rel="noopener noreferrer" class="video-links__title">{link.title || '精選好車'}</a>
           </div>
         </li>
@@ -229,7 +227,6 @@ function instagramEmbedUrl(url: string): string | null {
 .video-links__item:hover .video-links__thumb img { transform: scale(1.04); }
 .video-links__thumb-placeholder { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: #fff; background: linear-gradient(135deg, #833ab4, #fd1d1d 48%, #fcb045); }
 .video-links__play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
-.video-links__fallback-link { position: absolute; z-index: 3; left: 50%; bottom: 1rem; transform: translateX(-50%); width: max-content; max-width: calc(100% - 2rem); padding: 0.55rem 0.85rem; border-radius: 999px; background: rgba(5, 5, 7, 0.66); color: #fff; text-decoration: none; font-size: 0.78rem; font-weight: 800; backdrop-filter: blur(14px); }
 .video-links__title { display: block; color: var(--muted); text-decoration: none; font-size: 0.86rem; font-weight: 760; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .video-links__title:hover { color: var(--accent-strong); }
 .video-links__dots { display: flex; justify-content: center; gap: 0.35rem; margin-top: 0.8rem; }
@@ -242,7 +239,4 @@ function instagramEmbedUrl(url: string): string | null {
   .video-links__grid > li { flex-basis: min(17.5rem, 72vw); }
 }
 
-@media (hover: none) and (pointer: coarse) {
-  .video-links__thumb iframe { display: none; }
-}
 </style>
