@@ -105,10 +105,12 @@ function instagramEmbedUrl(url: string): string | null {
     let gestureActive = false;
     let gestureMoved = false;
     let gestureStart: { x: number; y: number } | null = null;
+    let pausedScrollLeft = 0;
     let resumeTimer: number | undefined;
 
     const pauseAuto = () => {
       mode = 'paused';
+      pausedScrollLeft = track.scrollLeft;
       if (resumeTimer) clearTimeout(resumeTimer);
     };
     const resumeAfterSwipe = () => {
@@ -169,6 +171,9 @@ function instagramEmbedUrl(url: string): string | null {
       resumeAfterSwipe();
     });
     track.addEventListener('scroll', () => {
+      if (mode === 'paused' && !gestureActive && Math.abs(track.scrollLeft - pausedScrollLeft) > 12) {
+        resumeAfterSwipe();
+      }
       requestAnimationFrame(sync);
     }, { passive: true });
     sync();
