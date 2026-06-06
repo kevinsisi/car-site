@@ -156,13 +156,17 @@ function stripPosterStyle(video: HeroVideo, videoId: string | null): string | un
       iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
       iframe.setAttribute('tabindex', '-1');
       iframe.setAttribute('aria-hidden', 'true');
+      const revealIframe = () => iframe.classList.add('is-ready');
+      // Do not wait only for iframe load; YouTube can delay that event while
+      // still rendering enough video to show after the startup chrome fades.
+      window.setTimeout(revealIframe, STRIP_IFRAME_REVEAL_DELAY_MS);
       iframe.addEventListener('load', () => {
         // Subscribe to player events (needed to detect when a video ends).
         iframe.contentWindow?.postMessage(JSON.stringify({ event: 'listening', id: 'strip', channel: 'widget' }), '*');
         syncVideoPlayback();
         // YouTube briefly paints its own pause/play overlay on autoplay start.
         // Keep showing the poster until that internal chrome has faded out.
-        window.setTimeout(() => iframe.classList.add('is-ready'), STRIP_IFRAME_REVEAL_DELAY_MS);
+        window.setTimeout(revealIframe, STRIP_IFRAME_REVEAL_DELAY_MS);
       });
       holder.appendChild(iframe);
     };
