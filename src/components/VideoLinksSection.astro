@@ -47,14 +47,17 @@ function instagramEmbedUrl(url: string): string | null {
                   </a>
                 </>
               ) : instagramEmbed ? (
-                <iframe
-                  src={instagramEmbed}
-                  title={link.title || '精選好車'}
-                  loading="lazy"
-                  scrolling="no"
-                  allowtransparency="true"
-                  allow="encrypted-media; clipboard-write"
-                ></iframe>
+                <>
+                  <iframe
+                    src={instagramEmbed}
+                    title={link.title || '精選好車'}
+                    loading="lazy"
+                    scrolling="no"
+                    allowtransparency="true"
+                    allow="encrypted-media; clipboard-write"
+                  ></iframe>
+                  <button class="video-links__tap-shield" type="button" aria-label={`暫停輪播並啟用 ${link.title || 'Instagram 影片'}`}></button>
+                </>
               ) : (
                 <a class="video-links__thumb-placeholder" href={link.url} target="_blank" rel="noopener noreferrer" aria-label={`在 Instagram 開啟 ${link.title || '精選好車'}`}>
                   <svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true"><path d="M5 3l14 9-14 9V3z" fill="currentColor" /></svg>
@@ -113,6 +116,11 @@ function instagramEmbedUrl(url: string): string | null {
       pausedScrollLeft = track.scrollLeft;
       if (resumeTimer) clearTimeout(resumeTimer);
     };
+    const restoreTapShields = () => {
+      track.querySelectorAll<HTMLElement>('.video-links__tap-shield').forEach((shield) => {
+        shield.hidden = false;
+      });
+    };
     const resumeAfterSwipe = () => {
       if (resumeTimer) clearTimeout(resumeTimer);
       resumeTimer = window.setTimeout(() => {
@@ -137,6 +145,14 @@ function instagramEmbedUrl(url: string): string | null {
         pauseAuto();
       }
     }, { capture: true });
+    track.querySelectorAll<HTMLButtonElement>('.video-links__tap-shield').forEach((shield) => {
+      shield.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        pauseAuto();
+        shield.hidden = true;
+      });
+    });
     const endGesture = () => {
       if (!gestureActive) return;
       gestureActive = false;
@@ -164,14 +180,17 @@ function instagramEmbedUrl(url: string): string | null {
 
     section.querySelector('[data-video-links-prev]')?.addEventListener('click', () => {
       scrollToIndex(activeIndex() - 1);
+      restoreTapShields();
       resumeAfterSwipe();
     });
     section.querySelector('[data-video-links-next]')?.addEventListener('click', () => {
       scrollToIndex(activeIndex() + 1);
+      restoreTapShields();
       resumeAfterSwipe();
     });
     track.addEventListener('scroll', () => {
       if (mode === 'paused' && !gestureActive && Math.abs(track.scrollLeft - pausedScrollLeft) > 12) {
+        restoreTapShields();
         resumeAfterSwipe();
       }
       requestAnimationFrame(sync);
@@ -232,6 +251,8 @@ function instagramEmbedUrl(url: string): string | null {
 .video-links__item:hover .video-links__thumb img { transform: scale(1.04); }
 .video-links__thumb-placeholder { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: #fff; background: linear-gradient(135deg, #833ab4, #fd1d1d 48%, #fcb045); }
 .video-links__play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.video-links__tap-shield { position: absolute; inset: 0; z-index: 3; display: block; width: 100%; height: 100%; border: 0; padding: 0; background: transparent; cursor: pointer; }
+.video-links__tap-shield[hidden] { display: none; }
 .video-links__title { display: block; color: var(--muted); text-decoration: none; font-size: 0.86rem; font-weight: 760; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .video-links__title:hover { color: var(--accent-strong); }
 .video-links__dots { display: flex; justify-content: center; gap: 0.35rem; margin-top: 0.8rem; }
