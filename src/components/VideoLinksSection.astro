@@ -26,49 +26,51 @@ function instagramEmbedUrl(url: string): string | null {
         <p class="eyebrow">{sectionTitle}</p>
         <h2>Instagram 精選影片</h2>
       </div>
+    </div>
+    <div class="video-links__stage">
+      <ul class="video-links__grid" role="list" data-video-links-track>
+        {instagramLinks.map((link, index) => {
+          const instagramEmbed = instagramEmbedUrl(link.url);
+          return (
+          <li data-video-links-item>
+            <div class="video-links__item">
+              <span class="video-links__index">{String(index + 1).padStart(2, '0')}</span>
+              <div class="video-links__thumb" data-video-embed-shell>
+                {link.thumbnailUrl ? (
+                  <>
+                    <img src={link.thumbnailUrl} alt={link.title} loading="lazy" decoding="async" />
+                    <a class="video-links__play" href={link.url} target="_blank" rel="noopener noreferrer" aria-label={`在 Instagram 開啟 ${link.title || '精選好車'}`}>
+                      <svg viewBox="0 0 24 24" width="36" height="36"><circle cx="12" cy="12" r="11" fill="rgba(0,0,0,0.5)"/><path d="M10 8l6 4-6 4V8z" fill="#fff" /></svg>
+                    </a>
+                  </>
+                ) : instagramEmbed ? (
+                  <>
+                    <iframe
+                      src={instagramEmbed}
+                      title={link.title || '精選好車'}
+                      loading="lazy"
+                      scrolling="no"
+                      allowtransparency="true"
+                      allow="encrypted-media; clipboard-write"
+                    ></iframe>
+                    <button class="video-links__tap-shield" type="button" aria-label={`暫停輪播並啟用 ${link.title || 'Instagram 影片'}`}></button>
+                  </>
+                ) : (
+                  <a class="video-links__thumb-placeholder" href={link.url} target="_blank" rel="noopener noreferrer" aria-label={`在 Instagram 開啟 ${link.title || '精選好車'}`}>
+                    <svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true"><path d="M5 3l14 9-14 9V3z" fill="currentColor" /></svg>
+                  </a>
+                )}
+              </div>
+              <a href={link.url} target="_blank" rel="noopener noreferrer" class="video-links__title">{link.title || '精選好車'}</a>
+            </div>
+          </li>
+        )})}
+      </ul>
       <div class="video-links__controls" aria-label="影片輪播控制">
-        <button type="button" data-video-links-prev aria-label="上一支影片">‹</button>
-        <button type="button" data-video-links-next aria-label="下一支影片">›</button>
+        <button class="video-links__control video-links__control--prev" type="button" data-video-links-prev aria-label="上一支影片">‹</button>
+        <button class="video-links__control video-links__control--next" type="button" data-video-links-next aria-label="下一支影片">›</button>
       </div>
     </div>
-    <ul class="video-links__grid" role="list" data-video-links-track>
-      {instagramLinks.map((link, index) => {
-        const instagramEmbed = instagramEmbedUrl(link.url);
-        return (
-        <li data-video-links-item>
-          <div class="video-links__item">
-            <span class="video-links__index">{String(index + 1).padStart(2, '0')}</span>
-            <div class="video-links__thumb" data-video-embed-shell>
-              {link.thumbnailUrl ? (
-                <>
-                  <img src={link.thumbnailUrl} alt={link.title} loading="lazy" decoding="async" />
-                  <a class="video-links__play" href={link.url} target="_blank" rel="noopener noreferrer" aria-label={`在 Instagram 開啟 ${link.title || '精選好車'}`}>
-                    <svg viewBox="0 0 24 24" width="36" height="36"><circle cx="12" cy="12" r="11" fill="rgba(0,0,0,0.5)"/><path d="M10 8l6 4-6 4V8z" fill="#fff" /></svg>
-                  </a>
-                </>
-              ) : instagramEmbed ? (
-                <>
-                  <iframe
-                    src={instagramEmbed}
-                    title={link.title || '精選好車'}
-                    loading="lazy"
-                    scrolling="no"
-                    allowtransparency="true"
-                    allow="encrypted-media; clipboard-write"
-                  ></iframe>
-                  <button class="video-links__tap-shield" type="button" aria-label={`暫停輪播並啟用 ${link.title || 'Instagram 影片'}`}></button>
-                </>
-              ) : (
-                <a class="video-links__thumb-placeholder" href={link.url} target="_blank" rel="noopener noreferrer" aria-label={`在 Instagram 開啟 ${link.title || '精選好車'}`}>
-                  <svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true"><path d="M5 3l14 9-14 9V3z" fill="currentColor" /></svg>
-                </a>
-              )}
-            </div>
-            <a href={link.url} target="_blank" rel="noopener noreferrer" class="video-links__title">{link.title || '精選好車'}</a>
-          </div>
-        </li>
-      )})}
-    </ul>
     <div class="video-links__dots" aria-hidden="true">
       {instagramLinks.map((_, index) => <span class={index === 0 ? 'is-active' : ''}></span>)}
     </div>
@@ -205,9 +207,12 @@ function instagramEmbedUrl(url: string): string | null {
 .video-links__header { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
 .video-links .eyebrow { margin: 0 0 0.35rem; }
 .video-links h2 { margin: 0; font-size: clamp(1.8rem, 4vw, 3.6rem); line-height: 1; letter-spacing: -0.04em; }
-.video-links__controls { display: flex; gap: 0.45rem; }
-.video-links__controls button { width: 2.4rem; height: 2.4rem; border: 1px solid color-mix(in srgb, var(--line) 72%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--surface) 82%, transparent); color: var(--accent-strong); font-size: 1.5rem; line-height: 1; }
-.video-links__controls button:hover { transform: translateY(-1px); background: var(--surface); border-color: color-mix(in srgb, var(--accent) 54%, var(--line)); }
+.video-links__stage { position: relative; }
+.video-links__controls { pointer-events: none; position: absolute; inset: 0; z-index: 4; display: flex; align-items: center; justify-content: space-between; }
+.video-links__control { pointer-events: auto; width: 2.8rem; height: 2.8rem; border: 1px solid color-mix(in srgb, var(--line) 72%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--surface) 86%, transparent); color: var(--accent-strong); font-size: 1.65rem; line-height: 1; box-shadow: 0 0.9rem 2.2rem rgba(0, 0, 0, 0.16); backdrop-filter: blur(14px); }
+.video-links__control:hover { transform: translateY(-1px); background: var(--surface); border-color: color-mix(in srgb, var(--accent) 54%, var(--line)); }
+.video-links__control--prev { margin-left: clamp(0.45rem, 1.4vw, 1.1rem); }
+.video-links__control--next { margin-right: clamp(0.45rem, 1.4vw, 1.1rem); }
 .video-links__grid {
   display: flex;
   gap: clamp(0.85rem, 2vw, 1.35rem);
@@ -261,7 +266,7 @@ function instagramEmbedUrl(url: string): string | null {
 
 @media (max-width: 900px) {
   .video-links__header { align-items: center; }
-  .video-links__controls button { width: 2.2rem; height: 2.2rem; }
+  .video-links__controls { display: none; }
   .video-links__grid > li { flex-basis: min(17.5rem, 72vw); }
 }
 
