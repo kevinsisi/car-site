@@ -102,34 +102,46 @@ function instagramEmbedUrl(url: string): string | null {
       track.scrollTo({ left: target.offsetLeft, behavior: 'auto' });
     };
 
-    // Auto-scroll pauses the moment the user touches/clicks the carousel and
-    // stays paused until they deliberately swipe it again:
-    //   running → (pointerdown / iframe focus) → paused
-    //   paused  → gesture ends + scrolling settles → armed
-    //   armed   → next user scroll → running
-    let mode: 'running' | 'paused' | 'armed' = 'running';
+    // Click/tap should pause the carousel. Only a real drag/swipe resumes it.
+    let mode: 'running' | 'paused' = 'running';
     let gestureActive = false;
-    let settleTimer: number | undefined;
+    let gestureMoved = false;
+    let gestureStart: { x: number; y: number } | null = null;
+    let resumeTimer: number | undefined;
 
     const pauseAuto = () => {
       mode = 'paused';
-      if (settleTimer) clearTimeout(settleTimer);
+      if (resumeTimer) clearTimeout(resumeTimer);
     };
-    const armAfterSettle = () => {
-      if (settleTimer) clearTimeout(settleTimer);
-      settleTimer = window.setTimeout(() => {
-        if (mode === 'paused' && !gestureActive) mode = 'armed';
-      }, 300);
+    const resumeAfterSwipe = () => {
+      if (resumeTimer) clearTimeout(resumeTimer);
+      resumeTimer = window.setTimeout(() => {
+        if (!gestureActive) mode = 'running';
+      }, 450);
     };
 
-    track.addEventListener('pointerdown', () => {
+    track.addEventListener('pointerdown', (event) => {
       gestureActive = true;
+      gestureMoved = false;
+      gestureStart = { x: event.clientX, y: event.clientY };
       pauseAuto();
     }, { passive: true });
+    track.addEventListener('pointermove', (event) => {
+      if (!gestureStart) return;
+      if (Math.hypot(event.clientX - gestureStart.x, event.clientY - gestureStart.y) > 12) {
+        gestureMoved = true;
+      }
+    }, { passive: true });
+    track.addEventListener('click', (event) => {
+      if (!gestureMoved && event.target instanceof Element && event.target.closest('[data-video-links-item]')) {
+        pauseAuto();
+      }
+    }, { capture: true });
     const endGesture = () => {
       if (!gestureActive) return;
       gestureActive = false;
-      if (mode === 'paused') armAfterSettle();
+      gestureStart = null;
+      if (gestureMoved) resumeAfterSwipe();
     };
     window.addEventListener('pointerup', endGesture, { passive: true });
     window.addEventListener('pointercancel', endGesture, { passive: true });
@@ -137,7 +149,6 @@ function instagramEmbedUrl(url: string): string | null {
       const active = document.activeElement;
       if (active instanceof HTMLIFrameElement && track.contains(active)) {
         pauseAuto();
-        armAfterSettle();
       }
     });
     const tick = (now: number) => {
@@ -153,17 +164,13 @@ function instagramEmbedUrl(url: string): string | null {
 
     section.querySelector('[data-video-links-prev]')?.addEventListener('click', () => {
       scrollToIndex(activeIndex() - 1);
+      resumeAfterSwipe();
     });
     section.querySelector('[data-video-links-next]')?.addEventListener('click', () => {
       scrollToIndex(activeIndex() + 1);
+      resumeAfterSwipe();
     });
     track.addEventListener('scroll', () => {
-      if (mode === 'armed') {
-        mode = 'running';
-      } else if (mode === 'paused' && !gestureActive) {
-        // momentum from the pausing swipe — keep waiting for it to settle
-        armAfterSettle();
-      }
       requestAnimationFrame(sync);
     }, { passive: true });
     sync();
