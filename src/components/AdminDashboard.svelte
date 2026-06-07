@@ -52,6 +52,8 @@
   let vehicleFormDirty = $derived(JSON.stringify(vehicleForm) !== vehicleFormBaseline);
   let draggedImageIndex = $state<number | null>(null);
   let isUploadingImages = $state(false);
+  let carsmeetImportUrl = $state('');
+  let isImportingCarsmeet = $state(false);
   let uploadProgress = $state<{ current: number; total: number }>({ current: 0, total: 0 });
   const shareTemplatePlaceholder = '憶文豪車，推薦給您\n{車名}\n年份：{年份}\n品牌：{品牌}\n里程：{里程}\n實拍現車，專人介紹車況與配備\n{網址}';
   const cardTitleTemplatePlaceholder = '{年份} {品牌} {型號} {規格}\n{補充}';
@@ -677,6 +679,36 @@
       window.setTimeout(() => window.location.reload(), 700);
     } else {
       updateToast(tid, '車輛儲存失敗，請確認標題、品牌、型號與圖片', 'error');
+    }
+  }
+
+  async function importCarsmeetVehicle() {
+    const url = carsmeetImportUrl.trim();
+    if (!url) {
+      notifyError('請先貼上 Carsmeet 車輛網址');
+      return;
+    }
+    if (vehicleFormDirty && !window.confirm('目前編輯中尚未儲存，匯入後會重新載入頁面。確定要繼續？')) return;
+    isImportingCarsmeet = true;
+    const tid = notifyProgress('正在從 Carsmeet 匯入車輛...');
+    try {
+      const response = await adminFetch('/api/admin/vehicles/import-carsmeet', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (response.ok && result.vehicleId) {
+        updateToast(tid, `已匯入「${result.title || 'Carsmeet 車輛'}」，共 ${result.imageCount || 0} 張圖片，正在開啟草稿...`, 'success');
+        carsmeetImportUrl = '';
+        window.setTimeout(() => {
+          window.location.href = `/admin/vehicles?focus=${encodeURIComponent(result.vehicleId)}`;
+        }, 700);
+      } else {
+        updateToast(tid, result.error || 'Carsmeet 匯入失敗，請確認網址', 'error');
+      }
+    } finally {
+      isImportingCarsmeet = false;
     }
   }
 
@@ -1347,6 +1379,16 @@
 {#if mode === 'vehicles'}
   <section class="admin-panel vehicle-admin-list">
     <h2>車輛管理</h2>
+    <form class="carsmeet-import" onsubmit={(event) => { event.preventDefault(); importCarsmeetVehicle(); }}>
+      <div>
+        <strong>從 Carsmeet 官網匯入</strong>
+        <p class="form-hint">貼上車輛網址，例如 https://carsmeet.tw/265/，匯入後會建立草稿供你檢查。</p>
+      </div>
+      <div class="carsmeet-import__actions">
+        <input type="url" bind:value={carsmeetImportUrl} placeholder="https://carsmeet.tw/265/" inputmode="url" disabled={isImportingCarsmeet} />
+        <button type="submit" class="secondary-button" disabled={isImportingCarsmeet || !carsmeetImportUrl.trim()}>{isImportingCarsmeet ? '匯入中...' : '一鍵匯入'}</button>
+      </div>
+    </form>
     <form class="vehicle-edit-form" onsubmit={(event) => { event.preventDefault(); saveVehicle(); }}>
       <div class="vehicle-edit-form__head">
         <h3>{selectedId ? '編輯車輛' : '新增車輛'}</h3>
