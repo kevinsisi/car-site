@@ -25,6 +25,7 @@ The current admin vehicle flow uses `AdminDashboard.svelte` to create and edit v
 - Parse only `https://carsmeet.tw/<numeric-id>/` URLs and normalize trailing slashes.
   - Rationale: numeric IDs are the stable external IDs users paste and are enough to dedupe imports.
   - Alternative considered: support any WordPress post URL; rejected to keep the first version predictable.
+  - Non-standard Carsmeet URLs, including text slugs, are excluded from import parity checks for now.
 
 - Store imported vehicles as `draft` regardless of the source page status.
   - Rationale: imported data needs admin review before public publication, especially for pricing/copy/photo order.
@@ -36,6 +37,7 @@ The current admin vehicle flow uses `AdminDashboard.svelte` to create and edit v
 
 - Preserve idempotency by resolving an existing vehicle by slug first and then by `source = "carsmeet"` plus `externalId = <numeric-id>`.
   - Rationale: `slug` is the cross-source unique public identifier, while source/external ID is an additional import mapping for repeat imports from the same platform.
+  - Slug and external ID lookup uses case-insensitive matching for ASCII letters so `B181` and `b181` resolve to the same local vehicle.
 
 ## Risks / Trade-offs
 

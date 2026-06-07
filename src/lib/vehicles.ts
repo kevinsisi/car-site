@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, ne } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, ne, sql } from 'drizzle-orm';
 import { db } from '@/db/connection';
 import { importMappings, vehicleImages, vehicles, type PublishMode, type VehicleStatus } from '@/db/schema';
 import { brandUrlSlug, getBrandAliasMap } from './brand-aliases';
@@ -77,6 +77,17 @@ function normalizeRouteSlug(input: string | undefined | null): string {
     .replace(/\s+/g, '-')
     .replace(/[^A-Za-z0-9_-]/g, '')
     .slice(0, 90);
+}
+
+async function findVehicleBySlugInsensitive(slug: string): Promise<(typeof vehicles.$inferSelect) | undefined> {
+  const normalized = normalizeRouteSlug(slug);
+  if (!normalized) return undefined;
+  const [row] = await db
+    .select()
+    .from(vehicles)
+    .where(sql`lower(${vehicles.slug}) = lower(${normalized})`)
+    .limit(1);
+  return row;
 }
 
 function cleanTemplateOutput(value: string): string {
@@ -260,8 +271,8 @@ export async function upsertVehicle(input: {
   const baseSlug = slugify(`${input.year || ''} ${input.brand} ${input.model} ${input.subModel || ''}`);
   const requestedSlug = normalizeRouteSlug(input.slug);
   const existingById = input.id ? await db.select().from(vehicles).where(eq(vehicles.id, input.id)).limit(1) : [];
-  const existingBySlug = requestedSlug ? await db.select().from(vehicles).where(eq(vehicles.slug, requestedSlug)).limit(1) : [];
-  const existing = existingById[0] || existingBySlug[0];
+  const existingBySlug = requestedSlug ? await findVehicleBySlugInsensitive(requestedSlug) : undefined;
+  const existing = existingById[0] || existingBySlug;
   const id = existing?.id || input.id || crypto.randomUUID();
   const slug = requestedSlug || existing?.slug || `${baseSlug}-${id.slice(0, 6)}`;
   const monthlyRecommended = input.monthlyRecommended ?? existing?.monthlyRecommended ?? false;
@@ -346,11 +357,11 @@ export async function importVehicle(input: {
   const settings = await getSettings();
   const slug = normalizeRouteSlug(input.slug || input.externalId);
   const existingMapping = await db
-    .select({ vehicleId: importMappings.vehicleId })
+    .select({ id: importMappings.id, vehicleId: importMappings.vehicleId })
     .from(importMappings)
-    .where(and(eq(importMappings.source, input.source), eq(importMappings.externalId, input.externalId)))
+    .where(and(sql`lower(${importMappings.source}) = lower(${input.source})`, sql`lower(${importMappings.externalId}) = lower(${input.externalId})`))
     .limit(1);
-  const existingSlug = slug ? await db.select({ id: vehicles.id }).from(vehicles).where(eq(vehicles.slug, slug)).limit(1) : [];
+  const existingSlug = slug ? await findVehicleBySlugInsensitive(slug) : undefined;
 
   const hasPublicFields = Boolean(input.brand && input.model && (input.photos?.length || 0) > 0);
   const publishMode = input.publishMode || 'use_default';
@@ -365,7 +376,7 @@ export async function importVehicle(input: {
   })();
 
   const vehicleId = await upsertVehicle({
-    id: existingSlug[0]?.id || existingMapping[0]?.vehicleId,
+    id: existingSlug?.id || existingMapping[0]?.vehicleId,
     slug,
     title: input.title || [input.year, input.brand, input.model, input.subModel].filter(Boolean).join(' '),
     brand: input.brand,
@@ -387,13 +398,17 @@ export async function importVehicle(input: {
   });
 
   const now = new Date().toISOString();
-  await db
-    .insert(importMappings)
-    .values({ id: crypto.randomUUID(), source: input.source, externalId: input.externalId, vehicleId, lastImportedAt: now })
-    .onConflictDoUpdate({
-      target: [importMappings.source, importMappings.externalId],
-      set: { vehicleId, lastImportedAt: now },
-    });
+  if (existingMapping[0]?.id) {
+    await db.update(importMappings).set({ vehicleId, lastImportedAt: now }).where(eq(importMappings.id, existingMapping[0].id));
+  } else {
+    await db
+      .insert(importMappings)
+      .values({ id: crypto.randomUUID(), source: input.source, externalId: input.externalId, vehicleId, lastImportedAt: now })
+      .onConflictDoUpdate({
+        target: [importMappings.source, importMappings.externalId],
+        set: { vehicleId, lastImportedAt: now },
+      });
+  }
 
   return { vehicleId, status, published: status === 'published', validation: { hasPublicFields } };
 }
