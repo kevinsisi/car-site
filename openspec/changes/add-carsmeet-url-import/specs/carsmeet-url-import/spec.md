@@ -26,11 +26,15 @@ The system SHALL populate local vehicle fields from the Carsmeet page when the p
 - **THEN** the local vehicle draft contains the extracted fields and at least the available cover image
 
 ### Requirement: Re-import is idempotent
-The system SHALL update the existing local Carsmeet-sourced vehicle for the same external ID instead of creating duplicates.
+The system SHALL update the existing local vehicle for the same slug or the same Carsmeet external ID instead of creating duplicates.
 
 #### Scenario: Same URL is imported twice
 - **WHEN** an admin imports the same supported Carsmeet URL more than once
 - **THEN** the system updates the existing local vehicle and returns that vehicle ID
+
+#### Scenario: Import matches an existing slug from another source
+- **WHEN** an admin imports a supported Carsmeet URL whose resolved slug already exists on a local vehicle
+- **THEN** the system updates the existing local vehicle and records the Carsmeet mapping for that vehicle instead of creating another vehicle
 
 ### Requirement: Import failures are visible to admins
 The system SHALL report fetch, parse, and validation failures to the admin without silently creating incomplete vehicles.

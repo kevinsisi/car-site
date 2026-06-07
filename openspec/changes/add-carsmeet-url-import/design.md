@@ -34,8 +34,8 @@ The current admin vehicle flow uses `AdminDashboard.svelte` to create and edit v
   - Rationale: keeps API route thin and makes parser behavior testable without coupling to Svelte UI.
   - Alternative considered: browser automation; rejected due to runtime cost and deployment complexity.
 
-- Preserve idempotency by checking an existing vehicle with `source = "carsmeet"` and `externalId = <numeric-id>` before upsert.
-  - Rationale: repeated imports should refresh the same local record instead of creating duplicates.
+- Preserve idempotency by resolving an existing vehicle by slug first and then by `source = "carsmeet"` plus `externalId = <numeric-id>`.
+  - Rationale: `slug` is the cross-source unique public identifier, while source/external ID is an additional import mapping for repeat imports from the same platform.
 
 ## Risks / Trade-offs
 

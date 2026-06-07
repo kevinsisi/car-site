@@ -257,18 +257,20 @@ export async function upsertVehicle(input: {
   images?: string[];
 }) {
   const now = new Date().toISOString();
-  const id = input.id || crypto.randomUUID();
   const baseSlug = slugify(`${input.year || ''} ${input.brand} ${input.model} ${input.subModel || ''}`);
-  const existing = input.id ? await db.select().from(vehicles).where(eq(vehicles.id, input.id)).limit(1) : [];
   const requestedSlug = normalizeRouteSlug(input.slug);
-  const slug = requestedSlug || existing[0]?.slug || `${baseSlug}-${id.slice(0, 6)}`;
-  const monthlyRecommended = input.monthlyRecommended ?? existing[0]?.monthlyRecommended ?? false;
-  const showSoldCase = input.showSoldCase ?? existing[0]?.showSoldCase ?? false;
+  const existingById = input.id ? await db.select().from(vehicles).where(eq(vehicles.id, input.id)).limit(1) : [];
+  const existingBySlug = requestedSlug ? await db.select().from(vehicles).where(eq(vehicles.slug, requestedSlug)).limit(1) : [];
+  const existing = existingById[0] || existingBySlug[0];
+  const id = existing?.id || input.id || crypto.randomUUID();
+  const slug = requestedSlug || existing?.slug || `${baseSlug}-${id.slice(0, 6)}`;
+  const monthlyRecommended = input.monthlyRecommended ?? existing?.monthlyRecommended ?? false;
+  const showSoldCase = input.showSoldCase ?? existing?.showSoldCase ?? false;
   const values = {
     id,
     slug,
     title: input.title,
-    cardTitleSupplement: input.cardTitleSupplement ?? existing[0]?.cardTitleSupplement ?? '',
+    cardTitleSupplement: input.cardTitleSupplement ?? existing?.cardTitleSupplement ?? '',
     brand: input.brand,
     model: input.model,
     subModel: input.subModel || '',
@@ -288,7 +290,7 @@ export async function upsertVehicle(input: {
     externalId: input.externalId || null,
     localEditsJson: JSON.stringify([]),
     soldAt: input.status === 'sold' ? now : null,
-    createdAt: existing[0]?.createdAt || now,
+    createdAt: existing?.createdAt || now,
     updatedAt: now,
   };
 
@@ -342,11 +344,13 @@ export async function importVehicle(input: {
   publishMode?: PublishMode;
 }) {
   const settings = await getSettings();
-  const existing = await db
+  const slug = normalizeRouteSlug(input.slug || input.externalId);
+  const existingMapping = await db
     .select({ vehicleId: importMappings.vehicleId })
     .from(importMappings)
     .where(and(eq(importMappings.source, input.source), eq(importMappings.externalId, input.externalId)))
     .limit(1);
+  const existingSlug = slug ? await db.select({ id: vehicles.id }).from(vehicles).where(eq(vehicles.slug, slug)).limit(1) : [];
 
   const hasPublicFields = Boolean(input.brand && input.model && (input.photos?.length || 0) > 0);
   const publishMode = input.publishMode || 'use_default';
@@ -361,8 +365,8 @@ export async function importVehicle(input: {
   })();
 
   const vehicleId = await upsertVehicle({
-    id: existing[0]?.vehicleId,
-    slug: input.slug || input.externalId,
+    id: existingSlug[0]?.id || existingMapping[0]?.vehicleId,
+    slug,
     title: input.title || [input.year, input.brand, input.model, input.subModel].filter(Boolean).join(' '),
     brand: input.brand,
     model: input.model,
