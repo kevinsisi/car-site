@@ -225,7 +225,7 @@ function instagramEmbedUrl(url: string): string | null {
 .video-links__grid::-webkit-scrollbar { display: none; }
 .video-links__grid > li { flex: 0 0 min(20rem, 76vw); }
 @media (min-width: 900px) { .video-links__grid > li { flex-basis: min(22rem, 25vw); } }
-.video-links__item { position: relative; display: grid; gap: 0.7rem; color: inherit; opacity: 0.82; transform: scale(0.975); transition: opacity 220ms ease, transform 220ms ease; }
+.video-links__item { position: relative; display: grid; gap: 0.7rem; color: inherit; opacity: 1; transform: scale(0.975); transition: transform 220ms ease; }
 .video-links__grid > li.is-active .video-links__item,
 .video-links__item:hover { opacity: 1; transform: scale(1); }
 .video-links__index { position: absolute; z-index: 2; top: 0.7rem; left: 0.7rem; min-width: 2.2rem; height: 1.65rem; display: inline-grid; place-items: center; border: 1px solid rgba(255,255,255,0.22); border-radius: 999px; background: rgba(10, 12, 18, 0.48); color: #fff; font-size: 0.74rem; font-weight: 850; letter-spacing: 0.08em; backdrop-filter: blur(14px); }
