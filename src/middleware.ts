@@ -4,6 +4,7 @@ import { db } from '@/db/connection';
 import { adminUsers } from '@/db/schema';
 import { getSession } from '@/lib/auth';
 import { verifyPassword } from '@/lib/crypto';
+import { migrateFeatures } from '@/lib/migrate-features';
 
 const sameHostPost = (request: Request) => {
   if (request.method !== 'POST') return true;
@@ -21,7 +22,14 @@ const sameHostPost = (request: Request) => {
 
 const FORCE_CHANGE_ALLOWLIST = ['/admin/account', '/admin/login', '/api/admin/change-password', '/api/admin/logout'];
 
+let migrationPromise: Promise<void> | null = null;
+
 export const onRequest = defineMiddleware(async (context, next) => {
+  if (!migrationPromise) {
+    migrationPromise = migrateFeatures();
+  }
+  await migrationPromise;
+
   if (context.url.pathname.startsWith('/api/admin/') && !sameHostPost(context.request)) {
     return new Response('Cross-site POST form submissions are forbidden', { status: 403 });
   }
