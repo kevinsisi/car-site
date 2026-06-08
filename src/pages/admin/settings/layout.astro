@@ -14,5 +14,5 @@ if (user.role !== 'superadmin' && !hasPermission(user.permissions, PERMISSIONS.S
 const settings = await getSettings();
 ---
 <AdminLayout user={user} title="版型設定">
-  <SettingsLayout client:load settings={settings} />
+  <SettingsLayout client:load settings={settings} isSuperadmin={user.role === 'superadmin'} />
 </AdminLayout>

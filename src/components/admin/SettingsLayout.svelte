@@ -2,12 +2,18 @@
   import type { SiteSettings } from '@/lib/settings';
   import { detailSpecFieldOptions } from '@/lib/detail-spec-fields';
   import { styles, templates } from '@/lib/theme';
+  import {
+    FEATURE_COMPARE, FEATURE_SELL_INQUIRY, FEATURE_CONTACT_PAGE,
+    FEATURE_ABOUT_PAGE, FEATURE_SOCIAL_ICONS, FEATURE_DIRECT_CONTACT,
+    FEATURE_HERO_VIDEOS, FEATURE_VIDEO_LINKS, ALL_FEATURES_MASK,
+  } from '@/lib/features';
 
   interface Props {
     settings: SiteSettings;
+    isSuperadmin: boolean;
   }
 
-  let { settings }: Props = $props();
+  let { settings, isSuperadmin }: Props = $props();
 
   type ToastLevel = 'info' | 'success' | 'error' | 'progress';
   interface Toast { id: number; text: string; level: ToastLevel; sticky: boolean; }
@@ -66,16 +72,49 @@
     heroVehicleSlug: settings.heroVehicleSlug,
     showSoldVehicles: settings.showSoldVehicles,
     importBehavior: settings.importBehavior,
-    featureCompareEnabled: settings.featureCompareEnabled,
-    featureSellInquiryEnabled: settings.featureSellInquiryEnabled,
-    featureContactPageEnabled: settings.featureContactPageEnabled,
-    featureAboutPageEnabled: settings.featureAboutPageEnabled,
-    featureSocialIconsEnabled: settings.featureSocialIconsEnabled,
-    featureDirectContactEnabled: settings.featureDirectContactEnabled,
+    featureMask: settings.featureMask,
   });
 
   let originalForm = $state(JSON.stringify(form));
   let formDirty = $derived(JSON.stringify(form) !== originalForm);
+
+  let licenseMask = $state(settings.featureLicenseMask);
+  let licenseOriginal = $state(settings.featureLicenseMask);
+  let licenseDirty = $derived(licenseMask !== licenseOriginal);
+
+  const FEATURE_LIST = [
+    { bit: FEATURE_COMPARE,        label: '顯示比車功能（車卡比較按鈕、浮動比車列、比較頁新增車輛）' },
+    { bit: FEATURE_SELL_INQUIRY,   label: '顯示賣車詢問入口與線上表單' },
+    { bit: FEATURE_CONTACT_PAGE,   label: '顯示聯絡頁入口' },
+    { bit: FEATURE_ABOUT_PAGE,     label: '顯示關於頁入口' },
+    { bit: FEATURE_SOCIAL_ICONS,   label: '顯示社群 icon（Instagram、Facebook、Threads、TikTok）' },
+    { bit: FEATURE_DIRECT_CONTACT, label: '顯示直接聯絡（LINE、電話、行動快速列）' },
+    { bit: FEATURE_HERO_VIDEOS,    label: '顯示 Hero 影片區' },
+    { bit: FEATURE_VIDEO_LINKS,    label: '顯示影片連結區' },
+  ] as const;
+
+  function hasBit(mask: number, bit: number): boolean {
+    return (mask & bit) !== 0;
+  }
+
+  function toggleBit(mask: number, bit: number, on: boolean): number {
+    return on ? mask | bit : mask & ~bit;
+  }
+
+  async function saveLicenseMask(): Promise<void> {
+    const tid = notifyProgress('儲存授權設定...');
+    const response = await adminFetch('/api/admin/settings', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ featureLicenseMask: licenseMask }),
+    });
+    if (response.ok) {
+      licenseOriginal = licenseMask;
+      updateToast(tid, '授權設定已更新', 'success');
+    } else {
+      updateToast(tid, '授權設定更新失敗', 'error');
+    }
+  }
 
   function insertAtCursor(field: TemplateField, snippet: string) {
     const ta = document.querySelector<HTMLTextAreaElement>(`textarea[data-template-field="${field}"]`);
@@ -322,15 +361,49 @@
   <details class="settings-section">
     <summary>前台功能開關</summary>
     <div class="settings-section__body">
-      <p class="form-hint">控制公開網站要顯示哪些入口與互動功能。關閉後不會讓頁面 404，只會讓相關入口、按鈕或表單依情境收起。</p>
-      <label class="checkbox-row"><input type="checkbox" bind:checked={form.featureCompareEnabled} /> 顯示比車功能（車卡比較按鈕、浮動比車列、比較頁新增車輛）</label>
-      <label class="checkbox-row"><input type="checkbox" bind:checked={form.featureSellInquiryEnabled} /> 顯示賣車詢問入口與線上表單</label>
-      <label class="checkbox-row"><input type="checkbox" bind:checked={form.featureContactPageEnabled} /> 顯示聯絡頁入口</label>
-      <label class="checkbox-row"><input type="checkbox" bind:checked={form.featureAboutPageEnabled} /> 顯示關於頁入口</label>
-      <label class="checkbox-row"><input type="checkbox" bind:checked={form.featureSocialIconsEnabled} /> 顯示社群 icon（Instagram、Facebook、Threads、TikTok）</label>
-      <label class="checkbox-row"><input type="checkbox" bind:checked={form.featureDirectContactEnabled} /> 顯示直接聯絡（LINE、電話、行動快速列）</label>
+      <p class="form-hint">控制公開網站要顯示哪些入口與互動功能。關閉後不會讓頁面 404，只會讓相關入口、按鈕或表單依情境收起。鎖頭圖示表示該功能未在此方案中授權。</p>
+      {#each FEATURE_LIST as f}
+        {@const licensed = hasBit(licenseMask, f.bit)}
+        <label class="checkbox-row">
+          <input
+            type="checkbox"
+            disabled={!licensed}
+            checked={licensed && hasBit(form.featureMask, f.bit)}
+            onchange={(e) => { form.featureMask = toggleBit(form.featureMask, f.bit, (e.currentTarget as HTMLInputElement).checked); }}
+          />
+          {f.label}
+          {#if !licensed}<span style="margin-left:.4em;opacity:.55" title="此功能未在您的方案中啟用">🔒</span>{/if}
+        </label>
+      {/each}
     </div>
   </details>
+
+  {#if isSuperadmin}
+  <details class="settings-section">
+    <summary>授權管理（Superadmin）</summary>
+    <div class="settings-section__body">
+      <p class="form-hint">控制此客戶可使用哪些功能。已關閉的功能，admin 無法在上方功能開關中啟用。儲存後立即生效。</p>
+      {#each FEATURE_LIST as f}
+        <label class="checkbox-row">
+          <input
+            type="checkbox"
+            checked={hasBit(licenseMask, f.bit)}
+            onchange={(e) => { licenseMask = toggleBit(licenseMask, f.bit, (e.currentTarget as HTMLInputElement).checked); }}
+          />
+          {f.label}
+        </label>
+      {/each}
+      <div style="margin-top:1rem">
+        <button
+          class="admin-button"
+          type="button"
+          disabled={!licenseDirty}
+          onclick={saveLicenseMask}
+        >儲存授權設定</button>
+      </div>
+    </div>
+  </details>
+  {/if}
 
   <details class="settings-section">
     <summary>外部匯入與公開狀態</summary>
