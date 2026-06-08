@@ -17,7 +17,6 @@
   }
   .page { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 60px; }
 
-  /* ── Section ── */
   .section-title {
     font-size: 30px;
     font-weight: 800;
@@ -25,7 +24,7 @@
     letter-spacing: .02em;
   }
 
-  /* ── Table ── */
+  /* ── Compare table ── */
   .compare-table {
     width: 100%;
     border-collapse: collapse;
@@ -41,30 +40,17 @@
     border-bottom: 1px solid #eee;
   }
   .compare-table tr:last-child td { border-bottom: none; }
-
-  /* Header row */
   .compare-table thead th { font-weight: 700; font-size: 18px; }
   .compare-table thead th:first-child { background: #f0f0f0; color: #555; }
   .col-label { background: #f7f7f7 !important; color: #555; font-weight: 600; width: 30%; }
-
-  /* WordPress column */
   .col-wp { background: #fff; color: #444; width: 35%; }
   .col-wp-header { background: #e8e8e8; color: #444; }
-
-  /* Our column — highlight */
   .col-ours { background: #1a2b4a; color: #fff; width: 35%; }
   .col-ours-header { background: #1a2b4a; color: #fff; }
   .col-ours .tag { display: inline-block; background: #3a8cff; color: #fff; font-size: 15px; padding: 2px 8px; border-radius: 99px; margin-left: 6px; vertical-align: middle; }
-
-  /* Row alternation */
   .compare-table tbody tr:nth-child(even) .col-label { background: #f0f0f0; }
   .compare-table tbody tr:nth-child(even) .col-wp { background: #fafafa; }
   .compare-table tbody tr:nth-child(even) .col-ours { background: #213460; }
-
-  /* Icons */
-  .check { color: #4ade80; font-weight: 700; }
-  .cross { color: #f87171; }
-  .neutral { color: #fbbf24; }
 
   /* ── Plan table ── */
   .plan-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 16px rgba(0,0,0,.08); }
@@ -80,44 +66,95 @@
   .plan-table tbody tr:nth-child(even) .col-full   { background: #213460; }
   .category-row td { background: #0f1c35 !important; color: #aac4ff !important; font-size: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 8px 20px; }
 
-  /* Footer note */
+  /* ── Icons ── */
+  .check   { color: #4ade80; font-weight: 700; }
+  .cross   { color: #f87171; }
+  .neutral { color: #fbbf24; }
+
+  /* ── Add-on toggle ── */
+  .addon-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .addon-check { display: none; }
+  .addon-box {
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    border: 2px solid #ccc;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .15s;
+    font-size: 13px;
+    color: transparent;
+  }
+  .addon-box.is-checked {
+    background: #4ade80;
+    border-color: #4ade80;
+    color: #fff;
+  }
+  .addon-price-tag {
+    font-size: 16px;
+    color: #aaa;
+    transition: color .15s, font-weight .15s;
+    white-space: nowrap;
+  }
+  .addon-price-tag.is-checked {
+    color: #22c55e;
+    font-weight: 700;
+  }
+  .addon-label:hover .addon-box { border-color: #4ade80; }
+
+  /* ── Footer note ── */
   .note { font-size: 17px; color: #888; margin-top: 10px; }
 
   /* ── Pricing cards ── */
   .pricing-row { display: flex; gap: 24px; }
-  .pricing-card {
-    flex: 1;
-    border-radius: 14px;
-    overflow: hidden;
-    box-shadow: 0 2px 16px rgba(0,0,0,.1);
-  }
-  .pricing-card-header {
-    padding: 28px 28px 20px;
-  }
+  .pricing-card { flex: 1; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 16px rgba(0,0,0,.1); }
+  .pricing-card-header { padding: 28px 28px 20px; }
   .pricing-card.basic .pricing-card-header { background: #e8e8e8; }
   .pricing-card.full  .pricing-card-header { background: #1a2b4a; color: #fff; }
   .pricing-plan-name { font-size: 19px; font-weight: 700; letter-spacing: .05em; margin-bottom: 8px; }
   .pricing-card.basic .pricing-plan-name { color: #555; }
   .pricing-card.full  .pricing-plan-name { color: #aac4ff; }
-  .pricing-amount {
-    font-size: 42px;
-    font-weight: 900;
-    letter-spacing: -.01em;
-    line-height: 1;
-    margin-bottom: 4px;
-  }
+  .pricing-amount { font-size: 42px; font-weight: 900; letter-spacing: -.01em; line-height: 1; margin-bottom: 4px; }
   .pricing-card.basic .pricing-amount { color: #222; }
   .pricing-card.full  .pricing-amount { color: #fff; }
   .pricing-unit { font-size: 18px; font-weight: 400; margin-left: 4px; }
   .pricing-card.basic .pricing-unit { color: #777; }
   .pricing-card.full  .pricing-unit { color: #aac4ff; }
-  .pricing-sub { font-size: 16px; margin-top: 4px; }
+  .pricing-sub { font-size: 16px; margin-top: 6px; }
   .pricing-card.basic .pricing-sub { color: #999; }
   .pricing-card.full  .pricing-sub { color: #7a9ed0; }
   .pricing-card-body { background: #fff; padding: 20px 28px 24px; }
   .pricing-card-body ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
   .pricing-card-body li { font-size: 18px; color: #333; display: flex; align-items: flex-start; gap: 8px; }
   .pricing-card-body li .check { flex-shrink: 0; }
+
+  /* Upgrade note */
+  .upgrade-note {
+    display: none;
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: #fff3cd;
+    border-left: 3px solid #f59e0b;
+    border-radius: 5px;
+    font-size: 15px;
+    color: #92400e;
+    font-weight: 600;
+  }
+
+  /* Addon summary in card */
+  .addon-summary {
+    margin-top: 6px;
+    font-size: 15px;
+    color: #888;
+  }
 
   /* ── Support scope ── */
   .scope-row { display: flex; gap: 24px; margin-top: 24px; }
@@ -133,17 +170,8 @@
   .scope-note { font-size: 16px; color: #999; margin-top: 14px; padding: 10px 14px; background: #fffbe6; border-left: 3px solid #fbbf24; border-radius: 4px; }
 
   /* ── Hosting compare ── */
-  .hosting-row {
-    display: flex;
-    gap: 16px;
-    margin-top: 20px;
-  }
-  .hosting-box {
-    flex: 1;
-    border-radius: 10px;
-    padding: 18px 22px;
-    font-size: 18px;
-  }
+  .hosting-row { display: flex; gap: 16px; margin-top: 20px; }
+  .hosting-box { flex: 1; border-radius: 10px; padding: 18px 22px; font-size: 18px; }
   .hosting-box.ours { background: #1a2b4a; color: #fff; }
   .hosting-box.them { background: #fff; color: #444; box-shadow: 0 1px 6px rgba(0,0,0,.08); }
   .hosting-box-label { font-size: 15px; font-weight: 700; letter-spacing: .06em; margin-bottom: 6px; opacity: .65; text-transform: uppercase; }
@@ -286,7 +314,13 @@
         </tr>
         <tr>
           <td class="col-label">車輛比較功能</td>
-          <td class="col-basic"><span class="cross">✗</span> 不含</td>
+          <td class="col-basic">
+            <label class="addon-label">
+              <input type="checkbox" class="addon-check" data-price="6000" data-name="車輛比較功能">
+              <span class="addon-box">✓</span>
+              <span class="addon-price-tag">+NT$6,000</span>
+            </label>
+          </td>
           <td class="col-full"><span class="check">✓</span> 最多 4 台並排比較</td>
         </tr>
 
@@ -298,17 +332,35 @@
         </tr>
         <tr>
           <td class="col-label">聯絡頁</td>
-          <td class="col-basic"><span class="cross">✗</span> 不含</td>
+          <td class="col-basic">
+            <label class="addon-label">
+              <input type="checkbox" class="addon-check" data-price="2000" data-name="聯絡頁">
+              <span class="addon-box">✓</span>
+              <span class="addon-price-tag">+NT$2,000</span>
+            </label>
+          </td>
           <td class="col-full"><span class="check">✓</span> 包含</td>
         </tr>
         <tr>
           <td class="col-label">賣車詢問表單</td>
-          <td class="col-basic"><span class="cross">✗</span> 不含</td>
+          <td class="col-basic">
+            <label class="addon-label">
+              <input type="checkbox" class="addon-check" data-price="6000" data-name="賣車詢問表單">
+              <span class="addon-box">✓</span>
+              <span class="addon-price-tag">+NT$6,000</span>
+            </label>
+          </td>
           <td class="col-full"><span class="check">✓</span> 含照片上傳＋Email 通知</td>
         </tr>
         <tr>
           <td class="col-label">關於頁</td>
-          <td class="col-basic"><span class="cross">✗</span> 不含</td>
+          <td class="col-basic">
+            <label class="addon-label">
+              <input type="checkbox" class="addon-check" data-price="2000" data-name="關於頁">
+              <span class="addon-box">✓</span>
+              <span class="addon-price-tag">+NT$2,000</span>
+            </label>
+          </td>
           <td class="col-full"><span class="check">✓</span> 包含</td>
         </tr>
 
@@ -320,19 +372,37 @@
         </tr>
         <tr>
           <td class="col-label">IG 貼文輪播</td>
-          <td class="col-basic"><span class="cross">✗</span> 不含</td>
+          <td class="col-basic">
+            <label class="addon-label">
+              <input type="checkbox" class="addon-check" data-price="5000" data-name="IG 貼文輪播">
+              <span class="addon-box">✓</span>
+              <span class="addon-price-tag">+NT$5,000</span>
+            </label>
+          </td>
           <td class="col-full"><span class="check">✓</span> 嵌入實際貼文卡</td>
         </tr>
 
         <tr class="category-row"><td colspan="3">影片展示</td></tr>
         <tr>
           <td class="col-label">首頁 Banner 影片</td>
-          <td class="col-basic"><span class="cross">✗</span> 不含</td>
+          <td class="col-basic">
+            <label class="addon-label">
+              <input type="checkbox" class="addon-check" data-price="8000" data-name="首頁 Banner 影片">
+              <span class="addon-box">✓</span>
+              <span class="addon-price-tag">+NT$8,000</span>
+            </label>
+          </td>
           <td class="col-full"><span class="check">✓</span> YouTube 或自架影片</td>
         </tr>
         <tr>
           <td class="col-label">精選影片連結區</td>
-          <td class="col-basic"><span class="cross">✗</span> 不含</td>
+          <td class="col-basic">
+            <label class="addon-label">
+              <input type="checkbox" class="addon-check" data-price="3000" data-name="精選影片連結區">
+              <span class="addon-box">✓</span>
+              <span class="addon-price-tag">+NT$3,000</span>
+            </label>
+          </td>
           <td class="col-full"><span class="check">✓</span> 包含</td>
         </tr>
 
@@ -349,17 +419,29 @@
         </tr>
         <tr>
           <td class="col-label">Email 詢問通知</td>
-          <td class="col-basic"><span class="cross">✗</span> 不含</td>
+          <td class="col-basic">
+            <label class="addon-label">
+              <input type="checkbox" class="addon-check" data-price="2000" data-name="Email 詢問通知">
+              <span class="addon-box">✓</span>
+              <span class="addon-price-tag">+NT$2,000</span>
+            </label>
+          </td>
           <td class="col-full"><span class="check">✓</span> 包含</td>
         </tr>
         <tr>
           <td class="col-label">版型、主題色切換</td>
-          <td class="col-basic"><span class="cross">✗</span> 不含</td>
+          <td class="col-basic">
+            <label class="addon-label">
+              <input type="checkbox" class="addon-check" data-price="4000" data-name="版型主題色切換">
+              <span class="addon-box">✓</span>
+              <span class="addon-price-tag">+NT$4,000</span>
+            </label>
+          </td>
           <td class="col-full"><span class="check">✓</span> 包含</td>
         </tr>
       </tbody>
     </table>
-    <p class="note">※ 基礎版適合初期測試市場；完整版提供完整的精品車商數位體驗。功能可依付費方案彈性開啟。</p>
+    <p class="note">※ 基礎版適合初期測試市場；完整版提供完整的精品車商數位體驗。勾選選配功能可查看對應報價。</p>
   </div>
 
   <!-- ─── TABLE 3: Pricing ─── -->
@@ -372,8 +454,9 @@
       <div class="pricing-card basic">
         <div class="pricing-card-header">
           <div class="pricing-plan-name">基礎版</div>
-          <div class="pricing-amount">NT$30,000<span class="pricing-unit">一次性費用</span></div>
-          <div class="pricing-sub">不含主機年費</div>
+          <div class="pricing-amount"><span id="basic-total">NT$30,000</span><span class="pricing-unit">起</span></div>
+          <div class="pricing-sub" id="basic-addon-count">不含主機年費</div>
+          <div class="upgrade-note" id="basic-upgrade-note">升級完整版 NT$60,000 更划算</div>
         </div>
         <div class="pricing-card-body">
           <ul>
@@ -456,6 +539,48 @@
 <button id="export-btn" onclick="exportImage()">匯出圖片</button>
 
 <script is:inline>
+// ── Add-on calculator ──
+const BASE_PRICE = 30000;
+const FULL_PRICE = 60000;
+
+function updateBasicTotal() {
+  const checks = document.querySelectorAll('.addon-check');
+  let extra = 0;
+  let count = 0;
+  const names = [];
+
+  checks.forEach(cb => {
+    if (cb.checked) {
+      extra += parseInt(cb.dataset.price, 10);
+      count++;
+      names.push(cb.dataset.name);
+    }
+  });
+
+  const total = BASE_PRICE + extra;
+  document.getElementById('basic-total').textContent =
+    'NT$' + total.toLocaleString('zh-TW');
+
+  const countEl = document.getElementById('basic-addon-count');
+  countEl.textContent = count === 0
+    ? '不含主機年費'
+    : `基礎 + ${count} 項選配・不含主機年費`;
+
+  const noteEl = document.getElementById('basic-upgrade-note');
+  noteEl.style.display = total >= FULL_PRICE ? 'block' : 'none';
+}
+
+document.querySelectorAll('.addon-check').forEach(cb => {
+  cb.addEventListener('change', () => {
+    const box = cb.nextElementSibling;
+    const tag = box.nextElementSibling;
+    box.classList.toggle('is-checked', cb.checked);
+    tag.classList.toggle('is-checked', cb.checked);
+    updateBasicTotal();
+  });
+});
+
+// ── Export image ──
 async function exportImage() {
   const btn = document.getElementById('export-btn');
   btn.textContent = '產生中…';
