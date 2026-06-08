@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>方案比較</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+    background: #f5f5f5;
+    padding: 40px 20px;
+    color: #222;
+  }
+  .page { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 60px; }
+
+  /* ── Section ── */
+  .section-title {
+    font-size: 30px;
+    font-weight: 800;
+    margin-bottom: 20px;
+    letter-spacing: .02em;
+  }
+
+  /* ── Table ── */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 16px rgba(0,0,0,.08);
+  }
+  .compare-table th, .compare-table td {
+    padding: 14px 20px;
+    text-align: left;
+    font-size: 19px;
+    border-bottom: 1px solid #eee;
+  }
+  .compare-table tr:last-child td { border-bottom: none; }
+
+  /* Header row */
+  .compare-table thead th { font-weight: 700; font-size: 18px; }
+  .compare-table thead th:first-child { background: #f0f0f0; color: #555; }
+  .col-label { background: #f7f7f7 !important; color: #555; font-weight: 600; width: 30%; }
+
+  /* WordPress column */
+  .col-wp { background: #fff; color: #444; width: 35%; }
+  .col-wp-header { background: #e8e8e8; color: #444; }
+
+  /* Our column — highlight */
+  .col-ours { background: #1a2b4a; color: #fff; width: 35%; }
+  .col-ours-header { background: #1a2b4a; color: #fff; }
+  .col-ours .tag { display: inline-block; background: #3a8cff; color: #fff; font-size: 15px; padding: 2px 8px; border-radius: 99px; margin-left: 6px; vertical-align: middle; }
+
+  /* Row alternation */
+  .compare-table tbody tr:nth-child(even) .col-label { background: #f0f0f0; }
+  .compare-table tbody tr:nth-child(even) .col-wp { background: #fafafa; }
+  .compare-table tbody tr:nth-child(even) .col-ours { background: #213460; }
+
+  /* Icons */
+  .check { color: #4ade80; font-weight: 700; }
+  .cross { color: #f87171; }
+  .neutral { color: #fbbf24; }
+
+  /* ── Plan table ── */
+  .plan-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 16px rgba(0,0,0,.08); }
+  .plan-table th, .plan-table td { padding: 13px 20px; text-align: left; font-size: 19px; border-bottom: 1px solid #eee; }
+  .plan-table tr:last-child td { border-bottom: none; }
+  .plan-table thead th:first-child { background: #f0f0f0; color: #555; }
+  .col-basic-header { background: #e8e8e8; color: #444; width: 30%; }
+  .col-full-header  { background: #1a2b4a; color: #fff; width: 30%; }
+  .col-basic { background: #fff; color: #444; }
+  .col-full  { background: #1a2b4a; color: #fff; }
+  .plan-table tbody tr:nth-child(even) .col-label  { background: #f0f0f0; }
+  .plan-table tbody tr:nth-child(even) .col-basic  { background: #fafafa; }
+  .plan-table tbody tr:nth-child(even) .col-full   { background: #213460; }
+  .category-row td { background: #0f1c35 !important; color: #aac4ff !important; font-size: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 8px 20px; }
+
+  /* Footer note */
+  .note { font-size: 17px; color: #888; margin-top: 10px; }
+
+  /* ── Pricing cards ── */
+  .pricing-row { display: flex; gap: 24px; }
+  .pricing-card {
+    flex: 1;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 16px rgba(0,0,0,.1);
+  }
+  .pricing-card-header {
+    padding: 28px 28px 20px;
+  }
+  .pricing-card.basic .pricing-card-header { background: #e8e8e8; }
+  .pricing-card.full  .pricing-card-header { background: #1a2b4a; color: #fff; }
+  .pricing-plan-name { font-size: 19px; font-weight: 700; letter-spacing: .05em; margin-bottom: 8px; }
+  .pricing-card.basic .pricing-plan-name { color: #555; }
+  .pricing-card.full  .pricing-plan-name { color: #aac4ff; }
+  .pricing-amount {
+    font-size: 42px;
+    font-weight: 900;
+    letter-spacing: -.01em;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .pricing-card.basic .pricing-amount { color: #222; }
+  .pricing-card.full  .pricing-amount { color: #fff; }
+  .pricing-unit { font-size: 18px; font-weight: 400; margin-left: 4px; }
+  .pricing-card.basic .pricing-unit { color: #777; }
+  .pricing-card.full  .pricing-unit { color: #aac4ff; }
+  .pricing-sub { font-size: 16px; margin-top: 4px; }
+  .pricing-card.basic .pricing-sub { color: #999; }
+  .pricing-card.full  .pricing-sub { color: #7a9ed0; }
+  .pricing-card-body { background: #fff; padding: 20px 28px 24px; }
+  .pricing-card-body ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .pricing-card-body li { font-size: 18px; color: #333; display: flex; align-items: flex-start; gap: 8px; }
+  .pricing-card-body li .check { flex-shrink: 0; }
+
+  /* ── Support scope ── */
+  .scope-row { display: flex; gap: 24px; margin-top: 24px; }
+  .scope-box { flex: 1; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+  .scope-box-header { padding: 14px 20px; font-size: 17px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+  .scope-box.included .scope-box-header { background: #1a2b4a; color: #aac4ff; }
+  .scope-box.extra    .scope-box-header { background: #f0f0f0; color: #777; }
+  .scope-box-body { background: #fff; padding: 16px 20px; }
+  .scope-box-body ul { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+  .scope-box-body li { font-size: 18px; color: #333; display: flex; align-items: flex-start; gap: 8px; line-height: 1.45; }
+  .scope-box-body li .check { flex-shrink: 0; }
+  .scope-box-body li .cross { flex-shrink: 0; }
+  .scope-note { font-size: 16px; color: #999; margin-top: 14px; padding: 10px 14px; background: #fffbe6; border-left: 3px solid #fbbf24; border-radius: 4px; }
+
+  /* ── Hosting compare ── */
+  .hosting-row {
+    display: flex;
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .hosting-box {
+    flex: 1;
+    border-radius: 10px;
+    padding: 18px 22px;
+    font-size: 18px;
+  }
+  .hosting-box.ours { background: #1a2b4a; color: #fff; }
+  .hosting-box.them { background: #fff; color: #444; box-shadow: 0 1px 6px rgba(0,0,0,.08); }
+  .hosting-box-label { font-size: 15px; font-weight: 700; letter-spacing: .06em; margin-bottom: 6px; opacity: .65; text-transform: uppercase; }
+  .hosting-box-price { font-size: 28px; font-weight: 900; line-height: 1; }
+  .hosting-box.ours .hosting-box-price { color: #4ade80; }
+  .hosting-box.them .hosting-box-price { color: #f87171; }
+  .hosting-box-detail { font-size: 16px; margin-top: 4px; opacity: .75; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<style>
+  #export-btn {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    background: #1a2b4a;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 14px 24px;
+    font-size: 17px;
+    font-family: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,.25);
+    transition: background .15s, transform .1s;
+    z-index: 999;
+  }
+  #export-btn:hover { background: #243d6a; transform: translateY(-1px); }
+  #export-btn:active { transform: translateY(0); }
+  #export-btn:disabled { opacity: .6; cursor: default; transform: none; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ─── TABLE 1: Our platform vs WordPress ─── -->
+  <div>
+    <div class="section-title">我們的方案 vs WordPress</div>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th class="col-label">比較項目</th>
+          <th class="col-wp-header">WordPress 方案</th>
+          <th class="col-ours-header">我們的方案</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="col-label">載入速度</td>
+          <td class="col-wp"><span class="cross">✗</span> 慢（插件愈多愈重）</td>
+          <td class="col-ours"><span class="check">✓</span> 快速載入，針對車商優化</td>
+        </tr>
+        <tr>
+          <td class="col-label">外觀設計</td>
+          <td class="col-wp"><span class="neutral">△</span> 套用現成模板，易撞版</td>
+          <td class="col-ours"><span class="check">✓</span> 完整客製化品牌風格</td>
+        </tr>
+        <tr>
+          <td class="col-label">管理介面</td>
+          <td class="col-wp"><span class="neutral">△</span> 通用後台，功能繁雜</td>
+          <td class="col-ours"><span class="check">✓</span> 專為車商設計，直覺易用</td>
+        </tr>
+        <tr>
+          <td class="col-label">插件／維護費用</td>
+          <td class="col-wp"><span class="cross">✗</span> 每年 $XX，插件需定期付費</td>
+          <td class="col-ours"><span class="check">✓</span> 無額外插件費用</td>
+        </tr>
+        <tr>
+          <td class="col-label">系統更新維護</td>
+          <td class="col-wp"><span class="cross">✗</span> 需自行更新，版本衝突風險</td>
+          <td class="col-ours"><span class="check">✓</span> 由我們負責維護更新</td>
+        </tr>
+        <tr>
+          <td class="col-label">安全性</td>
+          <td class="col-wp"><span class="cross">✗</span> WordPress 為最常被攻擊目標</td>
+          <td class="col-ours"><span class="check">✓</span> 封閉式系統，攻擊面小</td>
+        </tr>
+        <tr>
+          <td class="col-label">行動裝置體驗</td>
+          <td class="col-wp"><span class="neutral">△</span> 依模板品質，良莠不齊</td>
+          <td class="col-ours"><span class="check">✓</span> 行動優先設計，完整優化</td>
+        </tr>
+        <tr>
+          <td class="col-label">社群媒體整合</td>
+          <td class="col-wp"><span class="cross">✗</span> 需額外插件，效果有限</td>
+          <td class="col-ours"><span class="check">✓</span> 內建 IG／FB／TikTok／LINE</td>
+        </tr>
+        <tr>
+          <td class="col-label">車輛匯入</td>
+          <td class="col-wp"><span class="cross">✗</span> 無，需手動逐筆輸入</td>
+          <td class="col-ours"><span class="check">✓</span> 支援從外部連結批量匯入</td>
+        </tr>
+        <tr>
+          <td class="col-label">影片展示</td>
+          <td class="col-wp"><span class="neutral">△</span> 基本 YouTube 嵌入</td>
+          <td class="col-ours"><span class="check">✓</span> YouTube Banner＋自架影片自動轉檔</td>
+        </tr>
+        <tr>
+          <td class="col-label">功能調整彈性</td>
+          <td class="col-wp"><span class="neutral">△</span> 靠插件，穩定性不一</td>
+          <td class="col-ours"><span class="check">✓</span> 依您的需求直接開發</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="note">※ WordPress 插件費用依選用項目而異，常見需求（SEO、表單、圖庫、安全）每年合計約 NT$3,000–15,000 以上。</p>
+  </div>
+
+  <!-- ─── TABLE 2: Full version vs Basic ─── -->
+  <div>
+    <div class="section-title">功能方案比較</div>
+    <table class="plan-table">
+      <thead>
+        <tr>
+          <th class="col-label" style="background:#f0f0f0;color:#555;">功能項目</th>
+          <th class="col-basic-header">基礎版<br><small style="font-weight:400;font-size:16px;">核心展示＋基本聯絡</small></th>
+          <th class="col-full-header">完整版<br><small style="font-weight:400;font-size:16px;">全功能開放</small></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="category-row"><td colspan="3">核心展示</td></tr>
+        <tr>
+          <td class="col-label">精品首頁展示</td>
+          <td class="col-basic"><span class="check">✓</span> 包含</td>
+          <td class="col-full"><span class="check">✓</span> 包含</td>
+        </tr>
+        <tr>
+          <td class="col-label">車輛列表＋搜尋篩選</td>
+          <td class="col-basic"><span class="check">✓</span> 包含</td>
+          <td class="col-full"><span class="check">✓</span> 包含</td>
+        </tr>
+        <tr>
+          <td class="col-label">車輛詳情頁</td>
+          <td class="col-basic"><span class="check">✓</span> 包含</td>
+          <td class="col-full"><span class="check">✓</span> 包含</td>
+        </tr>
+        <tr>
+          <td class="col-label">車輛照片圖庫</td>
+          <td class="col-basic"><span class="check">✓</span> 包含</td>
+          <td class="col-full"><span class="check">✓</span> 含燈箱＋滑動瀏覽</td>
+        </tr>
+        <tr>
+          <td class="col-label">車輛比較功能</td>
+          <td class="col-basic"><span class="cross">✗</span> 不含</td>
+          <td class="col-full"><span class="check">✓</span> 最多 4 台並排比較</td>
+        </tr>
+
+        <tr class="category-row"><td colspan="3">聯絡互動</td></tr>
+        <tr>
+          <td class="col-label">LINE / 電話快速聯絡</td>
+          <td class="col-basic"><span class="check">✓</span> 包含</td>
+          <td class="col-full"><span class="check">✓</span> 行動列＋詳情頁 CTA</td>
+        </tr>
+        <tr>
+          <td class="col-label">聯絡頁</td>
+          <td class="col-basic"><span class="cross">✗</span> 不含</td>
+          <td class="col-full"><span class="check">✓</span> 包含</td>
+        </tr>
+        <tr>
+          <td class="col-label">賣車詢問表單</td>
+          <td class="col-basic"><span class="cross">✗</span> 不含</td>
+          <td class="col-full"><span class="check">✓</span> 含照片上傳＋Email 通知</td>
+        </tr>
+        <tr>
+          <td class="col-label">關於頁</td>
+          <td class="col-basic"><span class="cross">✗</span> 不含</td>
+          <td class="col-full"><span class="check">✓</span> 包含</td>
+        </tr>
+
+        <tr class="category-row"><td colspan="3">社群媒體</td></tr>
+        <tr>
+          <td class="col-label">社群 Icon（IG / FB / TikTok）</td>
+          <td class="col-basic"><span class="check">✓</span> 包含</td>
+          <td class="col-full"><span class="check">✓</span> 可自訂圖示與連結</td>
+        </tr>
+        <tr>
+          <td class="col-label">IG 貼文輪播</td>
+          <td class="col-basic"><span class="cross">✗</span> 不含</td>
+          <td class="col-full"><span class="check">✓</span> 嵌入實際貼文卡</td>
+        </tr>
+
+        <tr class="category-row"><td colspan="3">影片展示</td></tr>
+        <tr>
+          <td class="col-label">首頁 Banner 影片</td>
+          <td class="col-basic"><span class="cross">✗</span> 不含</td>
+          <td class="col-full"><span class="check">✓</span> YouTube 或自架影片</td>
+        </tr>
+        <tr>
+          <td class="col-label">精選影片連結區</td>
+          <td class="col-basic"><span class="cross">✗</span> 不含</td>
+          <td class="col-full"><span class="check">✓</span> 包含</td>
+        </tr>
+
+        <tr class="category-row"><td colspan="3">後台管理</td></tr>
+        <tr>
+          <td class="col-label">車輛管理後台</td>
+          <td class="col-basic"><span class="check">✓</span> 基本</td>
+          <td class="col-full"><span class="check">✓</span> 完整（草稿、上架、狀態）</td>
+        </tr>
+        <tr>
+          <td class="col-label">carsmeet 官網車輛匯入</td>
+          <td class="col-basic"><span class="check">✓</span> 包含</td>
+          <td class="col-full"><span class="check">✓</span> 包含</td>
+        </tr>
+        <tr>
+          <td class="col-label">Email 詢問通知</td>
+          <td class="col-basic"><span class="cross">✗</span> 不含</td>
+          <td class="col-full"><span class="check">✓</span> 包含</td>
+        </tr>
+        <tr>
+          <td class="col-label">版型、主題色切換</td>
+          <td class="col-basic"><span class="cross">✗</span> 不含</td>
+          <td class="col-full"><span class="check">✓</span> 包含</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="note">※ 基礎版適合初期測試市場；完整版提供完整的精品車商數位體驗。功能可依付費方案彈性開啟。</p>
+  </div>
+
+  <!-- ─── TABLE 3: Pricing ─── -->
+  <div>
+    <div class="section-title">收費方案</div>
+
+    <div class="pricing-row">
+
+      <!-- Basic -->
+      <div class="pricing-card basic">
+        <div class="pricing-card-header">
+          <div class="pricing-plan-name">基礎版</div>
+          <div class="pricing-amount">NT$30,000<span class="pricing-unit">一次性費用</span></div>
+          <div class="pricing-sub">不含主機年費</div>
+        </div>
+        <div class="pricing-card-body">
+          <ul>
+            <li><span class="check">✓</span> 官方帳號視覺設計（IG / FB / LINE 封面）</li>
+            <li><span class="check">✓</span> 網域名稱申請與設定</li>
+            <li><span class="check">✓</span> 主機架設與環境建置</li>
+            <li><span class="check">✓</span> 正式上線支援</li>
+            <li><span class="check">✓</span> 第一個月排版調整免費</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Full -->
+      <div class="pricing-card full">
+        <div class="pricing-card-header">
+          <div class="pricing-plan-name">完整版</div>
+          <div class="pricing-amount">NT$60,000<span class="pricing-unit">一次性費用</span></div>
+          <div class="pricing-sub">不含主機年費</div>
+        </div>
+        <div class="pricing-card-body">
+          <ul>
+            <li><span class="check">✓</span> 官方帳號視覺設計（IG / FB / LINE 封面）</li>
+            <li><span class="check">✓</span> 網域名稱申請與設定</li>
+            <li><span class="check">✓</span> 主機架設與環境建置</li>
+            <li><span class="check">✓</span> 正式上線支援</li>
+            <li><span class="check">✓</span> 第一個月排版調整免費</li>
+            <li><span class="check">✓</span> 全功能解鎖（比車、賣車表單、影片 Banner 等）</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Hosting cost compare -->
+    <div class="hosting-row">
+      <div class="hosting-box ours">
+        <div class="hosting-box-label">我們自架主機（年費）</div>
+        <div class="hosting-box-price">NT$8,000<span style="font-size:18px;font-weight:400;margin-left:4px;color:#aac4ff;">/ 年</span></div>
+        <div class="hosting-box-detail">含非熱門網域・穩定自管伺服器</div>
+      </div>
+      <div class="hosting-box them">
+        <div class="hosting-box-label">雲端主機（如 Serverzoo）</div>
+        <div class="hosting-box-price">~NT$30,000<span style="font-size:18px;font-weight:400;margin-left:4px;color:#aaa;">/ 年</span></div>
+        <div class="hosting-box-detail">規格依方案而定・另需自行管理</div>
+      </div>
+    </div>
+
+    <p class="note">※ 一次性費用為建置成本，後續依合約每年收取主機年費 NT$8,000（含非熱門網域，如 .com / .tw 等；熱門或特殊網域另議）。第一個月內的排版與文案調整均免費，後續客製調整依需求另議。</p>
+
+    <!-- Support scope -->
+    <div class="scope-row">
+      <div class="scope-box included">
+        <div class="scope-box-header">年費含蓋範圍</div>
+        <div class="scope-box-body">
+          <ul>
+            <li><span class="check">✓</span> 主機正常運作與監控</li>
+            <li><span class="check">✓</span> 網域年度續約</li>
+            <li><span class="check">✓</span> 平台 Bug 修復（功能異常非人為操作造成）</li>
+            <li><span class="check">✓</span> 系統安全性更新</li>
+          </ul>
+        </div>
+      </div>
+      <div class="scope-box extra">
+        <div class="scope-box-header">需另外報價</div>
+        <div class="scope-box-body">
+          <ul>
+            <li><span class="cross">✗</span> 新增功能或頁面</li>
+            <li><span class="cross">✗</span> 版面重新設計或改色</li>
+            <li><span class="cross">✗</span> 協助輸入車輛資料或上傳照片</li>
+            <li><span class="cross">✗</span> 後台操作教學（超過初次說明）</li>
+            <li><span class="cross">✗</span> 第三方系統整合</li>
+          </ul>
+          <div class="scope-note">車輛新增、價格更新、照片管理等日常內容，請自行透過後台操作。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<button id="export-btn" onclick="exportImage()">匯出圖片</button>
+
+<script>
+async function exportImage() {
+  const btn = document.getElementById('export-btn');
+  btn.textContent = '產生中…';
+  btn.disabled = true;
+  btn.style.display = 'none';
+
+  const canvas = await html2canvas(document.querySelector('.page'), {
+    scale: 2,
+    backgroundColor: '#f5f5f5',
+    useCORS: true,
+    scrollY: -window.scrollY,
+  });
+
+  btn.style.display = '';
+  btn.textContent = '匯出圖片';
+  btn.disabled = false;
+
+  const link = document.createElement('a');
+  link.download = 'pricing-comparison.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+</script>
+</body>
+</html>
