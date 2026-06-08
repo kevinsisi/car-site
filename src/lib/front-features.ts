@@ -1,4 +1,11 @@
 import type { SiteSettings } from './settings';
+import {
+  hasFeature,
+  FEATURE_COMPARE, FEATURE_SELL_INQUIRY, FEATURE_CONTACT_PAGE,
+  FEATURE_ABOUT_PAGE, FEATURE_SOCIAL_ICONS, FEATURE_DIRECT_CONTACT,
+  FEATURE_HERO_VIDEOS, FEATURE_VIDEO_LINKS,
+  DEFAULT_FEATURE_MASK, ALL_FEATURES_MASK,
+} from './features';
 
 export interface FrontFeatures {
   compare: boolean;
@@ -18,15 +25,18 @@ export interface PublicNavItem {
 }
 
 export function resolveFrontFeatures(settings: SiteSettings): FrontFeatures {
+  const license = settings.featureLicenseMask ?? ALL_FEATURES_MASK;
+  const admin   = settings.featureMask ?? DEFAULT_FEATURE_MASK;
+  const mask    = license & admin;
   return {
-    compare: settings.featureCompareEnabled !== false,
-    sellInquiry: settings.featureSellInquiryEnabled !== false,
-    contactPage: settings.featureContactPageEnabled !== false,
-    aboutPage: settings.featureAboutPageEnabled !== false,
-    socialIcons: settings.featureSocialIconsEnabled !== false,
-    directContact: settings.featureDirectContactEnabled !== false,
-    heroVideos: settings.videoSectionEnabled === true,
-    videoLinks: settings.videoLinksEnabled === true,
+    compare:       hasFeature(mask, FEATURE_COMPARE),
+    sellInquiry:   hasFeature(mask, FEATURE_SELL_INQUIRY),
+    contactPage:   hasFeature(mask, FEATURE_CONTACT_PAGE),
+    aboutPage:     hasFeature(mask, FEATURE_ABOUT_PAGE),
+    socialIcons:   hasFeature(mask, FEATURE_SOCIAL_ICONS),
+    directContact: hasFeature(mask, FEATURE_DIRECT_CONTACT),
+    heroVideos:    hasFeature(mask, FEATURE_HERO_VIDEOS),
+    videoLinks:    hasFeature(mask, FEATURE_VIDEO_LINKS),
   };
 }
 
