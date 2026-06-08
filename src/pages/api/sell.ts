@@ -4,6 +4,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { createSellInquiry } from '@/lib/sell-inquiries';
 import { getSettings } from '@/lib/settings';
+import { hasFeature, FEATURE_SELL_INQUIRY } from '@/lib/features';
 
 // In-memory rate limit: max 5 per IP per hour
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -31,6 +32,14 @@ export const POST: APIRoute = async ({ request }) => {
   if (!checkRateLimit(ip)) {
     return new Response(JSON.stringify({ success: false, error: '請稍後再試' }), {
       status: 429,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+
+  const settings = await getSettings();
+  if (!hasFeature(settings.featureLicenseMask & settings.featureMask, FEATURE_SELL_INQUIRY)) {
+    return new Response(JSON.stringify({ success: false, error: '此功能目前未開放' }), {
+      status: 403,
       headers: { 'content-type': 'application/json' },
     });
   }
@@ -82,7 +91,6 @@ export const POST: APIRoute = async ({ request }) => {
   await createSellInquiry({ brand, model, year, mileage, exteriorColor, notes, contactInfo, contactName, photoUrls });
 
   // Send email notification (best-effort)
-  const settings = await getSettings();
   const notifyTo = settings.notificationEmail || settings.gmailUser;
   if (settings.gmailUser && settings.gmailAppPassword && notifyTo) {
     try {
