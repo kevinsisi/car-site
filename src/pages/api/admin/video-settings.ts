@@ -82,9 +82,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     sanitizedHeroVideos = await sanitizeHeroVideos(body.heroVideos);
     updates.heroVideos = sanitizedHeroVideos;
   }
-  if (typeof body.videoSectionEnabled === 'boolean') updates.videoSectionEnabled = body.videoSectionEnabled;
   if (body.videoSectionPosition !== undefined) updates.videoSectionPosition = videoPositions.has(String(body.videoSectionPosition)) ? String(body.videoSectionPosition) : 'below-hero';
-  if (typeof body.videoLinksEnabled === 'boolean') updates.videoLinksEnabled = body.videoLinksEnabled;
   if (body.videoLinksSectionTitle !== undefined) updates.videoLinksSectionTitle = String(body.videoLinksSectionTitle || '');
 
   await setSettings(updates);
@@ -98,9 +96,7 @@ export const GET: APIRoute = async ({ cookies }) => {
   const settings = await getSettings();
   return Response.json({
     heroVideos: settings.heroVideos,
-    videoSectionEnabled: settings.videoSectionEnabled,
     videoSectionPosition: settings.videoSectionPosition,
-    videoLinksEnabled: settings.videoLinksEnabled,
     videoLinksSectionTitle: settings.videoLinksSectionTitle,
   });
 };
