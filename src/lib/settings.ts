@@ -4,6 +4,7 @@ import { siteSettings, type ImportBehavior } from '@/db/schema';
 import { defaultDetailSpecFields } from './detail-spec-fields';
 import { sanitizeImageUrl, sanitizePublicHref } from './safe-url';
 import { resolveStyle, resolveTemplate, type StyleId, type TemplateId } from './theme';
+import { DEFAULT_FEATURE_MASK, ALL_FEATURES_MASK } from './features';
 
 export type GalleryMode = 'lightbox' | 'slider' | 'thumbnail-strip' | 'grid';
 
@@ -127,16 +128,10 @@ export interface SiteSettings {
   socialIcons: SocialIconsMap;
   galleryMode: GalleryMode;
   heroVideos: HeroVideo[];
-  videoSectionEnabled: boolean;
   videoSectionPosition: VideoSectionPosition;
-  videoLinksEnabled: boolean;
   videoLinksSectionTitle: string;
-  featureCompareEnabled: boolean;
-  featureSellInquiryEnabled: boolean;
-  featureContactPageEnabled: boolean;
-  featureAboutPageEnabled: boolean;
-  featureSocialIconsEnabled: boolean;
-  featureDirectContactEnabled: boolean;
+  featureMask: number;
+  featureLicenseMask: number;
   notificationEmail: string;
   gmailUser: string;
   gmailAppPassword: string;
@@ -179,16 +174,10 @@ const defaults: SiteSettings = {
   socialIcons: {},
   galleryMode: 'lightbox',
   heroVideos: [],
-  videoSectionEnabled: false,
   videoSectionPosition: 'below-hero',
-  videoLinksEnabled: false,
   videoLinksSectionTitle: '精選影片',
-  featureCompareEnabled: true,
-  featureSellInquiryEnabled: true,
-  featureContactPageEnabled: true,
-  featureAboutPageEnabled: true,
-  featureSocialIconsEnabled: true,
-  featureDirectContactEnabled: true,
+  featureMask: DEFAULT_FEATURE_MASK,
+  featureLicenseMask: ALL_FEATURES_MASK,
   notificationEmail: '',
   gmailUser: '',
   gmailAppPassword: '',
@@ -267,20 +256,20 @@ export async function getSettings(): Promise<SiteSettings> {
         return [];
       }
     })(),
-    videoSectionEnabled: map.get('videoSectionEnabled') === 'true',
     videoSectionPosition: (() => {
       const v = map.get('videoSectionPosition');
       if (v === 'above-header' || v === 'below-featured' || v === 'above-footer') return v as VideoSectionPosition;
       return 'below-hero' as VideoSectionPosition;
     })(),
-    videoLinksEnabled: map.get('videoLinksEnabled') === 'true',
     videoLinksSectionTitle: map.get('videoLinksSectionTitle') || defaults.videoLinksSectionTitle,
-    featureCompareEnabled: map.get('featureCompareEnabled') !== 'false',
-    featureSellInquiryEnabled: map.get('featureSellInquiryEnabled') !== 'false',
-    featureContactPageEnabled: map.get('featureContactPageEnabled') !== 'false',
-    featureAboutPageEnabled: map.get('featureAboutPageEnabled') !== 'false',
-    featureSocialIconsEnabled: map.get('featureSocialIconsEnabled') !== 'false',
-    featureDirectContactEnabled: map.get('featureDirectContactEnabled') !== 'false',
+    featureMask: (() => {
+      const raw = Number.parseInt(map.get('featureMask') ?? '', 10);
+      return Number.isFinite(raw) && raw >= 0 ? raw : DEFAULT_FEATURE_MASK;
+    })(),
+    featureLicenseMask: (() => {
+      const raw = Number.parseInt(map.get('featureLicenseMask') ?? '', 10);
+      return Number.isFinite(raw) && raw >= 0 ? raw : ALL_FEATURES_MASK;
+    })(),
     notificationEmail: map.get('notificationEmail') || '',
     gmailUser: map.get('gmailUser') || '',
     gmailAppPassword: map.get('gmailAppPassword') || '',
