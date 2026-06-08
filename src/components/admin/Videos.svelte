@@ -8,7 +8,6 @@
   export let canCarousel: boolean;
   export let canLinks: boolean;
 
-  let videoSectionEnabled = settings.videoSectionEnabled ?? false;
   let videoSectionPosition = settings.videoSectionPosition ?? 'below-hero';
   let heroVideos: HeroVideo[] = (settings.heroVideos ?? []).map((v) => ({ ...v }));
   let carouselDirty = false;
@@ -17,7 +16,6 @@
   let pollTimer: ReturnType<typeof setInterval> | null = null;
 
   let links: VideoLinkView[] = [...videoLinks];
-  let videoLinksEnabled = settings.videoLinksEnabled ?? false;
   let videoLinksSectionTitle = settings.videoLinksSectionTitle ?? '精選影片';
   let linksDirty = false;
   let linksSaving = false;
@@ -51,7 +49,7 @@
     const res = await fetch('/api/admin/video-settings', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ videoSectionEnabled, videoSectionPosition, heroVideos: JSON.stringify(heroVideos) }),
+      body: JSON.stringify({ videoSectionPosition, heroVideos: JSON.stringify(heroVideos) }),
     });
     carouselSaving = false;
     const json = await res.json().catch(() => null);
@@ -137,7 +135,7 @@
     const settingsRes = await fetch('/api/admin/video-settings', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ videoLinksEnabled, videoLinksSectionTitle }),
+      body: JSON.stringify({ videoLinksSectionTitle }),
     });
     const res = settingsRes.ok ? await fetch('/api/admin/video-links', {
       method: 'POST',
@@ -162,13 +160,6 @@
     <section class="settings-section">
       <h2>Banner 影片輪播</h2>
       <div class="form-group" style="margin-bottom:1rem">
-        <label class="checkbox-row">
-          <input type="checkbox" bind:checked={videoSectionEnabled} on:change={() => (carouselDirty = true)} />
-          啟用影片輪播區塊
-        </label>
-      </div>
-      {#if videoSectionEnabled}
-        <div class="form-group" style="margin-bottom:1rem">
           <label>顯示位置</label>
           <select bind:value={videoSectionPosition} on:change={() => (carouselDirty = true)} class="form-select">
             <option value="above-header">Header 上方整條橫幅</option>
@@ -204,7 +195,6 @@
           {/each}
         </div>
         <button type="button" class="btn-add" on:click={addVideo}>＋ 新增影片</button>
-      {/if}
       <div class="form-actions" style="margin-top:1rem">
         <button type="button" class="btn-primary" on:click={saveCarousel} disabled={carouselSaving || !carouselDirty}>
           {carouselSaving ? '儲存中...' : '儲存'}
@@ -218,10 +208,6 @@
     <section class="settings-section">
       <h2>底部影片連結</h2>
       <div class="video-options">
-        <label class="checkbox-row">
-          <input type="checkbox" bind:checked={videoLinksEnabled} on:change={() => (linksDirty = true)} />
-          啟用底部影片連結區塊
-        </label>
         <label class="title-field">
           <span>區塊標題</span>
           <input type="text" bind:value={videoLinksSectionTitle} on:input={() => (linksDirty = true)} class="form-input" placeholder="精選影片" />
