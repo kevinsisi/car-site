@@ -86,10 +86,13 @@ function instagramEmbedUrl(url: string): string | null {
     let lastFrame = performance.now();
 
     const activeIndex = () => {
-      const left = track.scrollLeft;
+      const viewCenter = track.scrollLeft + track.clientWidth / 2;
       return items.reduce((closest, item, index) => {
-        const currentDistance = Math.abs(item.offsetLeft - left);
-        const closestDistance = Math.abs(items[closest].offsetLeft - left);
+        const itemCenter = item.offsetLeft + item.offsetWidth / 2;
+        const currentDistance = Math.abs(itemCenter - viewCenter);
+        const closestItem = items[closest];
+        const closestCenter = closestItem.offsetLeft + closestItem.offsetWidth / 2;
+        const closestDistance = Math.abs(closestCenter - viewCenter);
         return currentDistance < closestDistance ? index : closest;
       }, 0);
     };
@@ -102,7 +105,8 @@ function instagramEmbedUrl(url: string): string | null {
 
     const scrollToIndex = (index: number) => {
       const target = items[(index + items.length) % items.length];
-      track.scrollTo({ left: target.offsetLeft, behavior: 'auto' });
+      const itemCenter = target.offsetLeft + target.offsetWidth / 2;
+      track.scrollTo({ left: itemCenter - track.clientWidth / 2, behavior: 'auto' });
     };
 
     // Click/tap should pause the carousel. Only a real drag/swipe resumes it.
