@@ -9,10 +9,13 @@ if (!await hasAnyUsers()) return Astro.redirect('/admin/setup');
 const user = await getSession(Astro.cookies);
 if (!user) return Astro.redirect('/admin/login');
 const isForced = Astro.url.searchParams.get('force') === '1';
-const accounts = await db
-  .select({ id: adminUsers.id, username: adminUsers.username, createdAt: adminUsers.createdAt })
-  .from(adminUsers)
-  .orderBy(asc(adminUsers.createdAt));
+const isSuper = user.role === 'superadmin';
+const accounts = isSuper
+  ? await db
+      .select({ id: adminUsers.id, username: adminUsers.username, createdAt: adminUsers.createdAt })
+      .from(adminUsers)
+      .orderBy(asc(adminUsers.createdAt))
+  : [];
 ---
 
 <AdminLayout user={user}>
@@ -43,38 +46,40 @@ const accounts = await db
     </form>
   </section>
 
-  <section class="admin-panel">
-    <div class="hero-panel">
-      <div>
-        <h2>管理員帳號</h2>
-        <p>所有可登入後台的帳號。至少保留一個帳號；無法刪除目前登入中的帳號。</p>
+  {isSuper && (
+    <section class="admin-panel">
+      <div class="hero-panel">
+        <div>
+          <h2>管理員帳號</h2>
+          <p>所有可登入後台的帳號。至少保留一個帳號；無法刪除目前登入中的帳號。</p>
+        </div>
+        <span class="account-current">總共 <strong id="account-count">{accounts.length}</strong> 個</span>
       </div>
-      <span class="account-current">總共 <strong id="account-count">{accounts.length}</strong> 個</span>
-    </div>
 
-    <ul class="account-list" id="account-list">
-      {accounts.map((acc) => (
-        <li class="account-item" data-id={acc.id}>
-          <div>
-            <strong>{acc.username}</strong>
-            {acc.id === user.id && <span class="account-badge">目前登入</span>}
-            <small>建立於 {new Date(acc.createdAt).toLocaleDateString('zh-TW')}</small>
-          </div>
-          {acc.id !== user.id && (
-            <button type="button" class="row-button--danger account-delete" data-id={acc.id} data-username={acc.username}>刪除帳號</button>
-          )}
-        </li>
-      ))}
-    </ul>
+      <ul class="account-list" id="account-list">
+        {accounts.map((acc) => (
+          <li class="account-item" data-id={acc.id}>
+            <div>
+              <strong>{acc.username}</strong>
+              {acc.id === user.id && <span class="account-badge">目前登入</span>}
+              <small>建立於 {new Date(acc.createdAt).toLocaleDateString('zh-TW')}</small>
+            </div>
+            {acc.id !== user.id && (
+              <button type="button" class="row-button--danger account-delete" data-id={acc.id} data-username={acc.username}>刪除帳號</button>
+            )}
+          </li>
+        ))}
+      </ul>
 
-    <h3>新增管理員</h3>
-    <form id="new-account-form" class="settings-form" autocomplete="off">
-      <label>帳號 <input name="username" required minlength="3" placeholder="英文字母、數字、底線、點、短橫線" /></label>
-      <label>密碼 <input name="password" type="password" autocomplete="new-password" required minlength="8" /></label>
-      <p class="form-hint">建立後，新帳號就能用上述帳密登入後台。</p>
-      <button class="admin-button" type="submit">建立帳號</button>
-    </form>
-  </section>
+      <h3>新增管理員</h3>
+      <form id="new-account-form" class="settings-form" autocomplete="off">
+        <label>帳號 <input name="username" required minlength="3" placeholder="英文字母、數字、底線、點、短橫線" /></label>
+        <label>密碼 <input name="password" type="password" autocomplete="new-password" required minlength="8" /></label>
+        <p class="form-hint">建立後，新帳號就能用上述帳密登入後台。</p>
+        <button class="admin-button" type="submit">建立帳號</button>
+      </form>
+    </section>
+  )}
 
   <div id="account-toast-root"></div>
 

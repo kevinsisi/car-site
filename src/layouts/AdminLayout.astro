@@ -54,7 +54,7 @@ const canSeeAnySettings = isSuper || settingsPerms.some((p) => hasPermission(per
         <span></span><span></span><span></span>
       </button>
       <span class="admin-header__title">{settings.siteName || '後台管理'}</span>
-      <span class="admin-header__user">{user.username}</span>
+      {isSuper && <span class="admin-header__user">{user.username}</span>}
     </header>
 
     <!-- Sidebar overlay (mobile) -->
