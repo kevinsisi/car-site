@@ -358,22 +358,23 @@
     </div>
   </details>
 
-  <details class="settings-section">
+  <details class="settings-section" open>
     <summary>前台功能開關</summary>
     <div class="settings-section__body">
-      <p class="form-hint">控制公開網站要顯示哪些入口與互動功能。關閉後不會讓頁面 404，只會讓相關入口、按鈕或表單依情境收起。鎖頭圖示表示該功能未在此方案中授權。</p>
+      <p class="form-hint">控制公開網站要顯示哪些入口與互動功能。關閉後不會讓頁面 404，只會讓相關入口、按鈕或表單依情境收起。</p>
       {#each FEATURE_LIST as f}
         {@const licensed = hasBit(licenseMask, f.bit)}
-        <label class="checkbox-row">
-          <input
-            type="checkbox"
-            disabled={!isSuperadmin && !licensed}
-            checked={isSuperadmin ? hasBit(form.featureMask, f.bit) : (licensed && hasBit(form.featureMask, f.bit))}
-            onchange={(e) => { form.featureMask = toggleBit(form.featureMask, f.bit, (e.currentTarget as HTMLInputElement).checked); }}
-          />
-          {f.label}
-          {#if !licensed && !isSuperadmin}<span style="margin-left:.4em;opacity:.55" title="此功能未在您的方案中啟用">🔒</span>{/if}
-        </label>
+        {#if isSuperadmin || licensed}
+          <label class="checkbox-row">
+            <input
+              type="checkbox"
+              disabled={!isSuperadmin && !licensed}
+              checked={isSuperadmin ? hasBit(form.featureMask, f.bit) : (licensed && hasBit(form.featureMask, f.bit))}
+              onchange={(e) => { form.featureMask = toggleBit(form.featureMask, f.bit, (e.currentTarget as HTMLInputElement).checked); }}
+            />
+            {f.label}
+          </label>
+        {/if}
       {/each}
     </div>
   </details>
