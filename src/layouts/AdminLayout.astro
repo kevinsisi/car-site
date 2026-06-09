@@ -263,7 +263,7 @@ const canSeeAnySettings = isSuper || settingsPerms.some((p) => hasPermission(per
 .admin-overlay.is-visible { display: block; }
 
 /* ── Main content ── */
-.admin-main { margin-left: 15.5rem; min-height: 100vh; padding: clamp(1.25rem, 3vw, 2.25rem); }
+.admin-main { margin-left: 15.5rem; min-height: 100vh; padding: clamp(1.25rem, 3vw, 2.25rem); display: grid; gap: 1.5rem; align-content: start; }
 
 /* ── Mobile ── */
 @media (max-width: 768px) {
