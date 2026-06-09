@@ -367,12 +367,12 @@
         <label class="checkbox-row">
           <input
             type="checkbox"
-            disabled={!licensed}
-            checked={licensed && hasBit(form.featureMask, f.bit)}
+            disabled={!isSuperadmin && !licensed}
+            checked={isSuperadmin ? hasBit(form.featureMask, f.bit) : (licensed && hasBit(form.featureMask, f.bit))}
             onchange={(e) => { form.featureMask = toggleBit(form.featureMask, f.bit, (e.currentTarget as HTMLInputElement).checked); }}
           />
           {f.label}
-          {#if !licensed}<span style="margin-left:.4em;opacity:.55" title="此功能未在您的方案中啟用">🔒</span>{/if}
+          {#if !licensed && !isSuperadmin}<span style="margin-left:.4em;opacity:.55" title="此功能未在您的方案中啟用">🔒</span>{/if}
         </label>
       {/each}
     </div>

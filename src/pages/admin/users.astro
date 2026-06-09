@@ -14,13 +14,18 @@ if (user.role !== 'superadmin' && !hasPermission(user.permissions, PERMISSIONS.U
   return Astro.redirect('/admin');
 }
 
-const users = await db.select({
+const allUsers = await db.select({
   id: adminUsers.id,
   username: adminUsers.username,
   role: adminUsers.role,
   permissions: adminUsers.permissions,
   createdAt: adminUsers.createdAt,
 }).from(adminUsers).orderBy(asc(adminUsers.createdAt));
+
+// Non-superadmin users must not see superadmin accounts
+const users = user.role === 'superadmin'
+  ? allUsers
+  : allUsers.filter(u => u.role !== 'superadmin');
 
 // Pass permission bits as plain object (Svelte runs in browser, can't import server modules)
 const permissionBits = Object.fromEntries(
