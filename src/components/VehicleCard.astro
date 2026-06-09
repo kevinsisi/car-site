@@ -31,14 +31,12 @@ const specs = [
       ) : vehicle.monthlyRecommended ? (
         <span class="vehicle-badge">本月推薦</span>
       ) : null}
-      {vehicle.brandIconUrl && (
-        <span class="vehicle-card__brand-badge" aria-hidden="true">
-          <BrandIcon iconUrl={vehicle.brandIconUrl} alt={vehicle.brandDisplayName} size={32} />
-        </span>
-      )}
     </div>
       <div class="vehicle-card__body">
-        <p class="eyebrow">{vehicle.brandDisplayName}</p>
+        <div class="vehicle-card__eyebrow-row">
+          {vehicle.brandIconUrl && <BrandIcon iconUrl={vehicle.brandIconUrl} alt="" size={18} />}
+          <p class="eyebrow">{vehicle.brandDisplayName}</p>
+        </div>
         <h2>{vehicle.cardTitle}</h2>
         <ul class="spec-list" aria-label="車輛資訊">
           {specs.map((spec) => (

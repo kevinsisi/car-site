@@ -182,8 +182,9 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
 .home-brand-quick a { flex: 0 0 auto; min-height: 2.45rem; display: inline-flex; align-items: center; gap: 0.42rem; border: 1px solid color-mix(in srgb, var(--line) 72%, transparent); border-radius: 999px; padding: 0 0.75rem; background: color-mix(in srgb, var(--surface) 74%, transparent); color: var(--muted); font-size: 0.84rem; font-weight: 780; }
 .home-brand-quick a:hover { color: var(--accent-strong); border-color: color-mix(in srgb, var(--accent) 48%, var(--line)); background: var(--surface); transform: translateY(-1px); }
 .home-brand-quick__all { color: var(--accent-strong) !important; background: color-mix(in srgb, var(--accent) 11%, var(--surface)) !important; }
-.home-brand-quick__mark { width: 1.35rem; height: 1.35rem; display: inline-grid; place-items: center; border-radius: 999px; background: color-mix(in srgb, var(--surface-soft) 82%, transparent); color: var(--accent-strong); font-size: 0.72rem; font-weight: 900; }
-.home-brand-quick__mark img { width: 1.05rem; height: 1.05rem; object-fit: contain; }
+.home-brand-quick__mark { width: 1.85rem; height: 1.85rem; display: inline-grid; place-items: center; border-radius: 999px; background: color-mix(in srgb, var(--surface-soft) 82%, transparent); border: 1px solid color-mix(in srgb, var(--line) 60%, transparent); color: var(--accent-strong); font-size: 0.72rem; font-weight: 900; }
+.home-brand-quick__mark img { width: 1.35rem; height: 1.35rem; object-fit: contain; }
+.home-brand-quick a:hover .home-brand-quick__mark { border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); background: color-mix(in srgb, var(--surface-soft) 90%, transparent); }
 .home-brand-quick strong { min-width: 1.35rem; height: 1.35rem; display: inline-grid; place-items: center; border-radius: 999px; background: color-mix(in srgb, var(--surface-soft) 80%, transparent); color: color-mix(in srgb, var(--muted) 72%, transparent); font-size: 0.72rem; }
 
 .section-heading,
@@ -277,8 +278,9 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
 .vehicle-share svg { width: 1.715rem; height: 1.715rem; }
 .vehicle-share:hover { opacity: 1; transform: translateY(-1px); }
 
-.vehicle-card__brand-badge { position: absolute; bottom: 8px; right: 8px; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; background: rgba(255, 255, 255, 0.92); border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,0.18); padding: 4px; }
-.vehicle-card__brand-badge .brand-icon { width: 28px; height: 28px; }
+.vehicle-card__eyebrow-row { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.1rem; }
+.vehicle-card__eyebrow-row .eyebrow { margin: 0; }
+.vehicle-card__eyebrow-row .brand-icon { flex-shrink: 0; width: 1.15rem; height: 1.15rem; }
 
 .vehicle-card__body { padding: 1.25rem; }
 
@@ -338,7 +340,7 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
 .location-section__copy p { margin: 0; color: var(--text); font-size: 1.04rem; font-weight: 760; line-height: 1.5; }
 .location-section__copy span { color: var(--muted); line-height: 1.5; }
 .location-section__copy a { width: max-content; margin-top: 0.35rem; color: var(--accent-strong); font-weight: 820; }
-.location-section__map { width: 100%; min-height: 20rem; border: 0; border-radius: 1rem; filter: saturate(0.78) contrast(0.94); background: var(--surface-soft); }
+.location-section__map { width: 100%; min-height: 20rem; border: 0; border-radius: 1rem; filter: saturate(0.78) contrast(0.94); background: var(--surface-soft); pointer-events: none; }
 
 .detail-page { padding-bottom: 6rem; }
 .detail-pager { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: stretch; margin: 3rem clamp(1.25rem, 5vw, 6rem) 0; padding: 1.4rem; border: 1px solid var(--line); border-radius: 1.6rem; background: color-mix(in srgb, var(--surface) 84%, transparent); }
