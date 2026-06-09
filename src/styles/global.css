@@ -182,10 +182,8 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
 .home-brand-quick a { flex: 0 0 auto; min-height: 2.45rem; display: inline-flex; align-items: center; gap: 0.42rem; border: 1px solid color-mix(in srgb, var(--line) 72%, transparent); border-radius: 999px; padding: 0 0.75rem; background: color-mix(in srgb, var(--surface) 74%, transparent); color: var(--muted); font-size: 0.84rem; font-weight: 780; }
 .home-brand-quick a:hover { color: var(--accent-strong); border-color: color-mix(in srgb, var(--accent) 48%, var(--line)); background: var(--surface); transform: translateY(-1px); }
 .home-brand-quick__all { color: var(--accent-strong) !important; background: color-mix(in srgb, var(--accent) 11%, var(--surface)) !important; }
-.home-brand-quick__mark { width: 1.85rem; height: 1.85rem; display: inline-grid; place-items: center; border-radius: 999px; background: color-mix(in srgb, var(--surface-soft) 82%, transparent); border: 1px solid color-mix(in srgb, var(--line) 60%, transparent); color: var(--accent-strong); font-size: 0.72rem; font-weight: 900; }
-.home-brand-quick__mark img { width: 1.35rem; height: 1.35rem; object-fit: contain; }
-.home-brand-quick a:hover .home-brand-quick__mark { border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); background: color-mix(in srgb, var(--surface-soft) 90%, transparent); }
-.home-brand-quick strong { min-width: 1.35rem; height: 1.35rem; display: inline-grid; place-items: center; border-radius: 999px; background: color-mix(in srgb, var(--surface-soft) 80%, transparent); color: color-mix(in srgb, var(--muted) 72%, transparent); font-size: 0.72rem; }
+.home-brand-quick__item img { width: 1.15rem; height: 1.15rem; object-fit: contain; flex-shrink: 0; }
+.home-brand-quick__count { color: color-mix(in srgb, var(--muted) 65%, transparent); font-size: 0.76rem; font-weight: 600; }
 
 .section-heading,
 .page-hero { padding: clamp(3rem, 7vw, 6rem) clamp(1.25rem, 5vw, 6rem) 2rem; }

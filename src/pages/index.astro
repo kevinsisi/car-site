@@ -51,11 +51,9 @@ const quickBrands = brands
       <a class="home-brand-quick__all" href="/cars">全部車款</a>
       {quickBrands.map((brand) => (
         <a href={`/cars?brand=${brand.urlSlug}`} class="home-brand-quick__item">
-          <span class="home-brand-quick__mark">
-            {brand.iconUrl ? <img src={brand.iconUrl} alt="" width="22" height="22" loading="lazy" /> : brand.displayName.slice(0, 1)}
-          </span>
+          {brand.iconUrl && <img src={brand.iconUrl} alt="" width="18" height="18" loading="lazy" />}
           <span>{brand.displayName}</span>
-          <strong>{brand.count}</strong>
+          <span class="home-brand-quick__count">{brand.count}</span>
         </a>
       ))}
     </nav>
