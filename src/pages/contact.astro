@@ -7,7 +7,8 @@ import { resolveFrontFeatures } from '@/lib/front-features';
 const settings = await getSettings();
 const features = resolveFrontFeatures(settings);
 const mapQuery = settings.storeAddress ? encodeURIComponent(settings.storeAddress) : '';
-const mapHref = mapQuery ? `https://www.google.com/maps/search/?api=1&query=${mapQuery}` : '#';
+const mapHrefApple = mapQuery ? `maps://maps.apple.com/?daddr=${mapQuery}&dirflg=d` : '#';
+const mapHrefGoogle = mapQuery ? `https://www.google.com/maps/dir/?api=1&destination=${mapQuery}&travelmode=driving` : '#';
 const mapEmbedSrc = mapQuery ? `https://www.google.com/maps?q=${mapQuery}&output=embed` : '';
 const contactItems = [
   ...(features.directContact && settings.phoneNumber ? [{
@@ -58,7 +59,22 @@ const contactItems = [
         <h2 id="contact-location-title">實體門市 / 預約賞車</h2>
         <p>{settings.storeAddress}</p>
         <span>{settings.businessHours || (features.directContact ? '採預約制賞車，來訪前請先以 LINE 或電話確認時間。' : '採預約制賞車。')}</span>
-        <a href={mapHref} target="_blank" rel="noopener noreferrer">在 Google 地圖開啟</a>
+        <a
+          id="nav-link"
+          href={mapHrefGoogle}
+          data-apple={mapHrefApple}
+          data-google={mapHrefGoogle}
+          target="_blank"
+          rel="noopener noreferrer"
+        >開車導航過來</a>
+        <script>
+          const link = document.getElementById('nav-link');
+          if (link) {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+              (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+            if (isIOS) link.href = link.dataset.apple;
+          }
+        </script>
       </div>
       {mapEmbedSrc && (
         <iframe
