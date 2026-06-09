@@ -358,26 +358,24 @@
     </div>
   </details>
 
+  {#if isSuperadmin}
   <details class="settings-section" open>
     <summary>前台功能開關</summary>
     <div class="settings-section__body">
       <p class="form-hint">控制公開網站要顯示哪些入口與互動功能。關閉後不會讓頁面 404，只會讓相關入口、按鈕或表單依情境收起。</p>
       {#each FEATURE_LIST as f}
-        {@const licensed = hasBit(licenseMask, f.bit)}
-        {#if isSuperadmin || licensed}
-          <label class="checkbox-row">
-            <input
-              type="checkbox"
-              disabled={!isSuperadmin && !licensed}
-              checked={isSuperadmin ? hasBit(form.featureMask, f.bit) : (licensed && hasBit(form.featureMask, f.bit))}
-              onchange={(e) => { form.featureMask = toggleBit(form.featureMask, f.bit, (e.currentTarget as HTMLInputElement).checked); }}
-            />
-            {f.label}
-          </label>
-        {/if}
+        <label class="checkbox-row">
+          <input
+            type="checkbox"
+            checked={hasBit(form.featureMask, f.bit)}
+            onchange={(e) => { form.featureMask = toggleBit(form.featureMask, f.bit, (e.currentTarget as HTMLInputElement).checked); }}
+          />
+          {f.label}
+        </label>
       {/each}
     </div>
   </details>
+  {/if}
 
   {#if isSuperadmin}
   <details class="settings-section">
