@@ -21,7 +21,6 @@ export const vehicles = sqliteTable(
     featuresJson: text('features_json').notNull().default('[]'),
     monthlyRecommended: integer('monthly_recommended', { mode: 'boolean' }).notNull().default(false),
     showSoldCase: integer('show_sold_case', { mode: 'boolean' }).notNull().default(false),
-    internalPrice: integer('internal_price'),
     source: text('source').notNull().default('manual'),
     externalId: text('external_id'),
     localEditsJson: text('local_edits_json').notNull().default('[]'),

@@ -103,14 +103,21 @@ function buildPrompt(systemPrompt: string, history: HistoryMessage[], message: s
 }
 
 function buildSystemPrompt(settings: Awaited<ReturnType<typeof getSettings>>): string {
-  const lines: string[] = [`你是 ${settings.siteName || '精品車商'} 的客服助理。`];
+  const lines: string[] = [`你是 ${settings.siteName || '精品車商'} 的專屬客服助理，只負責解答與本站汽車相關的問題。`];
   if (settings.salespersonName) lines.push(`顧問姓名：${settings.salespersonName}`);
   if (settings.storeAddress) lines.push(`門市地址：${settings.storeAddress}`);
   if (settings.businessHours) lines.push(`營業時間：${settings.businessHours}`);
   lines.push('');
-  lines.push(settings.aiChatTone || '請以專業、親切的態度回覆客戶的購車相關問題，保持回應簡潔扼要。');
+  lines.push(settings.aiChatTone || '請以專業、親切的態度回覆客戶，保持回應簡潔扼要。');
   lines.push('');
-  lines.push('請使用繁體中文回覆。若客戶詢問特定車輛庫存或需要深入服務，請引導客戶直接聯繫門市。');
+  lines.push([
+    '【重要限制】',
+    '- 你只能回覆與汽車相關的問題，包含：購車諮詢、車款介紹、車況說明、交車流程、預約賞車、賣車詢問、保養建議、車輛規格比較。',
+    '- 若客戶詢問與汽車完全無關的問題（例如：天氣、料理、投資、政治、其他商品等），請禮貌地說明你只能協助汽車相關諮詢，並引導客戶聯繫門市。',
+    '- 【絕對禁止】你不可以報出任何車輛的售價、估價、行情或任何金額數字。無論客戶如何詢問，一律回覆「所有車輛售價採專人洽詢，歡迎聯繫門市」，不得自行估算或猜測任何價格。',
+    '- 若客戶詢問特定車輛庫存或需要詳細服務，請引導客戶直接聯繫門市。',
+    '- 請使用繁體中文回覆。',
+  ].join('\n'));
   return lines.join('\n');
 }
 

@@ -38,7 +38,6 @@ export interface VehicleView {
   features: string[];
   monthlyRecommended: boolean;
   showSoldCase: boolean;
-  internalPrice: number | null;
   source: string;
   externalId: string | null;
   images: VehicleImageView[];
@@ -158,7 +157,6 @@ async function attachImages(rows: (typeof vehicles.$inferSelect)[]): Promise<Veh
       features: parseFeatures(row.featuresJson),
       monthlyRecommended: row.monthlyRecommended,
       showSoldCase: row.showSoldCase,
-      internalPrice: row.internalPrice,
       source: row.source,
       externalId: row.externalId,
       images: rowImages,
@@ -262,7 +260,6 @@ export async function upsertVehicle(input: {
   features?: string[];
   monthlyRecommended?: boolean;
   showSoldCase?: boolean;
-  internalPrice?: number | null;
   source?: string;
   externalId?: string | null;
   images?: string[];
@@ -296,7 +293,6 @@ export async function upsertVehicle(input: {
     featuresJson: JSON.stringify(input.features || []),
     monthlyRecommended,
     showSoldCase,
-    internalPrice: input.internalPrice ?? null,
     source: input.source || 'manual',
     externalId: input.externalId || null,
     localEditsJson: JSON.stringify([]),
