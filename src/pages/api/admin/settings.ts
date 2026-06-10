@@ -80,9 +80,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   if (hasOwn(body, 'importBehavior')) updates.importBehavior = ['draft_first', 'auto_publish', 'import_only'].includes(String(body.importBehavior)) ? body.importBehavior : 'draft_first';
   if (hasOwn(body, 'showSoldVehicles')) updates.showSoldVehicles = body.showSoldVehicles === true;
   if (hasOwn(body, 'featureMask')) {
-    if (user.role !== 'superadmin' && (user.permissions & PERMISSIONS.SETTINGS_LAYOUT) === 0) return jsonError('forbidden');
+    if (user.role !== 'superadmin') return jsonError('forbidden');
     const n = Number.parseInt(String(body.featureMask ?? ''), 10);
-    if (Number.isFinite(n) && n >= 0 && n <= 255) updates.featureMask = n & licenseMask;
+    if (Number.isFinite(n) && n >= 0 && n <= 255) updates.featureMask = n;
   }
   if (hasOwn(body, 'featureLicenseMask')) {
     if (user.role !== 'superadmin') {
@@ -91,8 +91,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const n = Number.parseInt(String(body.featureLicenseMask ?? ''), 10);
     if (Number.isFinite(n) && n >= 0 && n <= 255) {
       updates.featureLicenseMask = n;
-      updates.featureMask = currentSettings.featureMask & n;
+      const requestedMask = typeof updates.featureMask === 'number' ? updates.featureMask : currentSettings.featureMask;
+      updates.featureMask = requestedMask & n;
     }
+  }
+  if (typeof updates.featureMask === 'number' && !hasOwn(body, 'featureLicenseMask')) {
+    updates.featureMask = updates.featureMask & licenseMask;
   }
   if (hasOwn(body, 'socialIcons')) updates.socialIcons = parseSocialIcons(typeof body.socialIcons === 'string' ? body.socialIcons : JSON.stringify(body.socialIcons ?? {}));
   if (hasOwn(body, 'galleryMode')) {

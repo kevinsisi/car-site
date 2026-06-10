@@ -7,11 +7,13 @@
   }
 
   let { settings }: Props = $props();
+  let featureMask = $state(settings.featureMask & settings.featureLicenseMask);
+  let originalFeatureMask = $state(settings.featureMask & settings.featureLicenseMask);
   let licenseMask = $state(settings.featureLicenseMask);
   let originalLicenseMask = $state(settings.featureLicenseMask);
   let saving = $state(false);
   let status = $state('');
-  let dirty = $derived(licenseMask !== originalLicenseMask);
+  let dirty = $derived(featureMask !== originalFeatureMask || licenseMask !== originalLicenseMask);
 
   function hasBit(mask: number, bit: number): boolean {
     return (mask & bit) !== 0;
@@ -27,14 +29,16 @@
     const res = await fetch('/api/admin/settings', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ featureLicenseMask: licenseMask }),
+      body: JSON.stringify({ featureMask: featureMask & licenseMask, featureLicenseMask: licenseMask }),
     });
     saving = false;
     if (res.ok) {
+      featureMask = featureMask & licenseMask;
+      originalFeatureMask = featureMask;
       originalLicenseMask = licenseMask;
-      status = '授權設定已更新';
+      status = '功能設定已更新';
     } else {
-      status = '授權設定更新失敗';
+      status = '功能設定更新失敗';
     }
     setTimeout(() => (status = ''), 2600);
   }
@@ -43,8 +47,30 @@
 <div class="admin-page">
   <div class="page-header">
     <h1>授權管理</h1>
-    <p>Superadmin 專用。控制此客戶方案允許使用哪些前台與後台功能。</p>
+    <p>Superadmin 專用。集中控制公開功能開關與此客戶方案允許使用的收費功能。</p>
   </div>
+
+  <section class="settings-section">
+    <h2>前台功能開關</h2>
+    <p class="muted">控制公開網站要顯示哪些入口與互動功能。未授權功能會鎖定，需先在下方收費功能控制開放後才能啟用。</p>
+    <div class="feature-grid">
+      {#each FEATURE_OPTIONS as feature}
+        {@const licensed = hasBit(licenseMask, feature.bit)}
+        <label class="feature-card" class:is-enabled={hasBit(featureMask, feature.bit)} class:is-locked={!licensed}>
+          <input
+            type="checkbox"
+            checked={hasBit(featureMask, feature.bit)}
+            disabled={!licensed}
+            onchange={(event) => { featureMask = toggleBit(featureMask, feature.bit, licensed && (event.currentTarget as HTMLInputElement).checked); }}
+          />
+          <span>
+            <strong>{feature.label}</strong>
+            <small>{feature.description}{licensed ? '' : '（未授權）'}</small>
+          </span>
+        </label>
+      {/each}
+    </div>
+  </section>
 
   <section class="settings-section">
     <h2>收費功能控制</h2>
@@ -55,7 +81,11 @@
           <input
             type="checkbox"
             checked={hasBit(licenseMask, feature.bit)}
-            onchange={(event) => { licenseMask = toggleBit(licenseMask, feature.bit, (event.currentTarget as HTMLInputElement).checked); }}
+            onchange={(event) => {
+              const enabled = (event.currentTarget as HTMLInputElement).checked;
+              licenseMask = toggleBit(licenseMask, feature.bit, enabled);
+              if (!enabled) featureMask = toggleBit(featureMask, feature.bit, false);
+            }}
           />
           <span>
             <strong>{feature.label}</strong>
@@ -65,7 +95,7 @@
       {/each}
     </div>
     <div class="form-actions">
-      <button type="button" class="btn-primary" disabled={!dirty || saving} onclick={save}>{saving ? '儲存中...' : '儲存授權設定'}</button>
+      <button type="button" class="btn-primary" disabled={!dirty || saving} onclick={save}>{saving ? '儲存中...' : '儲存功能設定'}</button>
       {#if status}<span class="save-status">{status}</span>{/if}
     </div>
   </section>
@@ -75,6 +105,7 @@
   .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.85rem; margin-top: 1rem; }
   .feature-card { display: flex; gap: 0.75rem; align-items: flex-start; padding: 1rem; border: 1px solid var(--line); border-radius: 16px; background: color-mix(in srgb, var(--surface) 96%, transparent); cursor: pointer; }
   .feature-card.is-enabled { border-color: color-mix(in srgb, var(--accent) 48%, var(--line)); background: color-mix(in srgb, var(--accent) 9%, var(--surface)); }
+  .feature-card.is-locked { opacity: 0.58; cursor: not-allowed; }
   .feature-card input { width: 18px; height: 18px; margin-top: 0.15rem; accent-color: var(--accent); }
   .feature-card span { display: grid; gap: 0.28rem; }
   .feature-card strong { color: var(--accent-strong); font-size: 0.95rem; }

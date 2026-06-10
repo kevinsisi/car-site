@@ -2,11 +2,9 @@
   import type { SiteSettings } from '@/lib/settings';
   import { detailSpecFieldOptions } from '@/lib/detail-spec-fields';
   import { styles, templates } from '@/lib/theme';
-  import { FEATURE_OPTIONS, effectiveFeatureMask } from '@/lib/features';
 
   interface Props {
     settings: SiteSettings;
-    isSuperadmin: boolean;
   }
 
   let { settings }: Props = $props();
@@ -68,21 +66,10 @@
     heroVehicleSlug: settings.heroVehicleSlug,
     showSoldVehicles: settings.showSoldVehicles,
     importBehavior: settings.importBehavior,
-    featureMask: effectiveFeatureMask(settings.featureMask, settings.featureLicenseMask),
   });
 
   let originalForm = $state(JSON.stringify(form));
   let formDirty = $derived(JSON.stringify(form) !== originalForm);
-
-  const licenseMask = settings.featureLicenseMask;
-
-  function hasBit(mask: number, bit: number): boolean {
-    return (mask & bit) !== 0;
-  }
-
-  function toggleBit(mask: number, bit: number, on: boolean): number {
-    return on ? mask | bit : mask & ~bit;
-  }
 
   function insertAtCursor(field: TemplateField, snippet: string) {
     const ta = document.querySelector<HTMLTextAreaElement>(`textarea[data-template-field="${field}"]`);
@@ -323,25 +310,6 @@
         </div>
       </div>
       <label>頁尾提醒 <textarea data-autoresize bind:value={form.footerDisclaimer}></textarea></label>
-    </div>
-  </details>
-
-  <details class="settings-section" open>
-    <summary>前台功能開關</summary>
-    <div class="settings-section__body">
-      <p class="form-hint">控制公開網站要顯示哪些入口與互動功能。未授權功能會鎖定，需由 Superadmin 於「授權管理」開放後才能啟用。</p>
-      {#each FEATURE_OPTIONS as f}
-        {@const licensed = hasBit(licenseMask, f.bit)}
-        <label class="checkbox-row">
-          <input
-            type="checkbox"
-            checked={hasBit(form.featureMask, f.bit)}
-            disabled={!licensed}
-            onchange={(e) => { form.featureMask = toggleBit(form.featureMask, f.bit, licensed && (e.currentTarget as HTMLInputElement).checked); }}
-          />
-          <span>{f.label}<small>{f.description}{licensed ? '' : '（未授權）'}</small></span>
-        </label>
-      {/each}
     </div>
   </details>
 
