@@ -6,8 +6,10 @@
   const { openingMessage }: Props = $props();
 
   type Message = { role: 'user' | 'assistant'; content: string; imagePreview?: string };
+  type StoredChatSession = { messages: Message[]; exchangeCount: number };
 
   const MAX_EXCHANGES = 13;
+  const STORAGE_KEY = 'car-site-chat-session';
 
   let open = $state(false);
   let messages = $state<Message[]>([]);
@@ -24,13 +26,45 @@
   let fileInput: HTMLInputElement;
   let messagesEl: HTMLDivElement;
 
+  function isMessage(value: unknown): value is Message {
+    if (!value || typeof value !== 'object') return false;
+    const msg = value as Record<string, unknown>;
+    return (msg.role === 'user' || msg.role === 'assistant') && typeof msg.content === 'string';
+  }
+
+  function loadStoredSession(): StoredChatSession | null {
+    if (typeof sessionStorage === 'undefined') return null;
+    try {
+      const parsed = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || 'null') as Partial<StoredChatSession> | null;
+      if (!parsed || !Array.isArray(parsed.messages)) return null;
+      return {
+        messages: parsed.messages.filter(isMessage),
+        exchangeCount: Math.max(0, Number.parseInt(String(parsed.exchangeCount ?? '0'), 10) || 0),
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  function saveStoredSession() {
+    if (!initialized || typeof sessionStorage === 'undefined') return;
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ messages, exchangeCount }));
+  }
+
+  $effect(saveStoredSession);
+
   function toggle() {
     open = !open;
     if (open && !initialized) {
       initialized = true;
-      if (openingMessage) {
-        messages = [{ role: 'assistant', content: openingMessage }];
-      }
+      const stored = loadStoredSession();
+      messages = stored?.messages.length
+        ? stored.messages
+        : openingMessage
+          ? [{ role: 'assistant', content: openingMessage }]
+          : [];
+      exchangeCount = stored?.exchangeCount ?? 0;
+      setTimeout(scrollToBottom, 50);
     }
   }
 
@@ -90,8 +124,9 @@
 
     const userMsg: Message = { role: 'user', content: text || '（圖片）', imagePreview: pendingImage?.preview };
     const imageToSend = pendingImage ? { data: pendingImage.data, mediaType: pendingImage.mediaType } : undefined;
+    const nextMessages = [...messages, userMsg];
     pendingImage = null;
-    messages = [...messages, userMsg];
+    messages = nextMessages;
     loading = true;
     setTimeout(scrollToBottom, 50);
 
@@ -101,7 +136,7 @@
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           message: text || '（圖片）',
-          history: messages.slice(-7, -1).map((m) => ({ role: m.role, content: m.content })),
+          history: nextMessages.slice(-7, -1).map((m) => ({ role: m.role, content: m.content })),
           ...(imageToSend ? { image: imageToSend } : {}),
         }),
       });

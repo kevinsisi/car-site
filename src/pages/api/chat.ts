@@ -166,6 +166,22 @@ async function callOpenCode(serverUrl: string, model: string, variant: string, p
 
 type HistoryMessage = { role: 'user' | 'assistant'; content: string };
 
+function hasLineContact(settings: Awaited<ReturnType<typeof getSettings>>): boolean {
+  return Boolean(settings.lineUrl && settings.lineUrl !== '#');
+}
+
+function isCarInquiry(message: string, history: HistoryMessage[], hasImages = false): boolean {
+  if (hasImages) return true;
+  const text = [message, ...history.slice(-4).map((m) => m.content)].join(' ');
+  return /問車|找車|推薦|介紹|比較|預約|賞車|看車|試乘|車況|配備|里程|年份|品牌|車款|車型|庫存|現車|到港|買車|中古車|超跑|跑車|休旅|轎車|SUV|Porsche|BMW|Benz|Mercedes|Audi|Toyota|Lexus|Ferrari|Lamborghini|McLaren|Maserati|Bentley|Rolls-Royce|Aston Martin/i.test(text);
+}
+
+function ensureLineCta(reply: string, lineUrl: string, shouldAppend: boolean): string {
+  if (!shouldAppend || !lineUrl || lineUrl === '#') return reply;
+  if (reply.includes(lineUrl)) return reply;
+  return `${reply}\n\n若想確認車況、配備或預約賞車，歡迎加 LINE 聯繫：${lineUrl}`.trim();
+}
+
 function buildPrompt(systemPrompt: string, history: HistoryMessage[], message: string, hasImages = false): string {
   const parts: string[] = [systemPrompt, ''];
   if (hasImages) {
@@ -220,6 +236,7 @@ function buildSystemPrompt(settings: Awaited<ReturnType<typeof getSettings>>, ve
   if (settings.salespersonName) lines.push(`顧問姓名：${settings.salespersonName}`);
   if (settings.storeAddress) lines.push(`門市地址：${settings.storeAddress}`);
   if (settings.businessHours) lines.push(`營業時間：${settings.businessHours}`);
+  if (hasLineContact(settings)) lines.push(`LINE 聯繫連結：${settings.lineUrl}`);
   lines.push('');
   lines.push(settings.aiChatTone || '請以專業、親切的態度回覆客戶，保持回應簡潔扼要。');
   lines.push('');
@@ -232,6 +249,7 @@ function buildSystemPrompt(settings: Awaited<ReturnType<typeof getSettings>>, ve
     '- 若客戶詢問與汽車完全無關的問題，請禮貌地說明你只能協助汽車相關諮詢，並引導客戶聯繫門市。',
     '- 【絕對禁止】你不可以報出任何車輛的售價、估價、行情或任何金額數字。無論客戶如何詢問，一律回覆「所有車輛售價採專人洽詢，歡迎聯繫門市」，不得自行估算或猜測任何價格。',
     '- 若客戶需要詳細服務或想預約賞車，請引導客戶直接聯繫門市。',
+    hasLineContact(settings) ? `- 若客戶正在問車、找車、比較車款、詢問庫存、詢問車況或請你推薦車輛，回覆最後一定要附上 LINE 聯繫連結：${settings.lineUrl}` : '',
   ].join('\n'));
   const vehicleContext = buildVehicleContext(vehicleList, siteOrigin, compactVehicleContext);
   if (vehicleContext) {
@@ -292,12 +310,13 @@ export const POST: APIRoute = async ({ request }) => {
   const resolvedOrigin = (settings.siteUrl ? settings.siteUrl.replace(/\/$/, '') : siteOrigin);
   const systemPrompt = buildSystemPrompt(settings, vehicleList, resolvedOrigin, mode === 'vision');
   const fullPrompt = buildPrompt(systemPrompt, history, message, mode === 'vision');
+  const shouldAppendLineCta = hasLineContact(settings) && isCarInquiry(message, history, mode === 'vision');
 
   let lastError: unknown = null;
   for (const server of servers) {
     try {
       const reply = cleanReply(await callOpenCode(server.baseUrl, model, variant, fullPrompt, password, images));
-      return Response.json({ reply: reply || '（無回覆）' });
+      return Response.json({ reply: ensureLineCta(reply || '（無回覆）', settings.lineUrl, shouldAppendLineCta) });
     } catch (err) {
       lastError = err;
     }
@@ -310,7 +329,7 @@ export const POST: APIRoute = async ({ request }) => {
     for (const server of servers) {
       try {
         const reply = cleanReply(await callOpenCode(server.baseUrl, textModel, textVariant, fallbackPrompt, password, []));
-        return Response.json({ reply: reply || '目前無法辨識圖片，請補充品牌、車型或用車需求，我會協助推薦相近車款。' });
+        return Response.json({ reply: ensureLineCta(reply || '目前無法辨識圖片，請補充品牌、車型或用車需求，我會協助推薦相近車款。', settings.lineUrl, shouldAppendLineCta) });
       } catch (err) {
         lastError = err;
       }
