@@ -35,6 +35,7 @@ function splitModel(model: string): { providerID: string; modelID: string } {
 }
 
 type ChatImage = { mimeType: string; data: string };
+type ChatMode = 'text' | 'vision';
 
 function parseTextFromBody(body: unknown): string {
   if (Array.isArray(body)) {
@@ -134,6 +135,7 @@ async function callOpenCode(serverUrl: string, model: string, variant: string, p
       type: 'file',
       mime: img.mimeType,
       url: `data:${img.mimeType};base64,${img.data}`,
+      filename: `chat-image.${img.mimeType.split('/')[1] || 'jpg'}`,
     }));
     parts.push({ type: 'text', text: prompt });
 
@@ -260,9 +262,10 @@ export const POST: APIRoute = async ({ request }) => {
     return Response.json({ error: 'AI 客服尚未設定，請聯繫管理員。' }, { status: 503 });
   }
 
+  const mode: ChatMode = images.length > 0 ? 'vision' : 'text';
   const [model, variant, password] = await Promise.all([
-    images.length > 0 ? getOpenCodeVisionModel() : getOpenCodeTextModel(),
-    images.length > 0 ? getOpenCodeVisionVariant() : getOpenCodeTextVariant(),
+    mode === 'vision' ? getOpenCodeVisionModel() : getOpenCodeTextModel(),
+    mode === 'vision' ? getOpenCodeVisionVariant() : getOpenCodeTextVariant(),
     Promise.resolve(getOpenCodePassword()),
   ]);
 
@@ -277,6 +280,19 @@ export const POST: APIRoute = async ({ request }) => {
       return Response.json({ reply: reply || '（無回覆）' });
     } catch (err) {
       lastError = err;
+    }
+  }
+
+  if (mode === 'vision') {
+    const [textModel, textVariant] = await Promise.all([getOpenCodeTextModel(), getOpenCodeTextVariant()]);
+    const fallbackPrompt = `${fullPrompt}\n\n補充：客戶附了一張車輛圖片，但目前圖片辨識服務無法解析。請不要假裝看過圖片，請用親切語氣請客戶補充品牌、車型、年份、預算或偏好的外觀/用途，並可根據本站車輛清單推薦相近車款。`;
+    for (const server of servers) {
+      try {
+        const reply = cleanReply(await callOpenCode(server.baseUrl, textModel, textVariant, fallbackPrompt, password, []));
+        return Response.json({ reply: reply || '目前無法辨識圖片，請補充品牌、車型或用車需求，我會協助推薦相近車款。' });
+      } catch (err) {
+        lastError = err;
+      }
     }
   }
 
