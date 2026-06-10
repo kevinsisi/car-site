@@ -23,7 +23,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const _user = await getAdminOrResponse(cookies);
   if (_user instanceof Response) return _user;
   const user = _user;
-  const settingsPerms = PERMISSIONS.SETTINGS_BASIC | PERMISSIONS.SETTINGS_LAYOUT | PERMISSIONS.SETTINGS_GALLERY | PERMISSIONS.SETTINGS_SMTP;
+  const settingsPerms = PERMISSIONS.SETTINGS_BASIC | PERMISSIONS.SETTINGS_LAYOUT | PERMISSIONS.SETTINGS_GALLERY;
   if (user.role !== 'superadmin' && (user.permissions & settingsPerms) === 0) {
     return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403, headers: { 'content-type': 'application/json' } });
   }

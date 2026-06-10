@@ -58,6 +58,7 @@
     facebookUrl: settings.facebookUrl,
     threadsUrl: settings.threadsUrl,
     tiktokUrl: settings.tiktokUrl,
+    notificationEmail: settings.notificationEmail,
     socialIcons: { ...settings.socialIcons } as Record<SocialPlatform, SocialIconConfig | undefined>,
   });
 
@@ -183,6 +184,9 @@
       delete payload.tiktokUrl;
       delete payload.socialIcons;
     }
+    if (!features.sellInquiry) {
+      delete payload.notificationEmail;
+    }
     const response = await adminFetch('/api/admin/settings', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -298,6 +302,16 @@
         <label>TikTok 網址 <input bind:value={form.tiktokUrl} /></label>
       {/if}
       <p class="form-hint">社群網址留空時，公開網頁的頁尾就不會顯示該平台。</p>
+    </div>
+  </details>
+  {/if}
+
+  {#if features.sellInquiry}
+  <details class="settings-section">
+    <summary>賣車申請通知</summary>
+    <div class="settings-section__body">
+      <label>通知收件信箱 <input type="email" bind:value={form.notificationEmail} placeholder="your@email.com" /></label>
+      <p class="form-hint">收到賣車申請時發送通知到此信箱。留空則使用伺服器預設收件人。</p>
     </div>
   </details>
   {/if}

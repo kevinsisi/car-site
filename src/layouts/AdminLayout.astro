@@ -32,12 +32,10 @@ const settingsPerms = [
   PERMISSIONS.SETTINGS_BASIC,
   PERMISSIONS.SETTINGS_LAYOUT,
   PERMISSIONS.SETTINGS_GALLERY,
-  PERMISSIONS.SETTINGS_SMTP,
 ];
 const canSeeAnySettings = isSuper || settingsPerms.some((p) => hasPermission(perm, p));
 const canSeeVideos = (features.heroVideos && (isSuper || hasPermission(perm, PERMISSIONS.VIDEOS_CAROUSEL))) || (features.videoLinks && (isSuper || hasPermission(perm, PERMISSIONS.VIDEOS_LINKS)));
 const canSeeSellInquiries = features.sellInquiry && (isSuper || hasPermission(perm, PERMISSIONS.SELL_INQUIRIES));
-const canSeeSmtp = features.sellInquiry && (isSuper || hasPermission(perm, PERMISSIONS.SETTINGS_SMTP));
 const canSeeAnalytics = hasFeature(settings.featureLicenseMask ?? 0, FEATURE_ANALYTICS) && (isSuper || hasPermission(perm, PERMISSIONS.ANALYTICS));
 ---
 
@@ -114,9 +112,6 @@ const canSeeAnalytics = hasFeature(settings.featureLicenseMask ?? 0, FEATURE_ANA
             )}
             {(isSuper || hasPermission(perm, PERMISSIONS.SETTINGS_GALLERY)) && (
               <a href="/admin/settings/gallery" class:list={['nav-item nav-item--sub', { 'is-active': isActive('/admin/settings/gallery') }]}>照片模式</a>
-            )}
-            {canSeeSmtp && (
-              <a href="/admin/settings/smtp" class:list={['nav-item nav-item--sub', { 'is-active': isActive('/admin/settings/smtp') }]}>通知設定</a>
             )}
             {isSuper && (
               <a href="/admin/settings/features" class:list={['nav-item nav-item--sub', { 'is-active': isActive('/admin/settings/features') }]}>授權管理</a>
