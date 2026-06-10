@@ -9,7 +9,7 @@
   type StoredChatSession = { messages: Message[]; exchangeCount: number; savedAt?: number };
 
   const MAX_EXCHANGES = 13;
-  const STORAGE_KEY = 'car-site-chat-session';
+  const STORAGE_KEY = 'car-site-chat-session-v2';
   const STORAGE_TTL_MS = 12 * 60 * 60 * 1000;
 
   let open = $state(false);

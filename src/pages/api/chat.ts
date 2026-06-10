@@ -167,7 +167,7 @@ async function callOpenCode(serverUrl: string, model: string, variant: string, p
 type HistoryMessage = { role: 'user' | 'assistant'; content: string };
 
 function hasLineContact(settings: Awaited<ReturnType<typeof getSettings>>): boolean {
-  return Boolean(settings.lineUrl && settings.lineUrl !== '#');
+  return Boolean(settings.lineUrl && settings.lineUrl !== '#' && !settings.lineUrl.includes('placeholder'));
 }
 
 function isCarInquiry(message: string, history: HistoryMessage[], hasImages = false): boolean {
@@ -177,7 +177,7 @@ function isCarInquiry(message: string, history: HistoryMessage[], hasImages = fa
 }
 
 function ensureLineCta(reply: string, lineUrl: string, shouldAppend: boolean): string {
-  if (!shouldAppend || !lineUrl || lineUrl === '#') return reply;
+  if (!shouldAppend || !lineUrl || lineUrl === '#' || lineUrl.includes('placeholder')) return reply;
   if (reply.includes(lineUrl)) return reply;
   return `${reply}\n\n若想確認車況、配備或預約賞車，歡迎加 LINE 聯繫：${lineUrl}`.trim();
 }
