@@ -6,10 +6,11 @@
   const { openingMessage }: Props = $props();
 
   type Message = { role: 'user' | 'assistant'; content: string; imagePreview?: string };
-  type StoredChatSession = { messages: Message[]; exchangeCount: number };
+  type StoredChatSession = { messages: Message[]; exchangeCount: number; savedAt?: number };
 
   const MAX_EXCHANGES = 13;
   const STORAGE_KEY = 'car-site-chat-session';
+  const STORAGE_TTL_MS = 12 * 60 * 60 * 1000;
 
   let open = $state(false);
   let messages = $state<Message[]>([]);
@@ -25,6 +26,7 @@
 
   let fileInput: HTMLInputElement;
   let messagesEl: HTMLDivElement;
+  let hydrated = false;
 
   function isMessage(value: unknown): value is Message {
     if (!value || typeof value !== 'object') return false;
@@ -32,38 +34,60 @@
     return (msg.role === 'user' || msg.role === 'assistant') && typeof msg.content === 'string';
   }
 
-  function loadStoredSession(): StoredChatSession | null {
-    if (typeof sessionStorage === 'undefined') return null;
+  function parseStoredSession(raw: string | null): StoredChatSession | null {
     try {
-      const parsed = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || 'null') as Partial<StoredChatSession> | null;
+      const parsed = JSON.parse(raw || 'null') as Partial<StoredChatSession> | null;
       if (!parsed || !Array.isArray(parsed.messages)) return null;
+      const savedAt = Number(parsed.savedAt ?? 0);
+      if (savedAt > 0 && Date.now() - savedAt > STORAGE_TTL_MS) return null;
       return {
         messages: parsed.messages.filter(isMessage),
         exchangeCount: Math.max(0, Number.parseInt(String(parsed.exchangeCount ?? '0'), 10) || 0),
+        savedAt,
       };
     } catch {
       return null;
     }
   }
 
+  function loadStoredSession(): StoredChatSession | null {
+    const sessionData = typeof sessionStorage === 'undefined' ? null : parseStoredSession(sessionStorage.getItem(STORAGE_KEY));
+    if (sessionData?.messages.length) return sessionData;
+    const localData = typeof localStorage === 'undefined' ? null : parseStoredSession(localStorage.getItem(STORAGE_KEY));
+    if (localData?.messages.length) return localData;
+    return null;
+  }
+
+  function hydrateSession() {
+    if (hydrated) return;
+    hydrated = true;
+    const stored = loadStoredSession();
+    messages = stored?.messages.length
+      ? stored.messages
+      : openingMessage
+        ? [{ role: 'assistant', content: openingMessage }]
+        : [];
+    exchangeCount = stored?.exchangeCount ?? 0;
+  }
+
   function saveStoredSession() {
-    if (!initialized || typeof sessionStorage === 'undefined') return;
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ messages, exchangeCount }));
+    if (!hydrated || messages.length === 0) return;
+    const payload = JSON.stringify({ messages, exchangeCount, savedAt: Date.now() });
+    try { sessionStorage.setItem(STORAGE_KEY, payload); } catch {}
+    try { localStorage.setItem(STORAGE_KEY, payload); } catch {}
   }
 
   $effect(saveStoredSession);
+
+  $effect(() => {
+    hydrateSession();
+  });
 
   function toggle() {
     open = !open;
     if (open && !initialized) {
       initialized = true;
-      const stored = loadStoredSession();
-      messages = stored?.messages.length
-        ? stored.messages
-        : openingMessage
-          ? [{ role: 'assistant', content: openingMessage }]
-          : [];
-      exchangeCount = stored?.exchangeCount ?? 0;
+      hydrateSession();
       setTimeout(scrollToBottom, 50);
     }
   }
