@@ -82,7 +82,7 @@ function cleanReply(raw: string): string {
   // Strip <think>...</think> and <thinking>...</thinking> blocks (reasoning models)
   let text = raw.replace(/<think(?:ing)?>[^]*?<\/think(?:ing)?>/gi, '');
   const firstCjk = text.search(/[\u3400-\u9fff]/);
-  if (firstCjk > 0 && /^[\sA-Za-z].{0,800}[\u3400-\u9fff]/s.test(text)) {
+  if (firstCjk > 0 && firstCjk < 4_000 && /^[\sA-Za-z]/.test(text)) {
     text = text.slice(firstCjk);
   }
   // Strip markdown bold/italic/code
@@ -297,6 +297,7 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   if (mode === 'vision') {
+    console.warn('[chat] OpenCode vision failed, falling back to text:', lastError);
     const [textModel, textVariant] = await Promise.all([getOpenCodeTextModel(), getOpenCodeTextVariant()]);
     const fallbackPrompt = `${fullPrompt}\n\n補充：客戶附了一張車輛圖片，但目前圖片辨識服務無法解析。請不要假裝看過圖片。回覆第一個字必須是繁體中文，不要輸出任何英文分析或內部思考。請用親切語氣請客戶補充品牌、車型、年份、預算或偏好的外觀/用途，並可根據本站車輛清單推薦相近車款。`;
     for (const server of servers) {
