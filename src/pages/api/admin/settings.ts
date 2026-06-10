@@ -83,14 +83,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   if (hasOwn(body, 'featureMask')) {
     if (user.role !== 'superadmin') return jsonError('forbidden');
     const n = Number.parseInt(String(body.featureMask ?? ''), 10);
-    if (Number.isFinite(n) && n >= 0 && n <= 255) updates.featureMask = n;
+    if (Number.isFinite(n) && n >= 0 && n <= 511) updates.featureMask = n;
   }
   if (hasOwn(body, 'featureLicenseMask')) {
     if (user.role !== 'superadmin') {
       return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403, headers: { 'content-type': 'application/json' } });
     }
     const n = Number.parseInt(String(body.featureLicenseMask ?? ''), 10);
-    if (Number.isFinite(n) && n >= 0 && n <= 255) {
+    if (Number.isFinite(n) && n >= 0 && n <= 511) {
       updates.featureLicenseMask = n;
       const requestedMask = typeof updates.featureMask === 'number' ? updates.featureMask : currentSettings.featureMask;
       updates.featureMask = requestedMask & n;

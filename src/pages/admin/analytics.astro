@@ -3,10 +3,17 @@ import AdminLayout from '@/layouts/AdminLayout.astro';
 import AdminAnalytics from '@/components/AdminAnalytics.svelte';
 import { getSession, hasAnyUsers } from '@/lib/auth';
 import { PERMISSIONS, hasPermission } from '@/lib/permissions';
+import { getSettings } from '@/lib/settings';
+import { FEATURE_ANALYTICS, hasFeature } from '@/lib/features';
 
 if (!await hasAnyUsers()) return Astro.redirect('/admin/setup');
 const user = await getSession(Astro.cookies);
 if (!user) return Astro.redirect('/admin/login');
+
+const settings = await getSettings();
+if (!hasFeature(settings.featureLicenseMask ?? 0, FEATURE_ANALYTICS)) {
+  return new Response('Forbidden', { status: 403 });
+}
 if (user.role !== 'superadmin' && !hasPermission(user.permissions, PERMISSIONS.ANALYTICS)) {
   return new Response('Forbidden', { status: 403 });
 }

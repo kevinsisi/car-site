@@ -4,6 +4,7 @@ import { getSettings } from '@/lib/settings';
 import { siteIconHref } from '@/lib/site-icon';
 import { PERMISSIONS, hasPermission } from '@/lib/permissions';
 import { resolveFrontFeatures } from '@/lib/front-features';
+import { FEATURE_ANALYTICS, hasFeature } from '@/lib/features';
 import { styleVars, styles } from '@/lib/theme';
 import type { AdminUserSession } from '@/lib/auth';
 
@@ -37,6 +38,7 @@ const canSeeAnySettings = isSuper || settingsPerms.some((p) => hasPermission(per
 const canSeeVideos = (features.heroVideos && (isSuper || hasPermission(perm, PERMISSIONS.VIDEOS_CAROUSEL))) || (features.videoLinks && (isSuper || hasPermission(perm, PERMISSIONS.VIDEOS_LINKS)));
 const canSeeSellInquiries = features.sellInquiry && (isSuper || hasPermission(perm, PERMISSIONS.SELL_INQUIRIES));
 const canSeeSmtp = features.sellInquiry && (isSuper || hasPermission(perm, PERMISSIONS.SETTINGS_SMTP));
+const canSeeAnalytics = hasFeature(settings.featureLicenseMask ?? 0, FEATURE_ANALYTICS) && (isSuper || hasPermission(perm, PERMISSIONS.ANALYTICS));
 ---
 
 <!doctype html>
@@ -122,7 +124,7 @@ const canSeeSmtp = features.sellInquiry && (isSuper || hasPermission(perm, PERMI
           </div>
         )}
 
-        {(isSuper || hasPermission(perm, PERMISSIONS.ANALYTICS)) && (
+        {canSeeAnalytics && (
           <a href="/admin/analytics" class:list={['nav-item', { 'is-active': isActive('/admin/analytics') }]}>
             <span>流量分析</span>
           </a>
