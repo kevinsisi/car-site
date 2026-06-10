@@ -166,8 +166,12 @@ async function callOpenCode(serverUrl: string, model: string, variant: string, p
 
 type HistoryMessage = { role: 'user' | 'assistant'; content: string };
 
-function buildPrompt(systemPrompt: string, history: HistoryMessage[], message: string): string {
+function buildPrompt(systemPrompt: string, history: HistoryMessage[], message: string, hasImages = false): string {
   const parts: string[] = [systemPrompt, ''];
+  if (hasImages) {
+    parts.push('Customer attached one or more vehicle images. 請先直接觀察並描述圖片中的車輛外型、車種或可能的相近類型，再根據本站車輛清單推薦 1-2 輛相近車款。除非圖片真的完全無法辨識，否則不要說「訊息未正常顯示」或要求客戶重新提供訊息。');
+    parts.push('');
+  }
   for (const msg of history.slice(-6)) {
     parts.push(msg.role === 'user' ? `Customer: ${msg.content}` : `Assistant: ${msg.content}`);
   }
@@ -287,7 +291,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   const resolvedOrigin = (settings.siteUrl ? settings.siteUrl.replace(/\/$/, '') : siteOrigin);
   const systemPrompt = buildSystemPrompt(settings, vehicleList, resolvedOrigin, mode === 'vision');
-  const fullPrompt = buildPrompt(systemPrompt, history, message);
+  const fullPrompt = buildPrompt(systemPrompt, history, message, mode === 'vision');
 
   let lastError: unknown = null;
   for (const server of servers) {
