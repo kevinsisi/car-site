@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getAdminOrResponse } from '@/lib/auth';
 import { PERMISSIONS } from '@/lib/permissions';
+import { resolveFrontFeatures } from '@/lib/front-features';
 import { sanitizeImageUrl, sanitizePublicHref } from '@/lib/safe-url';
 import { getSettingValue, getSettings, setSettings, type HeroVideo } from '@/lib/settings';
 import { fetchVideoThumbnail } from '@/lib/video-links';
@@ -12,9 +13,13 @@ async function authorize(cookies: Parameters<APIRoute>[0]['cookies']) {
   const _user = await getAdminOrResponse(cookies);
   if (_user instanceof Response) return _user;
   const user = _user;
-  const canVideos = user.role === 'superadmin' || (user.permissions & (PERMISSIONS.VIDEOS_CAROUSEL | PERMISSIONS.VIDEOS_LINKS)) !== 0;
+  const settings = await getSettings();
+  const features = resolveFrontFeatures(settings);
+  const canCarousel = features.heroVideos && (user.role === 'superadmin' || (user.permissions & PERMISSIONS.VIDEOS_CAROUSEL) !== 0);
+  const canLinks = features.videoLinks && (user.role === 'superadmin' || (user.permissions & PERMISSIONS.VIDEOS_LINKS) !== 0);
+  const canVideos = canCarousel || canLinks;
   if (!canVideos) return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403, headers: { 'content-type': 'application/json' } });
-  return user;
+  return { settings, canCarousel, canLinks };
 }
 
 function parseExistingHeroVideos(): Promise<HeroVideo[]> {
@@ -72,18 +77,25 @@ async function sanitizeHeroVideos(value: unknown) {
 }
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-  const user = await authorize(cookies);
-  if (user instanceof Response) return user;
+  const auth = await authorize(cookies);
+  if (auth instanceof Response) return auth;
 
   const body = await request.json();
   const updates: Parameters<typeof setSettings>[0] = {};
   let sanitizedHeroVideos: HeroVideo[] | undefined;
   if (body.heroVideos !== undefined) {
+    if (!auth.canCarousel) return new Response(JSON.stringify({ error: 'hero videos feature disabled' }), { status: 403, headers: { 'content-type': 'application/json' } });
     sanitizedHeroVideos = await sanitizeHeroVideos(body.heroVideos);
     updates.heroVideos = sanitizedHeroVideos;
   }
-  if (body.videoSectionPosition !== undefined) updates.videoSectionPosition = videoPositions.has(String(body.videoSectionPosition)) ? String(body.videoSectionPosition) : 'below-hero';
-  if (body.videoLinksSectionTitle !== undefined) updates.videoLinksSectionTitle = String(body.videoLinksSectionTitle || '');
+  if (body.videoSectionPosition !== undefined) {
+    if (!auth.canCarousel) return new Response(JSON.stringify({ error: 'hero videos feature disabled' }), { status: 403, headers: { 'content-type': 'application/json' } });
+    updates.videoSectionPosition = videoPositions.has(String(body.videoSectionPosition)) ? String(body.videoSectionPosition) : 'below-hero';
+  }
+  if (body.videoLinksSectionTitle !== undefined) {
+    if (!auth.canLinks) return new Response(JSON.stringify({ error: 'video links feature disabled' }), { status: 403, headers: { 'content-type': 'application/json' } });
+    updates.videoLinksSectionTitle = String(body.videoLinksSectionTitle || '');
+  }
 
   await setSettings(updates);
   if (sanitizedHeroVideos) enqueueHeroVideoConversions(sanitizedHeroVideos);
@@ -91,12 +103,16 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 };
 
 export const GET: APIRoute = async ({ cookies }) => {
-  const user = await authorize(cookies);
-  if (user instanceof Response) return user;
-  const settings = await getSettings();
+  const auth = await authorize(cookies);
+  if (auth instanceof Response) return auth;
+  const settings = auth.settings;
   return Response.json({
-    heroVideos: settings.heroVideos,
-    videoSectionPosition: settings.videoSectionPosition,
-    videoLinksSectionTitle: settings.videoLinksSectionTitle,
+    ...(auth.canCarousel ? {
+      heroVideos: settings.heroVideos,
+      videoSectionPosition: settings.videoSectionPosition,
+    } : {}),
+    ...(auth.canLinks ? {
+      videoLinksSectionTitle: settings.videoLinksSectionTitle,
+    } : {}),
   });
 };

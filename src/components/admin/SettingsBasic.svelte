@@ -1,11 +1,13 @@
 <script lang="ts">
   import type { SiteSettings, SocialIconConfig, SocialPlatform } from '@/lib/settings';
+  import type { FrontFeatures } from '@/lib/front-features';
 
   interface Props {
     settings: SiteSettings;
+    features: FrontFeatures;
   }
 
-  let { settings }: Props = $props();
+  let { settings, features }: Props = $props();
 
   type ToastLevel = 'info' | 'success' | 'error' | 'progress';
   interface Toast { id: number; text: string; level: ToastLevel; sticky: boolean; }
@@ -169,10 +171,22 @@
 
   async function saveSettings(): Promise<boolean> {
     const tid = notifyProgress('儲存中...');
+    const payload: Record<string, unknown> = { ...form };
+    if (!features.directContact) {
+      delete payload.lineUrl;
+      delete payload.phoneNumber;
+    }
+    if (!features.socialIcons) {
+      delete payload.instagramUrl;
+      delete payload.facebookUrl;
+      delete payload.threadsUrl;
+      delete payload.tiktokUrl;
+      delete payload.socialIcons;
+    }
     const response = await adminFetch('/api/admin/settings', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify(payload),
     });
     if (response.ok) {
       originalForm = JSON.stringify(form);
@@ -262,24 +276,33 @@
   <details class="settings-section" open>
     <summary>聯絡資訊</summary>
     <div class="settings-section__body">
-      <label>電話 <input bind:value={form.phoneNumber} /></label>
+      {#if features.directContact}
+        <label>電話 <input bind:value={form.phoneNumber} /></label>
+      {/if}
       <label>門市地址 <input bind:value={form.storeAddress} placeholder="例如 台北市信義區忠孝東路五段 00 號 0 樓" /></label>
       <label>營業時間 <input bind:value={form.businessHours} placeholder="例如 週一至週六 10:00-19:00，採預約賞車" /></label>
     </div>
   </details>
 
+  {#if features.directContact || features.socialIcons}
   <details class="settings-section" open>
     <summary>社群連結</summary>
     <div class="settings-section__body">
-      <label>LINE 網址 <input bind:value={form.lineUrl} /></label>
-      <label>Instagram 網址 <input bind:value={form.instagramUrl} /></label>
-      <label>Facebook 網址 <input bind:value={form.facebookUrl} /></label>
-      <label>Threads 網址 <input bind:value={form.threadsUrl} /></label>
-      <label>TikTok 網址 <input bind:value={form.tiktokUrl} /></label>
+      {#if features.directContact}
+        <label>LINE 網址 <input bind:value={form.lineUrl} /></label>
+      {/if}
+      {#if features.socialIcons}
+        <label>Instagram 網址 <input bind:value={form.instagramUrl} /></label>
+        <label>Facebook 網址 <input bind:value={form.facebookUrl} /></label>
+        <label>Threads 網址 <input bind:value={form.threadsUrl} /></label>
+        <label>TikTok 網址 <input bind:value={form.tiktokUrl} /></label>
+      {/if}
       <p class="form-hint">社群網址留空時，公開網頁的頁尾就不會顯示該平台。</p>
     </div>
   </details>
+  {/if}
 
+  {#if features.socialIcons}
   <details class="settings-section">
     <summary>社群平台自訂圖示</summary>
     <div class="settings-section__body">
@@ -344,6 +367,7 @@
       </div>
     </div>
   </details>
+  {/if}
 
   <div class="settings-save-bar">
     <span class="settings-save-bar__hint">{formDirty ? '有未儲存的變更（Cmd/Ctrl+S 可儲存）' : '所有設定已是最新狀態'}</span>

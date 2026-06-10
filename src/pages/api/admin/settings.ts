@@ -2,8 +2,9 @@ import type { APIRoute } from 'astro';
 import { getAdminOrResponse } from '@/lib/auth';
 import { PERMISSIONS } from '@/lib/permissions';
 import { detailSpecFieldOptions } from '@/lib/detail-spec-fields';
+import { FEATURE_DIRECT_CONTACT, FEATURE_SELL_INQUIRY, FEATURE_SOCIAL_ICONS, effectiveFeatureMask, hasFeature } from '@/lib/features';
 import { sanitizeImageUrl, sanitizePublicHref } from '@/lib/safe-url';
-import { parseSocialIcons, setSettings, type GalleryMode, type SiteSettings } from '@/lib/settings';
+import { getSettings, parseSocialIcons, setSettings, type GalleryMode, type SiteSettings } from '@/lib/settings';
 import { resolveStyle, resolveTemplate } from '@/lib/theme';
 
 const allowedDetailSpecFields = new Set<string>(detailSpecFieldOptions.map((field) => field.key));
@@ -11,6 +12,10 @@ const galleryModes = new Set<GalleryMode>(['lightbox', 'slider', 'thumbnail-stri
 
 function hasOwn(body: Record<string, unknown>, key: keyof SiteSettings): boolean {
   return Object.prototype.hasOwnProperty.call(body, key);
+}
+
+function jsonError(error: string, status = 403): Response {
+  return new Response(JSON.stringify({ error }), { status, headers: { 'content-type': 'application/json' } });
 }
 
 export const POST: APIRoute = async ({ request, cookies }) => {
@@ -23,6 +28,16 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   }
   const body = await request.json() as Record<string, unknown>;
   const updates: Partial<Record<keyof SiteSettings, unknown>> = {};
+  const currentSettings = await getSettings();
+  const currentMask = effectiveFeatureMask(currentSettings.featureMask, currentSettings.featureLicenseMask);
+  const licenseMask = currentSettings.featureLicenseMask;
+  const directFields: (keyof SiteSettings)[] = ['lineUrl', 'phoneNumber'];
+  const socialFields: (keyof SiteSettings)[] = ['instagramUrl', 'facebookUrl', 'threadsUrl', 'tiktokUrl', 'socialIcons'];
+  const smtpFields: (keyof SiteSettings)[] = ['notificationEmail', 'gmailUser', 'gmailAppPassword'];
+
+  if (!hasFeature(currentMask, FEATURE_DIRECT_CONTACT) && directFields.some((key) => hasOwn(body, key))) return jsonError('direct contact feature disabled');
+  if (!hasFeature(currentMask, FEATURE_SOCIAL_ICONS) && socialFields.some((key) => hasOwn(body, key))) return jsonError('social feature disabled');
+  if (!hasFeature(currentMask, FEATURE_SELL_INQUIRY) && smtpFields.some((key) => hasOwn(body, key))) return jsonError('sell inquiry feature disabled');
 
   if (hasOwn(body, 'siteName')) updates.siteName = String(body.siteName || '');
   if (hasOwn(body, 'siteIconUrl')) updates.siteIconUrl = sanitizeImageUrl(body.siteIconUrl);
@@ -65,15 +80,19 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   if (hasOwn(body, 'importBehavior')) updates.importBehavior = ['draft_first', 'auto_publish', 'import_only'].includes(String(body.importBehavior)) ? body.importBehavior : 'draft_first';
   if (hasOwn(body, 'showSoldVehicles')) updates.showSoldVehicles = body.showSoldVehicles === true;
   if (hasOwn(body, 'featureMask')) {
+    if (user.role !== 'superadmin' && (user.permissions & PERMISSIONS.SETTINGS_LAYOUT) === 0) return jsonError('forbidden');
     const n = Number.parseInt(String(body.featureMask ?? ''), 10);
-    if (Number.isFinite(n) && n >= 0 && n <= 255) updates.featureMask = n;
+    if (Number.isFinite(n) && n >= 0 && n <= 255) updates.featureMask = n & licenseMask;
   }
   if (hasOwn(body, 'featureLicenseMask')) {
     if (user.role !== 'superadmin') {
       return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403, headers: { 'content-type': 'application/json' } });
     }
     const n = Number.parseInt(String(body.featureLicenseMask ?? ''), 10);
-    if (Number.isFinite(n) && n >= 0 && n <= 255) updates.featureLicenseMask = n;
+    if (Number.isFinite(n) && n >= 0 && n <= 255) {
+      updates.featureLicenseMask = n;
+      updates.featureMask = currentSettings.featureMask & n;
+    }
   }
   if (hasOwn(body, 'socialIcons')) updates.socialIcons = parseSocialIcons(typeof body.socialIcons === 'string' ? body.socialIcons : JSON.stringify(body.socialIcons ?? {}));
   if (hasOwn(body, 'galleryMode')) {

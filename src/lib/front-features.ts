@@ -4,7 +4,7 @@ import {
   FEATURE_COMPARE, FEATURE_SELL_INQUIRY, FEATURE_CONTACT_PAGE,
   FEATURE_ABOUT_PAGE, FEATURE_SOCIAL_ICONS, FEATURE_DIRECT_CONTACT,
   FEATURE_HERO_VIDEOS, FEATURE_VIDEO_LINKS,
-  DEFAULT_FEATURE_MASK, ALL_FEATURES_MASK,
+  DEFAULT_FEATURE_MASK, ALL_FEATURES_MASK, effectiveFeatureMask,
 } from './features';
 
 export interface FrontFeatures {
@@ -27,7 +27,7 @@ export interface PublicNavItem {
 export function resolveFrontFeatures(settings: SiteSettings): FrontFeatures {
   const license = settings.featureLicenseMask ?? ALL_FEATURES_MASK;
   const admin   = settings.featureMask ?? DEFAULT_FEATURE_MASK;
-  const mask    = license & admin;
+  const mask    = effectiveFeatureMask(admin, license);
   return {
     compare:       hasFeature(mask, FEATURE_COMPARE),
     sellInquiry:   hasFeature(mask, FEATURE_SELL_INQUIRY),
@@ -48,4 +48,8 @@ export function getPublicNavItems(features: FrontFeatures): PublicNavItem[] {
     ...(features.aboutPage ? [{ href: '/about', label: '關於', activeMatch: '/about' }] : []),
     ...(features.contactPage ? [{ href: '/contact', label: '聯絡', activeMatch: '/contact' }] : []),
   ];
+}
+
+export function getFirstPublicHref(features: FrontFeatures): string {
+  return getPublicNavItems(features)[0]?.href || '/';
 }

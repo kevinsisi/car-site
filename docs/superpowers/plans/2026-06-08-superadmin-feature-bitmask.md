@@ -22,8 +22,10 @@
 | `src/pages/api/admin/settings.ts` | MODIFY | Handle `featureMask` (any admin) + `featureLicenseMask` (superadmin only → 403) |
 | `src/pages/api/admin/video-settings.ts` | MODIFY | Remove `videoSectionEnabled`/`videoLinksEnabled` — now in `featureMask` |
 | `src/pages/api/sell.ts` | MODIFY | Gate POST on `FEATURE_SELL_INQUIRY` bit |
-| `src/components/admin/SettingsLayout.svelte` | MODIFY | Bitmask checkboxes with lock UI; superadmin license section |
-| `src/pages/admin/settings/layout.astro` | MODIFY | Pass `isSuperadmin` prop to `SettingsLayout` |
+| `src/components/admin/SettingsLayout.svelte` | MODIFY | Bitmask checkboxes with lock UI; no license controls in this page |
+| `src/components/admin/SettingsFeatures.svelte` | CREATE | Superadmin-only authorization controls |
+| `src/pages/admin/settings/features.astro` | CREATE | Superadmin-only authorization route |
+| `src/pages/admin/settings/layout.astro` | MODIFY | Pass current settings to `SettingsLayout` |
 | `src/components/admin/Videos.svelte` | MODIFY | Remove `videoSectionEnabled`/`videoLinksEnabled` local state and UI |
 
 ---
@@ -662,32 +664,7 @@ Replace the existing `<details class="settings-section">` block that contains `<
   </div>
 </details>
 
-{#if isSuperadmin}
-<details class="settings-section">
-  <summary>授權管理（Superadmin）</summary>
-  <div class="settings-section__body">
-    <p class="form-hint">控制此客戶可使用哪些功能。已關閉的功能，admin 無法在上方功能開關中啟用。儲存後立即生效。</p>
-    {#each FEATURE_LIST as f}
-      <label class="checkbox-row">
-        <input
-          type="checkbox"
-          checked={hasBit(licenseMask, f.bit)}
-          onchange={(e) => { licenseMask = toggleBit(licenseMask, f.bit, (e.currentTarget as HTMLInputElement).checked); }}
-        />
-        {f.label}
-      </label>
-    {/each}
-    <div style="margin-top:1rem">
-      <button
-        class="admin-button"
-        type="button"
-        disabled={!licenseDirty}
-        onclick={saveLicenseMask}
-      >儲存授權設定</button>
-    </div>
-  </div>
-</details>
-{/if}
+<!-- Superadmin authorization controls now live in /admin/settings/features. -->
 ```
 
 - [ ] **Step 6: Update `layout.astro` to pass `isSuperadmin`**
@@ -705,7 +682,7 @@ To:
 
 ```bash
 git add src/components/admin/SettingsLayout.svelte src/pages/admin/settings/layout.astro
-git commit -m "feat: bitmask feature toggles in SettingsLayout with superadmin license section"
+git commit -m "feat: bitmask feature toggles with superadmin authorization tab"
 ```
 
 ---
@@ -813,15 +790,15 @@ Start dev server if not running, then:
 1. Go to `http://localhost:4321/admin/settings/layout`
 2. Log in as admin
 3. Verify "前台功能開關" section shows 8 checkboxes (including 2 video ones)
-4. Verify non-superadmin does NOT see "授權管理（Superadmin）" section
+4. Verify non-superadmin does NOT see the `/admin/settings/features` authorization tab
 
-- [ ] **Step 4: Manually verify superadmin license section**
+- [ ] **Step 4: Manually verify superadmin authorization tab**
 
 1. In SQLite, set a user's role to `superadmin` (or use setup if available)
 2. Log in as superadmin
-3. Go to `/admin/settings/layout`
-4. Verify "授權管理（Superadmin）" section is visible
-5. Uncheck one feature in the license section → click "儲存授權設定"
+3. Go to `/admin/settings/features`
+4. Verify "授權管理" page and "收費功能控制" section are visible
+5. Uncheck one feature in the authorization page → click "儲存授權設定"
 6. Verify the corresponding checkbox in "前台功能開關" becomes disabled with 🔒
 
 - [ ] **Step 5: Push**

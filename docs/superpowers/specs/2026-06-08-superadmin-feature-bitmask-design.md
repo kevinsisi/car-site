@@ -105,13 +105,15 @@ return {
 - 若對應 bit 在 `featureLicenseMask` 中為 0：checkbox **disabled**，顯示鎖頭 icon，tooltip「此功能未在您的方案中啟用」
 - 儲存時送 `featureMask` 到 settings API
 
-### 新增 Superadmin 專屬區塊
+### 新增 Superadmin 專屬授權頁
 
 - 僅當 session `role === 'superadmin'` 時渲染
-- 獨立區塊標題：「授權管理」
+- 獨立 tab/page：`/admin/settings/features`
+- 頁面標題：「授權管理」，區塊標題：「收費功能控制」
 - 同樣 8 個開關，控制 `featureLicenseMask`
 - 視覺上與 admin 區塊明顯區隔（邊框或背景色差異）
 - 儲存時送 `featureLicenseMask` 到 settings API
+- 從 `SettingsLayout.svelte` 移除 Superadmin 授權區塊，避免和 admin 的「前台功能開關」重複
 
 ---
 
@@ -119,16 +121,21 @@ return {
 
 ### Settings API（`src/pages/api/admin/settings.ts`）
 
-- `featureMask`：任何已登入 admin 可寫
+- `featureMask`：任何具備 settings 權限的 admin 可寫，但儲存時會套用 `featureLicenseMask` 上限
 - `featureLicenseMask`：`user.role !== 'superadmin'` 時回傳 403，不處理該欄位
+- `featureLicenseMask` 更新時同步遮罩既有 `featureMask`，避免保留未授權 bit
+- 賣車、社群、直接聯絡功能關閉時，相關 settings 欄位不可由 API 更新
 
 ### 功能型 API
 
 | Endpoint | 要檢查的 bit |
 |----------|-------------|
 | `POST /api/sell.ts` | `FEATURE_SELL_INQUIRY` |
+| `POST /api/admin/test-email.ts` | `FEATURE_SELL_INQUIRY` |
+| `POST /api/admin/video-settings.ts` | `FEATURE_HERO_VIDEOS` / `FEATURE_VIDEO_LINKS` |
+| `POST /api/admin/video-links.ts` | `FEATURE_VIDEO_LINKS` |
 
-聯絡頁無提交 API（純資訊展示）。Compare、About、Video、Social 為純展示功能，一律不需 API 層保護。
+聯絡頁無提交 API（純資訊展示）。Compare、About、Contact、Sell 等 disabled public URL 直接 redirect 到第一個開放的 public nav 頁。
 
 ---
 
@@ -162,7 +169,9 @@ return {
 | `src/lib/front-features.ts` | 修改（resolveFrontFeatures 改用 bitmask） |
 | `src/lib/settings.ts` | 修改（移除舊 boolean，新增兩個 integer field） |
 | `src/lib/migrate-features.ts` | 新增（一次性遷移邏輯） |
-| `src/components/admin/SettingsLayout.svelte` | 修改（checkbox 改用 mask，新增 superadmin 區塊） |
+| `src/components/admin/SettingsLayout.svelte` | 修改（checkbox 改用 mask，未授權 bit disabled） |
+| `src/components/admin/SettingsFeatures.svelte` | 新增（Superadmin 授權管理獨立 tab） |
+| `src/pages/admin/settings/features.astro` | 新增（Superadmin-only route） |
 | `src/pages/api/admin/settings.ts` | 修改（保護 featureLicenseMask，只允許 superadmin） |
 | `src/middleware.ts` | 修改（首次請求時呼叫 migrate-features） |
 | `src/pages/api/sell.ts` | 修改（加 FEATURE_SELL_INQUIRY bit 檢查） |

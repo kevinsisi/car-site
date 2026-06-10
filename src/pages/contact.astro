@@ -2,10 +2,12 @@
 import PublicLayout from '@/layouts/PublicLayout.astro';
 import PremiumIcon from '@/components/PremiumIcon.astro';
 import { getSettings } from '@/lib/settings';
-import { resolveFrontFeatures } from '@/lib/front-features';
+import { getFirstPublicHref, resolveFrontFeatures } from '@/lib/front-features';
 
 const settings = await getSettings();
 const features = resolveFrontFeatures(settings);
+const fallbackHref = getFirstPublicHref(features);
+if (!features.contactPage) return Astro.redirect(fallbackHref);
 const mapQuery = settings.storeAddress ? encodeURIComponent(settings.storeAddress) : '';
 const mapHrefApple = mapQuery ? `maps://maps.apple.com/?daddr=${mapQuery}&dirflg=d` : '#';
 const mapHrefGoogle = mapQuery ? `https://www.google.com/maps/dir/?api=1&destination=${mapQuery}&travelmode=driving` : '#';
@@ -68,11 +70,11 @@ const contactItems = [
           rel="noopener noreferrer"
         >來店賞車</a>
         <script>
-          const link = document.getElementById('nav-link');
+          const link = document.getElementById('nav-link') as HTMLAnchorElement | null;
           if (link) {
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
               (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
-            if (isIOS) link.href = link.dataset.apple;
+            if (isIOS && link.dataset.apple) link.href = link.dataset.apple;
           }
         </script>
       </div>

@@ -3,6 +3,7 @@ import '@/styles/admin.css';
 import { getSettings } from '@/lib/settings';
 import { siteIconHref } from '@/lib/site-icon';
 import { PERMISSIONS, hasPermission } from '@/lib/permissions';
+import { resolveFrontFeatures } from '@/lib/front-features';
 import { styleVars, styles } from '@/lib/theme';
 import type { AdminUserSession } from '@/lib/auth';
 
@@ -14,6 +15,7 @@ interface Props {
 const { user, title = '後台管理' } = Astro.props;
 const pathname = Astro.url.pathname;
 const settings = await getSettings();
+const features = resolveFrontFeatures(settings);
 const siteIconUrl = siteIconHref(settings);
 const activeStyle = styles[settings.activeStyle];
 
@@ -32,6 +34,9 @@ const settingsPerms = [
   PERMISSIONS.SETTINGS_SMTP,
 ];
 const canSeeAnySettings = isSuper || settingsPerms.some((p) => hasPermission(perm, p));
+const canSeeVideos = (features.heroVideos && (isSuper || hasPermission(perm, PERMISSIONS.VIDEOS_CAROUSEL))) || (features.videoLinks && (isSuper || hasPermission(perm, PERMISSIONS.VIDEOS_LINKS)));
+const canSeeSellInquiries = features.sellInquiry && (isSuper || hasPermission(perm, PERMISSIONS.SELL_INQUIRIES));
+const canSeeSmtp = features.sellInquiry && (isSuper || hasPermission(perm, PERMISSIONS.SETTINGS_SMTP));
 ---
 
 <!doctype html>
@@ -84,13 +89,13 @@ const canSeeAnySettings = isSuper || settingsPerms.some((p) => hasPermission(per
           </a>
         )}
 
-        {(isSuper || hasPermission(perm, PERMISSIONS.VIDEOS_CAROUSEL) || hasPermission(perm, PERMISSIONS.VIDEOS_LINKS)) && (
+        {canSeeVideos && (
           <a href="/admin/videos" class:list={['nav-item', { 'is-active': isActive('/admin/videos') }]}>
             <span>影片管理</span>
           </a>
         )}
 
-        {(isSuper || hasPermission(perm, PERMISSIONS.SELL_INQUIRIES)) && (
+        {canSeeSellInquiries && (
           <a href="/admin/sell-inquiries" class:list={['nav-item', { 'is-active': isActive('/admin/sell-inquiries') }]}>
             <span>賣車申請</span>
           </a>
@@ -108,8 +113,11 @@ const canSeeAnySettings = isSuper || settingsPerms.some((p) => hasPermission(per
             {(isSuper || hasPermission(perm, PERMISSIONS.SETTINGS_GALLERY)) && (
               <a href="/admin/settings/gallery" class:list={['nav-item nav-item--sub', { 'is-active': isActive('/admin/settings/gallery') }]}>照片模式</a>
             )}
-            {(isSuper || hasPermission(perm, PERMISSIONS.SETTINGS_SMTP)) && (
+            {canSeeSmtp && (
               <a href="/admin/settings/smtp" class:list={['nav-item nav-item--sub', { 'is-active': isActive('/admin/settings/smtp') }]}>SMTP 通知</a>
+            )}
+            {isSuper && (
+              <a href="/admin/settings/features" class:list={['nav-item nav-item--sub', { 'is-active': isActive('/admin/settings/features') }]}>授權管理</a>
             )}
           </div>
         )}

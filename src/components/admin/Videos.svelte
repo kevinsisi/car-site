@@ -3,7 +3,7 @@
   import type { SiteSettings, HeroVideo } from '@/lib/settings';
   import type { VideoLinkView } from '@/lib/video-links';
 
-  export let settings: SiteSettings;
+  export let settings: Pick<SiteSettings, 'videoSectionPosition' | 'heroVideos' | 'videoLinksSectionTitle'>;
   export let videoLinks: VideoLinkView[] = [];
   export let canCarousel: boolean;
   export let canLinks: boolean;

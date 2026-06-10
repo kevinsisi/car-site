@@ -2,11 +2,13 @@
 import PublicLayout from '@/layouts/PublicLayout.astro';
 import BrandIcon from '@/components/BrandIcon.astro';
 import { getSettings } from '@/lib/settings';
-import { resolveFrontFeatures } from '@/lib/front-features';
+import { getFirstPublicHref, resolveFrontFeatures } from '@/lib/front-features';
 import { getVehicleBySlug, listPublicInventoryVehicles } from '@/lib/vehicles';
 
 const settings = await getSettings();
 const features = resolveFrontFeatures(settings);
+const fallbackHref = getFirstPublicHref(features);
+if (!features.compare) return Astro.redirect(fallbackHref);
 const idsParam = Astro.url.searchParams.get('ids') || '';
 const slugs = idsParam.split(',').map((s) => s.trim()).filter(Boolean);
 
@@ -73,15 +75,8 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
       <h1>規格比較</h1>
     </div>
 
-    {!features.compare && (
-      <div class="compare-disabled-note">
-        <strong>此網站目前未在前台提供比車入口。</strong>
-        <span>已分享的比較連結仍可查看，新增或調整比較車輛請回到車輛列表逐台瀏覽。</span>
-      </div>
-    )}
-
     {/* ── 加入車輛（搜尋區）放在最上方 ── */}
-    {features.compare && availableVehicles.length > 0 && (
+    {availableVehicles.length > 0 && (
       <div class="compare-add-section">
         <div class="compare-add-header">
           <h2>選擇車輛加入比較</h2>
@@ -133,7 +128,7 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
     {vehicles.length === 0 ? (
       <div class="compare-empty">
         <p>尚未選擇任何車輛</p>
-        <p class="muted">{features.compare ? '從上方選擇車輛，或在車輛列表點選「＋ 比較」。' : '目前比車入口已關閉，請從全部車輛與找車頁瀏覽單一車輛。'}</p>
+        <p class="muted">從上方選擇車輛，或在車輛列表點選「＋ 比較」。</p>
       </div>
     ) : (
       <div class="compare-table-wrapper">
@@ -159,7 +154,7 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
                       <BrandIcon iconUrl={v!.brandIconUrl} alt={v!.brandDisplayName} size={18} />
                       <a href={`/cars/${v!.slug}`}>{v!.cardTitle}</a>
                     </div>
-                    {features.compare && <a href={removeUrl(v!.slug)} class="compare-remove">✕ 移除</a>}
+                    <a href={removeUrl(v!.slug)} class="compare-remove">✕ 移除</a>
                   </div>
                 </th>
               ))}
@@ -181,14 +176,13 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
 
     <div class="compare-page__footer">
       <a href="/cars" class="btn-secondary">← 返回車輛列表</a>
-      {features.compare && vehicles.length > 0 && (
+      {vehicles.length > 0 && (
         <a href="/cars/compare" class="btn-secondary">清除全部</a>
       )}
     </div>
   </div>
 </PublicLayout>
 
-{features.compare && (
 <script>
   // If page loaded without ?ids but localStorage has slugs, redirect with them
   const urlIds = new URLSearchParams(location.search).get('ids');
@@ -329,7 +323,6 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
 
   document.querySelectorAll<HTMLInputElement>('input[data-suggestion-filter]').forEach(setupSearchSuggestions);
 </script>
-)}
 
 <style>
 .compare-page { max-width: 1200px; margin: 0 auto; padding: 2rem 1rem 6rem; }

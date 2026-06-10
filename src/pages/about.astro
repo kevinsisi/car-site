@@ -1,10 +1,12 @@
 ---
 import PublicLayout from '@/layouts/PublicLayout.astro';
 import { getSettings } from '@/lib/settings';
-import { resolveFrontFeatures } from '@/lib/front-features';
+import { getFirstPublicHref, resolveFrontFeatures } from '@/lib/front-features';
 
 const settings = await getSettings();
 const features = resolveFrontFeatures(settings);
+const fallbackHref = getFirstPublicHref(features);
+if (!features.aboutPage) return Astro.redirect(fallbackHref);
 const promises = [
   {
     title: '車況先行',

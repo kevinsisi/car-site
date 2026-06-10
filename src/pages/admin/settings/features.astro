@@ -1,0 +1,15 @@
+---
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import SettingsFeatures from '@/components/admin/SettingsFeatures.svelte';
+import { getSession, hasAnyUsers } from '@/lib/auth';
+import { getSettings } from '@/lib/settings';
+
+if (!await hasAnyUsers()) return Astro.redirect('/admin/setup');
+const user = await getSession(Astro.cookies);
+if (!user) return Astro.redirect('/admin/login');
+if (user.role !== 'superadmin') return Astro.redirect('/admin');
+const settings = await getSettings();
+---
+<AdminLayout user={user} title="授權管理">
+  <SettingsFeatures client:load settings={settings} />
+</AdminLayout>

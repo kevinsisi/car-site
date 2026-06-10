@@ -3,6 +3,7 @@ import AdminLayout from '@/layouts/AdminLayout.astro';
 import SettingsBasic from '@/components/admin/SettingsBasic.svelte';
 import { getSession, hasAnyUsers } from '@/lib/auth';
 import { PERMISSIONS, hasPermission } from '@/lib/permissions';
+import { resolveFrontFeatures } from '@/lib/front-features';
 import { getSettings } from '@/lib/settings';
 
 if (!await hasAnyUsers()) return Astro.redirect('/admin/setup');
@@ -12,7 +13,8 @@ if (user.role !== 'superadmin' && !hasPermission(user.permissions, PERMISSIONS.S
   return Astro.redirect('/admin');
 }
 const settings = await getSettings();
+const features = resolveFrontFeatures(settings);
 ---
 <AdminLayout user={user} title="基本設定">
-  <SettingsBasic client:load settings={settings} />
+  <SettingsBasic client:load settings={settings} features={features} />
 </AdminLayout>
