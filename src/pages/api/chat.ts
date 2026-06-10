@@ -49,7 +49,10 @@ function parseTextFromBody(body: unknown): string {
     const obj = body as Record<string, unknown>;
     if (obj.type === 'text' && typeof obj.value === 'string') return obj.value;
     if (Array.isArray(obj.parts)) {
-      return (obj.parts as Array<{ text?: string }>).map((p) => p?.text ?? '').join('');
+      return (obj.parts as Array<{ type?: string; synthetic?: boolean; text?: string }>)
+        .filter((p) => p.type === 'text' && !p.synthetic && typeof p.text === 'string')
+        .map((p) => p.text)
+        .join('');
     }
   }
   return '';
