@@ -35,7 +35,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const directFields: (keyof SiteSettings)[] = ['lineUrl', 'phoneNumber'];
   const socialFields: (keyof SiteSettings)[] = ['instagramUrl', 'facebookUrl', 'threadsUrl', 'tiktokUrl', 'socialIcons'];
   const smtpFields: (keyof SiteSettings)[] = ['notificationEmail', 'gmailUser', 'gmailAppPassword'];
-  const aiChatFields: (keyof SiteSettings)[] = ['aiChatOpening', 'aiChatTone'];
+  const aiChatFields: (keyof SiteSettings)[] = ['siteUrl', 'aiChatOpening', 'aiChatTone'];
 
   if (!hasFeature(currentMask, FEATURE_DIRECT_CONTACT) && directFields.some((key) => hasOwn(body, key))) return jsonError('direct contact feature disabled');
   if (!hasFeature(currentMask, FEATURE_SOCIAL_ICONS) && socialFields.some((key) => hasOwn(body, key))) return jsonError('social feature disabled');
@@ -111,6 +111,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   if (hasOwn(body, 'notificationEmail')) updates.notificationEmail = String(body.notificationEmail || '');
   if (hasOwn(body, 'gmailUser')) updates.gmailUser = String(body.gmailUser || '');
   if (hasOwn(body, 'gmailAppPassword')) updates.gmailAppPassword = String(body.gmailAppPassword || '');
+  if (hasOwn(body, 'siteUrl')) updates.siteUrl = sanitizePublicHref(body.siteUrl) || '';
   if (hasOwn(body, 'aiChatOpening')) updates.aiChatOpening = String(body.aiChatOpening || '');
   if (hasOwn(body, 'aiChatTone')) updates.aiChatTone = String(body.aiChatTone || '');
 

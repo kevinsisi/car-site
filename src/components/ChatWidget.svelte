@@ -5,7 +5,9 @@
 
   const { openingMessage }: Props = $props();
 
-  type Message = { role: 'user' | 'assistant'; content: string };
+  type Message = { role: 'user' | 'assistant'; content: string; imagePreview?: string };
+
+  const MAX_EXCHANGES = 13;
 
   let open = $state(false);
   let messages = $state<Message[]>([]);
@@ -13,6 +15,14 @@
   let loading = $state(false);
   let error = $state('');
   let initialized = $state(false);
+  let exchangeCount = $state(0);
+  let pendingImage = $state<{ data: string; mediaType: string; preview: string } | null>(null);
+
+  let limitReached = $derived(exchangeCount >= MAX_EXCHANGES);
+  let canSend = $derived(!loading && !limitReached && (input.trim().length > 0 || pendingImage !== null));
+
+  let fileInput: HTMLInputElement;
+  let messagesEl: HTMLDivElement;
 
   function toggle() {
     open = !open;
@@ -24,26 +34,81 @@
     }
   }
 
+  function scrollToBottom() {
+    if (messagesEl) {
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+  }
+
+  async function fileToBase64(file: File): Promise<{ data: string; mediaType: string; preview: string }> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        const [prefix, data] = dataUrl.split(',');
+        const mediaType = prefix.match(/:(.*?);/)?.[1] ?? 'image/jpeg';
+        resolve({ data, mediaType, preview: dataUrl });
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function handleFileSelect(e: Event) {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) return;
+    if (file.size > 5 * 1024 * 1024) { error = '圖片過大（最大 5MB）'; return; }
+    fileToBase64(file).then((img) => { pendingImage = img; error = ''; });
+    (e.target as HTMLInputElement).value = '';
+  }
+
+  function handlePaste(e: ClipboardEvent) {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (!file) continue;
+        if (file.size > 5 * 1024 * 1024) { error = '圖片過大（最大 5MB）'; return; }
+        e.preventDefault();
+        fileToBase64(file).then((img) => { pendingImage = img; error = ''; });
+        return;
+      }
+    }
+  }
+
+  function removePendingImage() {
+    pendingImage = null;
+  }
+
   async function send() {
     const text = input.trim();
-    if (!text || loading) return;
+    if (!canSend) return;
     input = '';
     error = '';
-    messages = [...messages, { role: 'user', content: text }];
+
+    const userMsg: Message = { role: 'user', content: text || '（圖片）', imagePreview: pendingImage?.preview };
+    const imageToSend = pendingImage ? { data: pendingImage.data, mediaType: pendingImage.mediaType } : undefined;
+    pendingImage = null;
+    messages = [...messages, userMsg];
     loading = true;
+    setTimeout(scrollToBottom, 50);
 
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          message: text,
-          history: messages.slice(-7, -1),
+          message: text || '（圖片）',
+          history: messages.slice(-7, -1).map((m) => ({ role: m.role, content: m.content })),
+          ...(imageToSend ? { image: imageToSend } : {}),
         }),
       });
       const data = (await res.json()) as { reply?: string; error?: string };
       if (res.ok && data.reply) {
         messages = [...messages, { role: 'assistant', content: data.reply }];
+        exchangeCount += 1;
       } else {
         error = data.error || '發生錯誤，請稍後再試。';
       }
@@ -51,6 +116,7 @@
       error = '網路錯誤，請稍後再試。';
     } finally {
       loading = false;
+      setTimeout(scrollToBottom, 50);
     }
   }
 
@@ -59,6 +125,18 @@
       e.preventDefault();
       send();
     }
+  }
+
+  // Render assistant text: escape HTML then linkify URLs
+  function renderText(text: string): string {
+    const escaped = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    return escaped.replace(
+      /(https?:\/\/[^\s<>"]+)/g,
+      '<a href="$1" target="_blank" rel="noopener noreferrer" class="chat-link">$1</a>',
+    );
   }
 </script>
 
@@ -85,10 +163,20 @@
       <button class="chat-close" onclick={toggle} aria-label="關閉">✕</button>
     </div>
 
-    <div class="chat-messages">
+    <div class="chat-messages" bind:this={messagesEl}>
       {#each messages as msg}
         <div class="chat-msg chat-msg--{msg.role}">
-          <div class="chat-bubble-msg">{msg.content}</div>
+          <div class="chat-bubble-msg">
+            {#if msg.imagePreview}
+              <img class="chat-img-preview" src={msg.imagePreview} alt="附圖" />
+            {/if}
+            {#if msg.role === 'assistant'}
+              <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+              {@html renderText(msg.content)}
+            {:else}
+              {msg.content}
+            {/if}
+          </div>
         </div>
       {/each}
       {#if loading}
@@ -101,21 +189,55 @@
       {#if error}
         <div class="chat-error">{error}</div>
       {/if}
+      {#if limitReached}
+        <div class="chat-limit-notice">本次對話已達 {MAX_EXCHANGES} 輪上限，請重新整理頁面開始新對話。</div>
+      {/if}
     </div>
 
+    <!-- Pending image preview -->
+    {#if pendingImage}
+      <div class="pending-image-strip">
+        <img class="pending-thumb" src={pendingImage.preview} alt="待傳送圖片" />
+        <button class="pending-remove" onclick={removePendingImage} aria-label="移除圖片">✕</button>
+      </div>
+    {/if}
+
     <div class="chat-input-row">
+      <!-- Hidden file input -->
+      <input
+        bind:this={fileInput}
+        type="file"
+        accept="image/*"
+        class="visually-hidden"
+        onchange={handleFileSelect}
+      />
+      <!-- Image attach button -->
+      <button
+        class="chat-attach"
+        onclick={() => fileInput.click()}
+        disabled={loading || limitReached}
+        aria-label="附加圖片"
+        title="附加圖片"
+        type="button"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+        </svg>
+      </button>
+
       <textarea
         class="chat-input"
         rows="1"
-        placeholder="輸入訊息..."
+        placeholder={limitReached ? '對話已達上限' : '輸入訊息...'}
         bind:value={input}
         onkeydown={onKeydown}
-        disabled={loading}
+        onpaste={handlePaste}
+        disabled={loading || limitReached}
       ></textarea>
       <button
         class="chat-send"
         onclick={send}
-        disabled={!input.trim() || loading}
+        disabled={!canSend}
         aria-label="送出"
       >
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
@@ -194,6 +316,21 @@
     border-bottom-left-radius: 4px;
   }
 
+  :global(.chat-link) {
+    color: var(--accent, #3b82f6);
+    text-decoration: underline;
+    word-break: break-all;
+  }
+  .chat-msg--user .chat-bubble-msg :global(.chat-link) { color: #fff; }
+
+  .chat-img-preview {
+    display: block;
+    max-width: 100%; max-height: 180px;
+    border-radius: 10px;
+    margin-bottom: 0.4rem;
+    object-fit: cover;
+  }
+
   .chat-bubble-msg--typing {
     display: flex; gap: 4px; align-items: center; padding: 0.7rem 0.9rem;
   }
@@ -215,6 +352,29 @@
     padding: 0.5rem 0.75rem; border-radius: 10px;
   }
 
+  .chat-limit-notice {
+    font-size: 0.78rem; color: var(--muted, #888);
+    text-align: center; padding: 0.5rem;
+  }
+
+  .pending-image-strip {
+    padding: 0.4rem 0.75rem;
+    border-top: 1px solid var(--line, #e5e7eb);
+    display: flex; align-items: center; gap: 0.5rem;
+    background: var(--surface, #fff);
+    flex-shrink: 0;
+  }
+  .pending-thumb {
+    height: 48px; width: 48px; object-fit: cover; border-radius: 8px;
+    border: 1px solid var(--line, #e5e7eb);
+  }
+  .pending-remove {
+    background: none; border: none; cursor: pointer;
+    color: var(--muted, #888); font-size: 0.85rem; padding: 0.1rem 0.3rem;
+    border-radius: 4px;
+  }
+  .pending-remove:hover { color: #e57373; }
+
   .chat-input-row {
     padding: 0.65rem 0.75rem;
     border-top: 1px solid var(--line, #e5e7eb);
@@ -222,6 +382,24 @@
     flex-shrink: 0;
     background: var(--surface, #fff);
   }
+
+  .visually-hidden {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden;
+    clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+
+  .chat-attach {
+    width: 2.25rem; height: 2.25rem; border-radius: 50%;
+    background: none; color: var(--muted, #888);
+    border: 1px solid var(--line, #e5e7eb); cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .chat-attach:not(:disabled):hover { color: var(--accent, #3b82f6); border-color: var(--accent, #3b82f6); }
+  .chat-attach:disabled { opacity: 0.4; cursor: not-allowed; }
+  .chat-attach svg { width: 1rem; height: 1rem; }
+
   .chat-input {
     flex: 1; resize: none; border: 1px solid var(--line, #e5e7eb);
     border-radius: 12px; padding: 0.55rem 0.8rem;

@@ -135,6 +135,7 @@ export interface SiteSettings {
   notificationEmail: string;
   gmailUser: string;
   gmailAppPassword: string;
+  siteUrl: string;
   aiChatOpening: string;
   aiChatTone: string;
 }
@@ -183,6 +184,7 @@ const defaults: SiteSettings = {
   notificationEmail: '',
   gmailUser: '',
   gmailAppPassword: '',
+  siteUrl: '',
   aiChatOpening: 'Hi！我是您的購車顧問，請問有什麼可以幫您的？',
   aiChatTone: '',
 };
@@ -277,6 +279,7 @@ export async function getSettings(): Promise<SiteSettings> {
     notificationEmail: map.get('notificationEmail') || '',
     gmailUser: map.get('gmailUser') || '',
     gmailAppPassword: map.get('gmailAppPassword') || '',
+    siteUrl: map.get('siteUrl') || '',
     aiChatOpening: map.get('aiChatOpening') || defaults.aiChatOpening,
     aiChatTone: map.get('aiChatTone') || '',
   };

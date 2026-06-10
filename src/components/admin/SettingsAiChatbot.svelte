@@ -38,6 +38,7 @@
 
   // ── Chat content form ─────────────────────────────────────────
   let chatForm = $state({
+    siteUrl: settings.siteUrl,
     aiChatOpening: settings.aiChatOpening,
     aiChatTone: settings.aiChatTone,
   });
@@ -185,6 +186,17 @@
     <h2>對話設定</h2>
 
     <div class="form-grid">
+      <label class="form-field">
+        <span class="field-label">網站 URL</span>
+        <input
+          type="url"
+          class="field-input"
+          placeholder="https://your-site.com"
+          bind:value={chatForm.siteUrl}
+        />
+        <small class="field-hint">AI 推薦車輛時附上的連結會用這個網址。留空則自動偵測（可能顯示 localhost）。</small>
+      </label>
+
       <label class="form-field">
         <span class="field-label">開場白</span>
         <textarea
