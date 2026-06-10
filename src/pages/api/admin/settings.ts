@@ -92,8 +92,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const n = Number.parseInt(String(body.featureLicenseMask ?? ''), 10);
     if (Number.isFinite(n) && n >= 0 && n <= 511) {
       updates.featureLicenseMask = n;
-      const requestedMask = typeof updates.featureMask === 'number' ? updates.featureMask : currentSettings.featureMask;
-      updates.featureMask = requestedMask & n;
+      updates.featureMask = n;
     }
   }
   if (typeof updates.featureMask === 'number' && !hasOwn(body, 'featureLicenseMask')) {
