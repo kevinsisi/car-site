@@ -135,6 +135,8 @@ export interface SiteSettings {
   notificationEmail: string;
   gmailUser: string;
   gmailAppPassword: string;
+  aiChatOpening: string;
+  aiChatTone: string;
 }
 
 const defaults: SiteSettings = {
@@ -181,6 +183,8 @@ const defaults: SiteSettings = {
   notificationEmail: '',
   gmailUser: '',
   gmailAppPassword: '',
+  aiChatOpening: 'Hi！我是您的購車顧問，請問有什麼可以幫您的？',
+  aiChatTone: '',
 };
 
 function resolveDetailSpecFields(value: string | undefined): string[] {
@@ -273,7 +277,21 @@ export async function getSettings(): Promise<SiteSettings> {
     notificationEmail: map.get('notificationEmail') || '',
     gmailUser: map.get('gmailUser') || '',
     gmailAppPassword: map.get('gmailAppPassword') || '',
+    aiChatOpening: map.get('aiChatOpening') || defaults.aiChatOpening,
+    aiChatTone: map.get('aiChatTone') || '',
   };
+}
+
+export async function setSettingValue(key: string, value: string): Promise<void> {
+  const now = new Date().toISOString();
+  await db
+    .insert(siteSettings)
+    .values({ key, value, updatedAt: now })
+    .onConflictDoUpdate({ target: siteSettings.key, set: { value, updatedAt: now } });
+}
+
+export async function deleteSettingValue(key: string): Promise<void> {
+  await db.delete(siteSettings).where(eq(siteSettings.key, key));
 }
 
 export async function setSettings(input: Partial<Record<keyof SiteSettings, unknown>>) {

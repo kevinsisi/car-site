@@ -3,6 +3,7 @@ import SocialIcon from '@/components/SocialIcon.astro';
 import PremiumIcon from '@/components/PremiumIcon.astro';
 import CompareBar from '@/components/CompareBar.astro';
 import VideoCarousel from '@/components/VideoCarousel.astro';
+import ChatWidget from '@/components/ChatWidget.svelte';
 import { getSettings } from '@/lib/settings';
 import { getPublicNavItems, resolveFrontFeatures } from '@/lib/front-features';
 import { siteIconHref } from '@/lib/site-icon';
@@ -246,5 +247,8 @@ const navItems = getPublicNavItems(features);
         }
       });
     </script>
+    {features.aiChatbot && (
+      <ChatWidget client:load openingMessage={settings.aiChatOpening} />
+    )}
   </body>
 </html>

@@ -4,7 +4,7 @@ import { getSettings } from '@/lib/settings';
 import { siteIconHref } from '@/lib/site-icon';
 import { PERMISSIONS, hasPermission } from '@/lib/permissions';
 import { resolveFrontFeatures } from '@/lib/front-features';
-import { FEATURE_ANALYTICS, hasFeature } from '@/lib/features';
+import { FEATURE_ANALYTICS, FEATURE_AI_CHATBOT, hasFeature } from '@/lib/features';
 import { styleVars, styles } from '@/lib/theme';
 import type { AdminUserSession } from '@/lib/auth';
 
@@ -37,6 +37,7 @@ const canSeeAnySettings = isSuper || settingsPerms.some((p) => hasPermission(per
 const canSeeVideos = (features.heroVideos && (isSuper || hasPermission(perm, PERMISSIONS.VIDEOS_CAROUSEL))) || (features.videoLinks && (isSuper || hasPermission(perm, PERMISSIONS.VIDEOS_LINKS)));
 const canSeeSellInquiries = features.sellInquiry && (isSuper || hasPermission(perm, PERMISSIONS.SELL_INQUIRIES));
 const canSeeAnalytics = hasFeature(settings.featureLicenseMask ?? 0, FEATURE_ANALYTICS) && (isSuper || hasPermission(perm, PERMISSIONS.ANALYTICS));
+const canSeeAiChatbot = hasFeature(settings.featureLicenseMask ?? 0, FEATURE_AI_CHATBOT) && (isSuper || hasPermission(perm, PERMISSIONS.SETTINGS_AI_CHATBOT));
 ---
 
 <!doctype html>
@@ -73,7 +74,7 @@ const canSeeAnalytics = hasFeature(settings.featureLicenseMask ?? 0, FEATURE_ANA
       </div>
 
       <nav class="admin-sidebar__nav">
-        <a href="/admin" class:list={['nav-item', { 'is-active': isActive('/admin') && !isActive('/admin/vehicles') && !isActive('/admin/brands') && !isActive('/admin/videos') && !isActive('/admin/sell-inquiries') && !isActive('/admin/settings') && !isActive('/admin/users') && !isActive('/admin/account') && !isActive('/admin/analytics') }]}>
+        <a href="/admin" class:list={['nav-item', { 'is-active': isActive('/admin') && !isActive('/admin/vehicles') && !isActive('/admin/brands') && !isActive('/admin/videos') && !isActive('/admin/sell-inquiries') && !isActive('/admin/settings') && !isActive('/admin/users') && !isActive('/admin/account') && !isActive('/admin/analytics') && !isActive('/admin/chat') }]}>
           <span>概覽</span>
         </a>
 
@@ -112,6 +113,9 @@ const canSeeAnalytics = hasFeature(settings.featureLicenseMask ?? 0, FEATURE_ANA
             )}
             {(isSuper || hasPermission(perm, PERMISSIONS.SETTINGS_GALLERY)) && (
               <a href="/admin/settings/gallery" class:list={['nav-item nav-item--sub', { 'is-active': isActive('/admin/settings/gallery') }]}>照片模式</a>
+            )}
+            {canSeeAiChatbot && (
+              <a href="/admin/settings/ai-chatbot" class:list={['nav-item nav-item--sub', { 'is-active': isActive('/admin/settings/ai-chatbot') }]}>AI 客服</a>
             )}
             {isSuper && (
               <a href="/admin/settings/features" class:list={['nav-item nav-item--sub', { 'is-active': isActive('/admin/settings/features') }]}>授權管理</a>

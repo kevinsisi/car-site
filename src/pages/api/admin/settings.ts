@@ -1,9 +1,9 @@
 import type { APIRoute } from 'astro';
 import { getAdminOrResponse } from '@/lib/auth';
-import { PERMISSIONS } from '@/lib/permissions';
+import { PERMISSIONS, hasPermission } from '@/lib/permissions';
 import { hashIp, logAdminActivity } from '@/lib/analytics';
 import { detailSpecFieldOptions } from '@/lib/detail-spec-fields';
-import { FEATURE_DIRECT_CONTACT, FEATURE_SELL_INQUIRY, FEATURE_SOCIAL_ICONS, effectiveFeatureMask, hasFeature } from '@/lib/features';
+import { FEATURE_DIRECT_CONTACT, FEATURE_SELL_INQUIRY, FEATURE_SOCIAL_ICONS, FEATURE_AI_CHATBOT, effectiveFeatureMask, hasFeature } from '@/lib/features';
 import { sanitizeImageUrl, sanitizePublicHref } from '@/lib/safe-url';
 import { getSettings, parseSocialIcons, setSettings, type GalleryMode, type SiteSettings } from '@/lib/settings';
 import { resolveStyle, resolveTemplate } from '@/lib/theme';
@@ -23,7 +23,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const _user = await getAdminOrResponse(cookies);
   if (_user instanceof Response) return _user;
   const user = _user;
-  const settingsPerms = PERMISSIONS.SETTINGS_BASIC | PERMISSIONS.SETTINGS_LAYOUT | PERMISSIONS.SETTINGS_GALLERY;
+  const settingsPerms = PERMISSIONS.SETTINGS_BASIC | PERMISSIONS.SETTINGS_LAYOUT | PERMISSIONS.SETTINGS_GALLERY | PERMISSIONS.SETTINGS_AI_CHATBOT;
   if (user.role !== 'superadmin' && (user.permissions & settingsPerms) === 0) {
     return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403, headers: { 'content-type': 'application/json' } });
   }
@@ -35,10 +35,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const directFields: (keyof SiteSettings)[] = ['lineUrl', 'phoneNumber'];
   const socialFields: (keyof SiteSettings)[] = ['instagramUrl', 'facebookUrl', 'threadsUrl', 'tiktokUrl', 'socialIcons'];
   const smtpFields: (keyof SiteSettings)[] = ['notificationEmail', 'gmailUser', 'gmailAppPassword'];
+  const aiChatFields: (keyof SiteSettings)[] = ['aiChatOpening', 'aiChatTone'];
 
   if (!hasFeature(currentMask, FEATURE_DIRECT_CONTACT) && directFields.some((key) => hasOwn(body, key))) return jsonError('direct contact feature disabled');
   if (!hasFeature(currentMask, FEATURE_SOCIAL_ICONS) && socialFields.some((key) => hasOwn(body, key))) return jsonError('social feature disabled');
   if (!hasFeature(currentMask, FEATURE_SELL_INQUIRY) && smtpFields.some((key) => hasOwn(body, key))) return jsonError('sell inquiry feature disabled');
+  if (!hasFeature(licenseMask, FEATURE_AI_CHATBOT) && aiChatFields.some((key) => hasOwn(body, key))) return jsonError('ai chatbot feature disabled');
+  if (aiChatFields.some((key) => hasOwn(body, key)) && user.role !== 'superadmin' && !hasPermission(user.permissions, PERMISSIONS.SETTINGS_AI_CHATBOT)) return jsonError('forbidden');
 
   if (hasOwn(body, 'siteName')) updates.siteName = String(body.siteName || '');
   if (hasOwn(body, 'siteIconUrl')) updates.siteIconUrl = sanitizeImageUrl(body.siteIconUrl);
@@ -83,14 +86,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   if (hasOwn(body, 'featureMask')) {
     if (user.role !== 'superadmin') return jsonError('forbidden');
     const n = Number.parseInt(String(body.featureMask ?? ''), 10);
-    if (Number.isFinite(n) && n >= 0 && n <= 511) updates.featureMask = n;
+    if (Number.isFinite(n) && n >= 0 && n <= 1023) updates.featureMask = n;
   }
   if (hasOwn(body, 'featureLicenseMask')) {
     if (user.role !== 'superadmin') {
       return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403, headers: { 'content-type': 'application/json' } });
     }
     const n = Number.parseInt(String(body.featureLicenseMask ?? ''), 10);
-    if (Number.isFinite(n) && n >= 0 && n <= 511) {
+    if (Number.isFinite(n) && n >= 0 && n <= 1023) {
       updates.featureLicenseMask = n;
       updates.featureMask = n;
     }
@@ -108,6 +111,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   if (hasOwn(body, 'notificationEmail')) updates.notificationEmail = String(body.notificationEmail || '');
   if (hasOwn(body, 'gmailUser')) updates.gmailUser = String(body.gmailUser || '');
   if (hasOwn(body, 'gmailAppPassword')) updates.gmailAppPassword = String(body.gmailAppPassword || '');
+  if (hasOwn(body, 'aiChatOpening')) updates.aiChatOpening = String(body.aiChatOpening || '');
+  if (hasOwn(body, 'aiChatTone')) updates.aiChatTone = String(body.aiChatTone || '');
 
   await setSettings(updates);
 

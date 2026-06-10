@@ -3,7 +3,7 @@ import {
   hasFeature,
   FEATURE_COMPARE, FEATURE_SELL_INQUIRY, FEATURE_CONTACT_PAGE,
   FEATURE_ABOUT_PAGE, FEATURE_SOCIAL_ICONS, FEATURE_DIRECT_CONTACT,
-  FEATURE_HERO_VIDEOS, FEATURE_VIDEO_LINKS,
+  FEATURE_HERO_VIDEOS, FEATURE_VIDEO_LINKS, FEATURE_AI_CHATBOT,
   DEFAULT_FEATURE_MASK, ALL_FEATURES_MASK, effectiveFeatureMask,
 } from './features';
 
@@ -16,6 +16,7 @@ export interface FrontFeatures {
   directContact: boolean;
   heroVideos: boolean;
   videoLinks: boolean;
+  aiChatbot: boolean;
 }
 
 export interface PublicNavItem {
@@ -37,6 +38,7 @@ export function resolveFrontFeatures(settings: SiteSettings): FrontFeatures {
     directContact: hasFeature(mask, FEATURE_DIRECT_CONTACT),
     heroVideos:    hasFeature(mask, FEATURE_HERO_VIDEOS),
     videoLinks:    hasFeature(mask, FEATURE_VIDEO_LINKS),
+    aiChatbot:     hasFeature(mask, FEATURE_AI_CHATBOT),
   };
 }
 
