@@ -34,7 +34,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const licenseMask = currentSettings.featureLicenseMask;
   const directFields: (keyof SiteSettings)[] = ['lineUrl', 'phoneNumber'];
   const socialFields: (keyof SiteSettings)[] = ['instagramUrl', 'facebookUrl', 'threadsUrl', 'tiktokUrl', 'socialIcons'];
-  const smtpFields: (keyof SiteSettings)[] = ['notificationEmail', 'gmailUser', 'gmailAppPassword'];
+  const smtpFields: (keyof SiteSettings)[] = ['notificationEmail', 'resendApiKey'];
 
   if (!hasFeature(currentMask, FEATURE_DIRECT_CONTACT) && directFields.some((key) => hasOwn(body, key))) return jsonError('direct contact feature disabled');
   if (!hasFeature(currentMask, FEATURE_SOCIAL_ICONS) && socialFields.some((key) => hasOwn(body, key))) return jsonError('social feature disabled');
@@ -106,8 +106,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     updates.galleryMode = body.galleryMode;
   }
   if (hasOwn(body, 'notificationEmail')) updates.notificationEmail = String(body.notificationEmail || '');
-  if (hasOwn(body, 'gmailUser')) updates.gmailUser = String(body.gmailUser || '');
-  if (hasOwn(body, 'gmailAppPassword')) updates.gmailAppPassword = String(body.gmailAppPassword || '');
+  if (hasOwn(body, 'resendApiKey')) updates.resendApiKey = String(body.resendApiKey || '');
 
   await setSettings(updates);
 

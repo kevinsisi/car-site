@@ -59,8 +59,7 @@
     threadsUrl: settings.threadsUrl,
     tiktokUrl: settings.tiktokUrl,
     notificationEmail: settings.notificationEmail,
-    gmailUser: settings.gmailUser,
-    gmailAppPassword: settings.gmailAppPassword,
+    resendApiKey: settings.resendApiKey,
     socialIcons: { ...settings.socialIcons } as Record<SocialPlatform, SocialIconConfig | undefined>,
   });
 
@@ -188,8 +187,7 @@
     }
     if (!features.sellInquiry) {
       delete payload.notificationEmail;
-      delete payload.gmailUser;
-      delete payload.gmailAppPassword;
+      delete payload.resendApiKey;
     }
     const response = await adminFetch('/api/admin/settings', {
       method: 'POST',
@@ -314,9 +312,8 @@
   <details class="settings-section">
     <summary>賣車申請通知</summary>
     <div class="settings-section__body">
-      <label>寄件 Gmail 帳號 <input type="email" bind:value={form.gmailUser} placeholder="notify@gmail.com" /></label>
-      <label>應用程式密碼 <input type="password" bind:value={form.gmailAppPassword} placeholder="xxxx xxxx xxxx xxxx" autocomplete="new-password" /></label>
-      <label>通知收件信箱 <input type="email" bind:value={form.notificationEmail} placeholder="留空則寄到寄件帳號本身" /></label>
+      <label>Resend API Key <input type="password" bind:value={form.resendApiKey} placeholder="re_xxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="new-password" /></label>
+      <label>通知收件信箱 <input type="email" bind:value={form.notificationEmail} placeholder="your@email.com" /></label>
     </div>
   </details>
   {/if}
