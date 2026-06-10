@@ -5,6 +5,7 @@ import { db } from '@/db/connection';
 import { adminUsers } from '@/db/schema';
 import { asc, eq } from 'drizzle-orm';
 import { hashPassword } from '@/lib/crypto';
+import { hashIp, logAdminActivity } from '@/lib/analytics';
 
 export const GET: APIRoute = async ({ cookies }) => {
   const _auth = await getPermittedOrResponse(cookies, PERMISSIONS.USERS_MANAGE);
@@ -52,5 +53,19 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     permissions,
     createdAt: new Date().toISOString(),
   });
+
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('cf-connecting-ip') ||
+    request.headers.get('x-real-ip') ||
+    'unknown';
+  logAdminActivity({
+    userId: creator.id,
+    username: creator.username,
+    action: 'user_create',
+    targetType: 'user',
+    details: { createdUsername: username, permissions },
+    ipHash: hashIp(ip),
+  }).catch(() => {});
+
   return Response.json({ ok: true });
 };

@@ -112,6 +112,32 @@ export const sellInquiries = sqliteTable('sell_inquiries', {
   readAt: text('read_at'),
 });
 
+export const pageViews = sqliteTable('page_views', {
+  id: text('id').primaryKey(),
+  path: text('path').notNull(),
+  vehicleSlug: text('vehicle_slug'),
+  sessionId: text('session_id').notNull(),
+  ipHash: text('ip_hash').notNull(),
+  deviceType: text('device_type').notNull().default('desktop'),
+  referrer: text('referrer'),
+  statusCode: integer('status_code').notNull().default(200),
+  durationMs: integer('duration_ms'),
+  isBot: integer('is_bot', { mode: 'boolean' }).notNull().default(false),
+  createdAt: text('created_at').notNull(),
+});
+
+export const adminActivityLog = sqliteTable('admin_activity_log', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull(),
+  username: text('username').notNull(),
+  action: text('action').notNull(),
+  targetType: text('target_type'),
+  targetId: text('target_id'),
+  detailsJson: text('details_json').notNull().default('{}'),
+  ipHash: text('ip_hash').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
 export type VehicleStatus = 'draft' | 'published' | 'incoming' | 'reserved' | 'special' | 'unknown' | 'unpublished' | 'sold' | 'archived';
 export type ImportBehavior = 'draft_first' | 'auto_publish' | 'import_only';
 export type PublishMode = 'use_default' | 'draft' | 'publish';

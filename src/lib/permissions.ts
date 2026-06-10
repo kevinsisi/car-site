@@ -12,7 +12,8 @@ export const PERMISSIONS = {
   SETTINGS_SMTP:     0x0400,
   USERS_MANAGE:      0x0800,
   IMPORT_API:        0x1000,
-  ALL:               0x1FFF,
+  ANALYTICS:         0x2000,
+  ALL:               0x3FFF,
 } as const;
 
 export type PermissionKey = keyof typeof PERMISSIONS;
@@ -39,5 +40,6 @@ export const PERMISSION_LABELS: Record<PermissionKey, string> = {
   SETTINGS_SMTP:    '設定 — SMTP 通知',
   USERS_MANAGE:     '用戶管理',
   IMPORT_API:       '外部 API 匯入',
+  ANALYTICS:        '流量分析儀表板',
   ALL:              '全部權限',
 };

@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { ADMIN_COOKIE, createSession } from '@/lib/auth';
+import { hashIp, logAdminActivity } from '@/lib/analytics';
 
 const MAX_ATTEMPTS = 5;
 const ATTEMPT_WINDOW_MS = 5 * 60 * 1000;
@@ -13,9 +14,17 @@ interface AttemptRecord {
 
 const attempts = new Map<string, AttemptRecord>();
 
+function getClientIp(request: Request): string {
+  return (
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('cf-connecting-ip') ||
+    request.headers.get('x-real-ip') ||
+    'unknown'
+  );
+}
+
 function getKey(request: Request, username: string): string {
-  const forwarded = request.headers.get('x-forwarded-for') || '';
-  const ip = forwarded.split(',')[0]?.trim() || request.headers.get('x-real-ip') || 'unknown';
+  const ip = getClientIp(request);
   return `${ip}::${username.toLowerCase()}`;
 }
 
@@ -72,5 +81,14 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     secure: import.meta.env.PROD,
     expires: new Date(session.expiresAt),
   });
+
+  const ip = getClientIp(request);
+  logAdminActivity({
+    userId: session.user.id,
+    username: session.user.username,
+    action: 'login',
+    ipHash: hashIp(ip),
+  }).catch(() => {});
+
   return redirect('/admin');
 };

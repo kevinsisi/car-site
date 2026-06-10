@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getAdminOrResponse } from '@/lib/auth';
 import { PERMISSIONS } from '@/lib/permissions';
+import { hashIp, logAdminActivity } from '@/lib/analytics';
 import { detailSpecFieldOptions } from '@/lib/detail-spec-fields';
 import { FEATURE_DIRECT_CONTACT, FEATURE_SELL_INQUIRY, FEATURE_SOCIAL_ICONS, effectiveFeatureMask, hasFeature } from '@/lib/features';
 import { sanitizeImageUrl, sanitizePublicHref } from '@/lib/safe-url';
@@ -110,5 +111,19 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   if (hasOwn(body, 'gmailAppPassword')) updates.gmailAppPassword = String(body.gmailAppPassword || '');
 
   await setSettings(updates);
+
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('cf-connecting-ip') ||
+    request.headers.get('x-real-ip') ||
+    'unknown';
+  logAdminActivity({
+    userId: user.id,
+    username: user.username,
+    action: 'settings_update',
+    targetType: 'settings',
+    details: { keys: Object.keys(updates) },
+    ipHash: hashIp(ip),
+  }).catch(() => {});
+
   return Response.json({ ok: true });
 };

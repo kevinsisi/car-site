@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { sqlite } from './connection';
+import { pruneOldAnalytics } from '@/lib/analytics';
 
 const migrationsDir = path.resolve(process.cwd(), 'src', 'db', 'migrations');
 sqlite.exec('CREATE TABLE IF NOT EXISTS schema_migrations (name TEXT PRIMARY KEY, applied_at TEXT NOT NULL)');
@@ -19,3 +20,5 @@ for (const file of fs.readdirSync(migrationsDir).filter((name) => name.endsWith(
   runMigration();
   console.log(`Applied migration ${file}`);
 }
+
+pruneOldAnalytics().catch((err) => console.error('[analytics] prune failed:', err));

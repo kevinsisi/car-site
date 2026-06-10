@@ -73,7 +73,7 @@ const canSeeSmtp = features.sellInquiry && (isSuper || hasPermission(perm, PERMI
       </div>
 
       <nav class="admin-sidebar__nav">
-        <a href="/admin" class:list={['nav-item', { 'is-active': isActive('/admin') && !isActive('/admin/vehicles') && !isActive('/admin/brands') && !isActive('/admin/videos') && !isActive('/admin/sell-inquiries') && !isActive('/admin/settings') && !isActive('/admin/users') && !isActive('/admin/account') }]}>
+        <a href="/admin" class:list={['nav-item', { 'is-active': isActive('/admin') && !isActive('/admin/vehicles') && !isActive('/admin/brands') && !isActive('/admin/videos') && !isActive('/admin/sell-inquiries') && !isActive('/admin/settings') && !isActive('/admin/users') && !isActive('/admin/account') && !isActive('/admin/analytics') }]}>
           <span>概覽</span>
         </a>
 
@@ -120,6 +120,12 @@ const canSeeSmtp = features.sellInquiry && (isSuper || hasPermission(perm, PERMI
               <a href="/admin/settings/features" class:list={['nav-item nav-item--sub', { 'is-active': isActive('/admin/settings/features') }]}>授權管理</a>
             )}
           </div>
+        )}
+
+        {(isSuper || hasPermission(perm, PERMISSIONS.ANALYTICS)) && (
+          <a href="/admin/analytics" class:list={['nav-item', { 'is-active': isActive('/admin/analytics') }]}>
+            <span>流量分析</span>
+          </a>
         )}
 
         {(isSuper || hasPermission(perm, PERMISSIONS.USERS_MANAGE)) && (

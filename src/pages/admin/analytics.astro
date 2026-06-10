@@ -1,0 +1,25 @@
+---
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import AdminAnalytics from '@/components/AdminAnalytics.svelte';
+import { getSession, hasAnyUsers } from '@/lib/auth';
+import { PERMISSIONS, hasPermission } from '@/lib/permissions';
+
+if (!await hasAnyUsers()) return Astro.redirect('/admin/setup');
+const user = await getSession(Astro.cookies);
+if (!user) return Astro.redirect('/admin/login');
+if (user.role !== 'superadmin' && !hasPermission(user.permissions, PERMISSIONS.ANALYTICS)) {
+  return new Response('Forbidden', { status: 403 });
+}
+---
+
+<AdminLayout user={user} title="流量分析">
+  <div class="page-header">
+    <h1 class="page-title">流量分析</h1>
+  </div>
+  <AdminAnalytics client:load />
+</AdminLayout>
+
+<style>
+.page-header { margin-bottom: 0.25rem; }
+.page-title { font-size: 1.35rem; font-weight: 800; margin: 0; color: var(--text); }
+</style>
