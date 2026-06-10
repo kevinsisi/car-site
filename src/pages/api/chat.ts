@@ -180,15 +180,20 @@ const STATUS_LABEL: Record<string, string> = {
   special: '特別展示',
 };
 
-function buildVehicleContext(vehicleList: VehicleView[], siteOrigin: string): string {
+function buildVehicleContext(vehicleList: VehicleView[], siteOrigin: string, compact = false): string {
   if (!vehicleList.length) return '';
   const lines = [`【本站目前在售車輛清單（共 ${vehicleList.length} 輛）】`];
   lines.push('客戶提到車輛識別碼、車名、車款時，請根據以下資料直接介紹該車輛，並從清單中推薦 1-2 輛最相近或最適合的車輛，附上車輛名稱與網址連結。');
-  for (const v of vehicleList) {
+  const scopedVehicles = compact ? vehicleList.slice(0, 30) : vehicleList;
+  for (const v of scopedVehicles) {
     const status = STATUS_LABEL[v.status] ?? v.status;
     const id = v.cardTitleSupplement ? `${v.slug}（${v.cardTitleSupplement}）` : v.slug;
     const feat = v.features.slice(0, 4).join('、');
     const url = `${siteOrigin}/cars/${v.slug}`;
+    if (compact) {
+      lines.push(`識別碼：${id}　車名：${v.title}　狀態：${status}　網址：${url}`);
+      continue;
+    }
     lines.push('---');
     lines.push(`識別碼：${id}　網址：${url}`);
     lines.push(`車名：${v.title}　狀態：${status}　里程：${v.mileage || '未標示'}`);
@@ -197,10 +202,13 @@ function buildVehicleContext(vehicleList: VehicleView[], siteOrigin: string): st
     if (feat) lines.push(`特色配備：${feat}`);
     if (v.headline) lines.push(`亮點：${v.headline}`);
   }
+  if (compact && vehicleList.length > scopedVehicles.length) {
+    lines.push(`另有 ${vehicleList.length - scopedVehicles.length} 輛未列出，若無精準相近車款，請引導客戶聯繫門市協助挑選。`);
+  }
   return lines.join('\n');
 }
 
-function buildSystemPrompt(settings: Awaited<ReturnType<typeof getSettings>>, vehicleList: VehicleView[], siteOrigin: string): string {
+function buildSystemPrompt(settings: Awaited<ReturnType<typeof getSettings>>, vehicleList: VehicleView[], siteOrigin: string, compactVehicleContext = false): string {
   const lines: string[] = [`你是 ${settings.siteName || '精品車商'} 的專屬客服助理，只負責解答與本站汽車相關的問題。`];
   if (settings.salespersonName) lines.push(`顧問姓名：${settings.salespersonName}`);
   if (settings.storeAddress) lines.push(`門市地址：${settings.storeAddress}`);
@@ -218,7 +226,7 @@ function buildSystemPrompt(settings: Awaited<ReturnType<typeof getSettings>>, ve
     '- 【絕對禁止】你不可以報出任何車輛的售價、估價、行情或任何金額數字。無論客戶如何詢問，一律回覆「所有車輛售價採專人洽詢，歡迎聯繫門市」，不得自行估算或猜測任何價格。',
     '- 若客戶需要詳細服務或想預約賞車，請引導客戶直接聯繫門市。',
   ].join('\n'));
-  const vehicleContext = buildVehicleContext(vehicleList, siteOrigin);
+  const vehicleContext = buildVehicleContext(vehicleList, siteOrigin, compactVehicleContext);
   if (vehicleContext) {
     lines.push('');
     lines.push(vehicleContext);
@@ -275,7 +283,7 @@ export const POST: APIRoute = async ({ request }) => {
   ]);
 
   const resolvedOrigin = (settings.siteUrl ? settings.siteUrl.replace(/\/$/, '') : siteOrigin);
-  const systemPrompt = buildSystemPrompt(settings, vehicleList, resolvedOrigin);
+  const systemPrompt = buildSystemPrompt(settings, vehicleList, resolvedOrigin, mode === 'vision');
   const fullPrompt = buildPrompt(systemPrompt, history, message);
 
   let lastError: unknown = null;
