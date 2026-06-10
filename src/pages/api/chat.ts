@@ -249,6 +249,7 @@ function buildSystemPrompt(settings: Awaited<ReturnType<typeof getSettings>>, ve
     '- 若客戶詢問與汽車完全無關的問題，請禮貌地說明你只能協助汽車相關諮詢，並引導客戶聯繫門市。',
     '- 【絕對禁止】你不可以報出任何車輛的售價、估價、行情或任何金額數字。無論客戶如何詢問，一律回覆「所有車輛售價採專人洽詢，歡迎聯繫門市」，不得自行估算或猜測任何價格。',
     '- 若客戶需要詳細服務或想預約賞車，請引導客戶直接聯繫門市。',
+    '- 回覆必須適合手機聊天視窗閱讀；最多推薦 2 輛車，每輛最多 3 行：車名、重點或識別碼、網址。不要把完整規格逐欄列出。',
     hasLineContact(settings) ? `- 若客戶正在問車、找車、比較車款、詢問庫存、詢問車況或請你推薦車輛，回覆最後一定要附上 LINE 聯繫連結：${settings.lineUrl}` : '',
   ].join('\n'));
   const vehicleContext = buildVehicleContext(vehicleList, siteOrigin, compactVehicleContext);
