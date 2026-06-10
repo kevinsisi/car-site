@@ -7,7 +7,8 @@ import { getOpenCodeServers, getOpenCodeTextModel, getOpenCodeTextVariant, getOp
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 20;
 const RATE_WINDOW_MS = 60 * 1000;
-const OPENCODE_TIMEOUT_MS = 30_000;
+const OPENCODE_CREATE_TIMEOUT_MS = 10_000;
+const OPENCODE_MESSAGE_TIMEOUT_MS = 120_000;
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
@@ -26,10 +27,10 @@ function authHeaders(password: string): Record<string, string> {
   return { Authorization: `Basic ${Buffer.from(`opencode:${password}`).toString('base64')}` };
 }
 
-function splitModel(model: string): { providerID: string; id: string } {
+function splitModel(model: string): { providerID: string; modelID: string } {
   const idx = model.indexOf('/');
-  if (idx === -1) return { providerID: model, id: model };
-  return { providerID: model.slice(0, idx), id: model.slice(idx + 1) };
+  if (idx === -1) return { providerID: 'opencode', modelID: model };
+  return { providerID: model.slice(0, idx), modelID: model.slice(idx + 1) };
 }
 
 function parseTextFromBody(body: unknown): string {
@@ -62,13 +63,17 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: numbe
 async function callOpenCode(serverUrl: string, model: string, variant: string, prompt: string, password: string): Promise<string> {
   const base = serverUrl.replace(/\/$/, '');
   const headers = { 'Content-Type': 'application/json', ...authHeaders(password) };
-  const { providerID, id } = splitModel(model);
+  const parsedModel = splitModel(model);
 
   const createRes = await fetchWithTimeout(`${base}/session`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ model: { providerID, id, variant } }),
-  }, OPENCODE_TIMEOUT_MS);
+    body: JSON.stringify({
+      title: 'car-site AI concierge',
+      agent: 'general',
+      model: { providerID: parsedModel.providerID, id: parsedModel.modelID, variant },
+    }),
+  }, OPENCODE_CREATE_TIMEOUT_MS);
 
   if (!createRes.ok) throw new Error(`OpenCode createSession: ${createRes.status}`);
   const sessionData = (await createRes.json()) as { id?: string };
@@ -80,8 +85,12 @@ async function callOpenCode(serverUrl: string, model: string, variant: string, p
     const msgRes = await fetchWithTimeout(`${base}/session/${sessionId}/message`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ parts: [{ text: prompt }] }),
-    }, OPENCODE_TIMEOUT_MS);
+      body: JSON.stringify({
+        agent: 'general',
+        model: parsedModel,
+        parts: [{ type: 'text', text: prompt }],
+      }),
+    }, OPENCODE_MESSAGE_TIMEOUT_MS);
     if (!msgRes.ok) throw new Error(`OpenCode sendMessage: ${msgRes.status}`);
     text = parseTextFromBody(await msgRes.json());
   } finally {
