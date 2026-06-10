@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getSettings } from '@/lib/settings';
 import { hasFeature, FEATURE_AI_CHATBOT, effectiveFeatureMask } from '@/lib/features';
-import { getOpenCodeServers, getOpenCodeTextModel, getOpenCodeTextVariant, getOpenCodePassword } from '@/lib/opencode-settings';
+import { getOpenCodeServers, getOpenCodeTextModel, getOpenCodeTextVariant, getOpenCodeVisionModel, getOpenCodeVisionVariant, getOpenCodePassword } from '@/lib/opencode-settings';
 import { listPublicInventoryVehicles, type VehicleView } from '@/lib/vehicles';
 
 // Rate limit: 20 messages per minute per IP
@@ -34,6 +34,8 @@ function splitModel(model: string): { providerID: string; modelID: string } {
   return { providerID: model.slice(0, idx), modelID: model.slice(idx + 1) };
 }
 
+type ChatImage = { mimeType: string; data: string };
+
 function parseTextFromBody(body: unknown): string {
   if (Array.isArray(body)) {
     return body
@@ -49,6 +51,29 @@ function parseTextFromBody(body: unknown): string {
     }
   }
   return '';
+}
+
+function parseImage(raw: unknown): ChatImage | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const item = raw as Record<string, unknown>;
+  const mimeType = String(item.mimeType ?? item.mediaType ?? item.mime ?? item.type ?? '').trim();
+  const rawData = String(item.data ?? item.base64 ?? item.url ?? '').trim();
+  if (!mimeType.startsWith('image/') || !rawData) return null;
+  const dataUrlPrefix = `data:${mimeType};base64,`;
+  const data = rawData.startsWith(dataUrlPrefix) ? rawData.slice(dataUrlPrefix.length) : rawData;
+  if (!data || data.length > 8_000_000) return null;
+  return { mimeType, data };
+}
+
+function parseImagesFromBody(body: Record<string, unknown>): ChatImage[] {
+  const rawImages = Array.isArray(body.images)
+    ? body.images
+    : Array.isArray(body.attachments)
+      ? body.attachments
+      : body.image
+        ? [body.image]
+        : [];
+  return rawImages.map(parseImage).filter((img): img is ChatImage => img !== null).slice(0, 3);
 }
 
 function cleanReply(raw: string): string {
@@ -67,6 +92,12 @@ function cleanReply(raw: string): string {
   return text.trim();
 }
 
+function sanitizeErrorBody(raw: string): string {
+  return raw
+    .replace(/data:image\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]+/gi, '[image-data]')
+    .slice(0, 500);
+}
+
 async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -77,9 +108,7 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: numbe
   }
 }
 
-type ImagePart = { data: string; mediaType: string };
-
-async function callOpenCode(serverUrl: string, model: string, variant: string, prompt: string, password: string, image?: ImagePart): Promise<string> {
+async function callOpenCode(serverUrl: string, model: string, variant: string, prompt: string, password: string, images: ChatImage[]): Promise<string> {
   const base = serverUrl.replace(/\/$/, '');
   const headers = { 'Content-Type': 'application/json', ...authHeaders(password) };
   const parsedModel = splitModel(model);
@@ -99,19 +128,25 @@ async function callOpenCode(serverUrl: string, model: string, variant: string, p
   const sessionId = sessionData.id;
   if (!sessionId) throw new Error('OpenCode createSession returned no session id');
 
-  const parts: unknown[] = [{ type: 'text', text: prompt }];
-  if (image) {
-    parts.push({ type: 'image', image: image.data, mediaType: image.mediaType });
-  }
-
   let text = '';
   try {
+    const parts: Array<Record<string, unknown>> = images.map((img) => ({
+      type: 'file',
+      mime: img.mimeType,
+      url: `data:${img.mimeType};base64,${img.data}`,
+    }));
+    parts.push({ type: 'text', text: prompt });
+
     const msgRes = await fetchWithTimeout(`${base}/session/${sessionId}/message`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ agent: 'general', model: parsedModel, parts }),
+      body: JSON.stringify({
+        agent: 'general',
+        model: parsedModel,
+        parts,
+      }),
     }, OPENCODE_MESSAGE_TIMEOUT_MS);
-    if (!msgRes.ok) throw new Error(`OpenCode sendMessage: ${msgRes.status}`);
+    if (!msgRes.ok) throw new Error(`OpenCode sendMessage: ${msgRes.status} ${sanitizeErrorBody(await msgRes.text())}`);
     text = parseTextFromBody(await msgRes.json());
   } finally {
     fetchWithTimeout(`${base}/session/${sessionId}`, { method: 'DELETE', headers: authHeaders(password) }, 10_000).catch(() => {});
@@ -201,7 +236,7 @@ export const POST: APIRoute = async ({ request }) => {
     return Response.json({ error: '此功能目前未開放' }, { status: 403 });
   }
 
-  let body: { message?: unknown; history?: unknown; image?: unknown };
+  let body: Record<string, unknown>;
   try {
     body = await request.json() as typeof body;
   } catch {
@@ -213,6 +248,7 @@ export const POST: APIRoute = async ({ request }) => {
   if (message.length > 1000) return Response.json({ error: '訊息過長' }, { status: 400 });
 
   const rawHistory = Array.isArray(body.history) ? body.history : [];
+  const images = parseImagesFromBody(body);
   const history: HistoryMessage[] = rawHistory
     .filter((m): m is { role: unknown; content: unknown } => m && typeof m === 'object')
     .filter((m) => (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
@@ -225,22 +261,10 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   const [model, variant, password] = await Promise.all([
-    getOpenCodeTextModel(),
-    getOpenCodeTextVariant(),
+    images.length > 0 ? getOpenCodeVisionModel() : getOpenCodeTextModel(),
+    images.length > 0 ? getOpenCodeVisionVariant() : getOpenCodeTextVariant(),
     Promise.resolve(getOpenCodePassword()),
   ]);
-
-  // Validate image if provided
-  let imagePart: ImagePart | undefined;
-  if (body.image && typeof body.image === 'object') {
-    const img = body.image as Record<string, unknown>;
-    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (typeof img.data === 'string' && typeof img.mediaType === 'string' && ALLOWED_TYPES.includes(img.mediaType)) {
-      if (img.data.length <= 8 * 1024 * 1024) {
-        imagePart = { data: img.data, mediaType: img.mediaType };
-      }
-    }
-  }
 
   const resolvedOrigin = (settings.siteUrl ? settings.siteUrl.replace(/\/$/, '') : siteOrigin);
   const systemPrompt = buildSystemPrompt(settings, vehicleList, resolvedOrigin);
@@ -249,7 +273,7 @@ export const POST: APIRoute = async ({ request }) => {
   let lastError: unknown = null;
   for (const server of servers) {
     try {
-      const reply = cleanReply(await callOpenCode(server.baseUrl, model, variant, fullPrompt, password, imagePart));
+      const reply = cleanReply(await callOpenCode(server.baseUrl, model, variant, fullPrompt, password, images));
       return Response.json({ reply: reply || '（無回覆）' });
     } catch (err) {
       lastError = err;
