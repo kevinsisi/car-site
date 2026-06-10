@@ -72,7 +72,8 @@
 
   function saveStoredSession() {
     if (!hydrated || messages.length === 0) return;
-    const payload = JSON.stringify({ messages, exchangeCount, savedAt: Date.now() });
+    const storedMessages = messages.map(({ role, content }) => ({ role, content }));
+    const payload = JSON.stringify({ messages: storedMessages, exchangeCount, savedAt: Date.now() });
     try { sessionStorage.setItem(STORAGE_KEY, payload); } catch {}
     try { localStorage.setItem(STORAGE_KEY, payload); } catch {}
   }
