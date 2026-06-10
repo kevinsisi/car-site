@@ -3,6 +3,7 @@ import { getSettings } from '@/lib/settings';
 import { hasFeature, FEATURE_AI_CHATBOT, effectiveFeatureMask } from '@/lib/features';
 import { getOpenCodeServers, getOpenCodeTextModel, getOpenCodeTextVariant, getOpenCodeVisionModel, getOpenCodeVisionVariant, getOpenCodePassword } from '@/lib/opencode-settings';
 import { listPublicInventoryVehicles, type VehicleView } from '@/lib/vehicles';
+import { shareOriginFromRequest } from '@/lib/vehicle-share';
 
 // Rate limit: 20 messages per minute per IP
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -80,6 +81,10 @@ function parseImagesFromBody(body: Record<string, unknown>): ChatImage[] {
 function cleanReply(raw: string): string {
   // Strip <think>...</think> and <thinking>...</thinking> blocks (reasoning models)
   let text = raw.replace(/<think(?:ing)?>[^]*?<\/think(?:ing)?>/gi, '');
+  const firstCjk = text.search(/[\u3400-\u9fff]/);
+  if (firstCjk > 0 && /^[\sA-Za-z].{0,800}[\u3400-\u9fff]/s.test(text)) {
+    text = text.slice(firstCjk);
+  }
   // Strip markdown bold/italic/code
   text = text.replace(/\*\*(.+?)\*\*/g, '$1');
   text = text.replace(/\*(.+?)\*/g, '$1');
@@ -223,7 +228,7 @@ function buildSystemPrompt(settings: Awaited<ReturnType<typeof getSettings>>, ve
 
 export const POST: APIRoute = async ({ request }) => {
   const reqUrl = new URL(request.url);
-  const siteOrigin = reqUrl.origin;
+  const siteOrigin = shareOriginFromRequest(request, reqUrl);
   const ip =
     request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
     request.headers.get('cf-connecting-ip') ||
@@ -285,7 +290,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   if (mode === 'vision') {
     const [textModel, textVariant] = await Promise.all([getOpenCodeTextModel(), getOpenCodeTextVariant()]);
-    const fallbackPrompt = `${fullPrompt}\n\n補充：客戶附了一張車輛圖片，但目前圖片辨識服務無法解析。請不要假裝看過圖片，請用親切語氣請客戶補充品牌、車型、年份、預算或偏好的外觀/用途，並可根據本站車輛清單推薦相近車款。`;
+    const fallbackPrompt = `${fullPrompt}\n\n補充：客戶附了一張車輛圖片，但目前圖片辨識服務無法解析。請不要假裝看過圖片。回覆第一個字必須是繁體中文，不要輸出任何英文分析或內部思考。請用親切語氣請客戶補充品牌、車型、年份、預算或偏好的外觀/用途，並可根據本站車輛清單推薦相近車款。`;
     for (const server of servers) {
       try {
         const reply = cleanReply(await callOpenCode(server.baseUrl, textModel, textVariant, fallbackPrompt, password, []));
