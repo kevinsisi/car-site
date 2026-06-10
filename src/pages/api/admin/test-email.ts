@@ -16,19 +16,21 @@ export const POST: APIRoute = async ({ cookies }) => {
   if (!features.sellInquiry) {
     return new Response(JSON.stringify({ ok: false, error: 'sell inquiry feature disabled' }), { status: 403, headers: { 'content-type': 'application/json' } });
   }
-  if (!settings.gmailUser || !settings.gmailAppPassword) {
-    return Response.json({ ok: false, error: '請先設定 Gmail 帳號和應用程式密碼' });
+  const gmailUser = process.env.GMAIL_USER || '';
+  const gmailPass = process.env.GMAIL_APP_PASSWORD || '';
+  if (!gmailUser || !gmailPass) {
+    return Response.json({ ok: false, error: '伺服器尚未設定 GMAIL_USER / GMAIL_APP_PASSWORD 環境變數' });
   }
-  const to = settings.notificationEmail || settings.gmailUser;
+  const to = settings.notificationEmail || gmailUser;
   try {
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
       port: 587,
       secure: false,
-      auth: { user: settings.gmailUser, pass: settings.gmailAppPassword },
+      auth: { user: gmailUser, pass: gmailPass },
     });
     await transporter.sendMail({
-      from: `"賣車通知" <${settings.gmailUser}>`,
+      from: `"賣車通知" <${gmailUser}>`,
       to,
       subject: '測試信 — 賣車通知',
       text: '這是來自您網站的測試通知信。',

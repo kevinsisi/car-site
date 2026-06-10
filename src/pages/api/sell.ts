@@ -91,17 +91,19 @@ export const POST: APIRoute = async ({ request }) => {
   await createSellInquiry({ brand, model, year, mileage, exteriorColor, notes, contactInfo, contactName, photoUrls });
 
   // Send email notification (best-effort)
-  const notifyTo = settings.notificationEmail || settings.gmailUser;
-  if (settings.gmailUser && settings.gmailAppPassword && notifyTo) {
+  const gmailUser = process.env.GMAIL_USER || '';
+  const gmailPass = process.env.GMAIL_APP_PASSWORD || '';
+  const notifyTo = settings.notificationEmail || gmailUser;
+  if (gmailUser && gmailPass && notifyTo) {
     try {
       const transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 587,
         secure: false,
-        auth: { user: settings.gmailUser, pass: settings.gmailAppPassword },
+        auth: { user: gmailUser, pass: gmailPass },
       });
       await transporter.sendMail({
-        from: `"賣車通知" <${settings.gmailUser}>`,
+        from: `"賣車通知" <${gmailUser}>`,
         to: notifyTo,
         subject: `新賣車申請：${[brand, model, year].filter(Boolean).join(' ')}`,
         text: [

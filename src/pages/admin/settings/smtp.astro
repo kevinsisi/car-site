@@ -16,6 +16,6 @@ const settings = await getSettings();
 const features = resolveFrontFeatures(settings);
 if (!features.sellInquiry) return Astro.redirect('/admin');
 ---
-<AdminLayout user={user} title="SMTP 通知">
+<AdminLayout user={user} title="通知設定">
   <SettingsSmtp client:load settings={settings} />
 </AdminLayout>

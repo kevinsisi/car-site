@@ -133,8 +133,6 @@ export interface SiteSettings {
   featureMask: number;
   featureLicenseMask: number;
   notificationEmail: string;
-  gmailUser: string;
-  gmailAppPassword: string;
 }
 
 const defaults: SiteSettings = {
@@ -179,8 +177,6 @@ const defaults: SiteSettings = {
   featureMask: DEFAULT_FEATURE_MASK,
   featureLicenseMask: ALL_FEATURES_MASK,
   notificationEmail: '',
-  gmailUser: '',
-  gmailAppPassword: '',
 };
 
 function resolveDetailSpecFields(value: string | undefined): string[] {
@@ -271,8 +267,6 @@ export async function getSettings(): Promise<SiteSettings> {
       return Number.isFinite(raw) && raw >= 0 ? raw : ALL_FEATURES_MASK;
     })(),
     notificationEmail: map.get('notificationEmail') || '',
-    gmailUser: map.get('gmailUser') || '',
-    gmailAppPassword: map.get('gmailAppPassword') || '',
   };
 }
 

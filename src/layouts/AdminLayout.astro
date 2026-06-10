@@ -116,7 +116,7 @@ const canSeeAnalytics = hasFeature(settings.featureLicenseMask ?? 0, FEATURE_ANA
               <a href="/admin/settings/gallery" class:list={['nav-item nav-item--sub', { 'is-active': isActive('/admin/settings/gallery') }]}>照片模式</a>
             )}
             {canSeeSmtp && (
-              <a href="/admin/settings/smtp" class:list={['nav-item nav-item--sub', { 'is-active': isActive('/admin/settings/smtp') }]}>SMTP 通知</a>
+              <a href="/admin/settings/smtp" class:list={['nav-item nav-item--sub', { 'is-active': isActive('/admin/settings/smtp') }]}>通知設定</a>
             )}
             {isSuper && (
               <a href="/admin/settings/features" class:list={['nav-item nav-item--sub', { 'is-active': isActive('/admin/settings/features') }]}>授權管理</a>
