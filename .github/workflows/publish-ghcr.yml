@@ -49,3 +49,33 @@ jobs:
           echo "Image: ${{ env.IMAGE_NAME }}:sha-${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
           echo "Digest: ${{ steps.build.outputs.digest }}" >> "$GITHUB_STEP_SUMMARY"
           echo "digest=${{ steps.build.outputs.digest }}" >> "$GITHUB_OUTPUT"
+
+  deploy-l390:
+    runs-on: [self-hosted, l390]
+    needs: publish
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      - name: Checkout runtime repository
+        uses: actions/checkout@v6
+        with:
+          repository: chuangkevin/l390-homelab-runtime
+          ref: main
+          token: ${{ github.token }}
+
+      - name: Log in and pull published image
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+          IMAGE_REF: ${{ env.IMAGE_NAME }}@${{ needs.publish.outputs.digest }}
+        run: |
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker pull "$IMAGE_REF"
+          docker logout ghcr.io
+
+      - name: Promote runtime image
+        env:
+          RUNTIME_IMAGE_REFS_FILE: /srv/l390-homelab/runtime-image-refs.env
+          IMAGE_REF: ${{ env.IMAGE_NAME }}@${{ needs.publish.outputs.digest }}
+        run: sudo bash scripts/promote-runtime.sh promote car-site-mita "$IMAGE_REF"
