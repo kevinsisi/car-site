@@ -2,7 +2,7 @@ import { and, asc, desc, eq, inArray, ne, sql } from 'drizzle-orm';
 import { db } from '@/db/connection';
 import { importMappings, vehicleImages, vehicles, type PublishMode, type VehicleStatus } from '@/db/schema';
 import { brandUrlSlug, getBrandAliasMap } from './brand-aliases';
-import { optimizedMediaUrl, thumbnailMediaUrl } from './media';
+import { resolveMediaPair } from './media';
 import { getSettings } from './settings';
 import { alwaysPublicVehicleStatuses, isPublicVehicleStatus, mapSourceInventoryStatus } from './vehicle-status';
 
@@ -125,8 +125,8 @@ async function attachImages(rows: (typeof vehicles.$inferSelect)[]): Promise<Veh
   const imageMap = new Map<string, VehicleImageView[]>();
   for (const image of images) {
     const list = imageMap.get(image.vehicleId) || [];
-    const fullUrl = optimizedMediaUrl(image.url);
-    list.push({ id: image.id, url: fullUrl, thumbUrl: thumbnailMediaUrl(image.url), alt: image.alt, sortOrder: image.sortOrder, isCover: image.isCover });
+    const media = resolveMediaPair(image.url);
+    list.push({ id: image.id, url: media.url, thumbUrl: media.thumbUrl, alt: image.alt, sortOrder: image.sortOrder, isCover: image.isCover });
     imageMap.set(image.vehicleId, list);
   }
   return rows.map((row) => {
@@ -169,16 +169,20 @@ async function attachImages(rows: (typeof vehicles.$inferSelect)[]): Promise<Veh
 }
 
 export async function listPublicBrands(): Promise<{ displayName: string; urlSlug: string; count: number; iconUrl: string | null }[]> {
-  const allVehicles = await listPublicInventoryVehicles();
+  const allVehicles = await db.select({ brand: vehicles.brand }).from(vehicles).where(inArray(vehicles.status, alwaysPublicVehicleStatuses));
+  const brandAliasMap = await getBrandAliasMap();
   const countMap = new Map<string, { displayName: string; urlSlug: string; count: number; iconUrl: string | null }>();
   for (const vehicle of allVehicles) {
-    if (!vehicle.brandUrlSlug) continue;
-    const key = vehicle.brandUrlSlug;
+    const brandAlias = brandAliasMap.get(vehicle.brand);
+    const displayName = brandAlias?.displayName || vehicle.brand;
+    const urlSlug = brandAlias?.urlSlug || brandUrlSlug(displayName);
+    if (!urlSlug) continue;
+    const key = urlSlug;
     const current = countMap.get(key) || {
-      displayName: vehicle.brandDisplayName,
-      urlSlug: vehicle.brandUrlSlug,
+      displayName,
+      urlSlug,
       count: 0,
-      iconUrl: vehicle.brandIconUrl,
+      iconUrl: brandAlias?.iconUrl ?? null,
     };
     current.count += 1;
     countMap.set(key, current);
