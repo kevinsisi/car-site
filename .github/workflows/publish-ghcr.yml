@@ -63,7 +63,7 @@ jobs:
         with:
           repository: chuangkevin/l390-homelab-runtime
           ref: main
-          token: ${{ github.token }}
+          ssh-key: ${{ secrets.L390_RUNTIME_REPO_DEPLOY_KEY }}
 
       - name: Log in and pull published image
         env:
