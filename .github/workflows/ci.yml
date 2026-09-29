@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run optimization regression tests
+        run: |
+          fixture_root=$(mktemp -d)
+          trap 'rm -rf "$fixture_root"' EXIT
+          export DATABASE_PATH="$fixture_root/car-site.db"
+          npm run db:migrate
+          npx playwright test tests/optimization-regression.spec.ts --project=chromium
+
+      - name: Check formatting
+        run: npx prettier --check tests/optimization-regression.spec.ts
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build

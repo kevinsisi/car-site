@@ -4,6 +4,7 @@ import type { APIRoute } from 'astro';
 import sharp from 'sharp';
 import { getAdminOrResponse } from '@/lib/auth';
 import { appConfig } from '@/lib/config';
+import { registerOptimizedMedia } from '@/lib/media';
 
 const mediaRoot = path.resolve(path.join(appConfig.databasePath, '..', 'media'));
 const allowedTypes: Record<string, string> = {
@@ -80,9 +81,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     await fs.promises.writeFile(filePath, buffer, { flag: 'wx' });
 
     // Fire-and-forget optimization (won't delay upload response)
-    generateOptimized(filePath, `uploads/${today}`, baseName).catch((err) =>
-      console.error('[media] optimize failed:', baseName, err)
-    );
+    generateOptimized(filePath, `uploads/${today}`, baseName)
+      .then(() => registerOptimizedMedia(`/media/uploads/${today}/${filename}`))
+      .catch((err) => console.error('[media] optimize failed:', baseName, err));
 
     urls.push(`/media/uploads/${today}/${filename}`);
   }

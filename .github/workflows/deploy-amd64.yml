@@ -1,20 +1,6 @@
-name: Deploy AMD64
+name: Manual AMD64 Fallback Deploy
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'src/**'
-      - 'scripts/**'
-      - 'public/**'
-      - 'Dockerfile'
-      - 'docker-compose.yml'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'tsconfig.json'
-      - 'astro.config.*'
-      - '.github/workflows/deploy-amd64.yml'
   workflow_dispatch:
 
 env:
