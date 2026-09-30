@@ -1,14 +1,6 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import type { APIRoute } from 'astro';
-import sharp from 'sharp';
-import { ADMIN_COOKIE, getAdminOrResponse } from '@/lib/auth';
-import { appConfig } from '@/lib/config';
-import { createD1Db } from '@/db/d1';
-import { registerOptimizedMedia } from '@/lib/media';
-import { deleteMedia, putMedia, type R2MediaBucket } from '@/lib/r2-media';
+import type { R2MediaBucket } from '@/lib/r2-media';
 
-const mediaRoot = path.resolve(path.join(appConfig.databasePath, '..', 'media'));
 const allowedTypes: Record<string, string> = {
   'image/jpeg': '.jpg',
   'image/png': '.png',
@@ -25,6 +17,7 @@ function validateFile(file: File): { error: string } | { ext: string } {
 }
 
 export async function uploadMediaToR2(files: File[], bucket: R2MediaBucket): Promise<Response> {
+  const { deleteMedia, putMedia } = await import('@/lib/r2-media');
   const urls: string[] = [];
   const createdIds: string[] = [];
 
@@ -59,6 +52,13 @@ function safeName(name: string) {
 
 // Generate WebP full + thumbnail in __optimized (non-blocking, best-effort)
 async function generateOptimized(srcPath: string, relDir: string, baseName: string): Promise<void> {
+  const [{ default: fs }, path, { default: sharp }] = await Promise.all([
+    import('node:fs'),
+    import('node:path'),
+    import('sharp'),
+  ]);
+  const { appConfig } = await import('@/lib/config');
+  const mediaRoot = path.resolve(path.join(appConfig.databasePath, '..', 'media'));
   const optimizedDir = path.join(mediaRoot, '__optimized', relDir);
   await fs.promises.mkdir(optimizedDir, { recursive: true });
 
@@ -83,6 +83,7 @@ export const POST: APIRoute = async ({ request, cookies, locals }) => {
   const runtime = locals?.runtime;
   const env = runtime?.env;
   const isWorker = Boolean(runtime);
+  const { ADMIN_COOKIE, getAdminOrResponse } = await import('@/lib/auth');
   let authOptions;
   let bucket: R2MediaBucket | undefined;
 
@@ -98,6 +99,7 @@ export const POST: APIRoute = async ({ request, cookies, locals }) => {
     if (!dbBinding || !sessionSecret || !bucket) {
       return Response.json({ error: '服務設定不完整' }, { status: 503 });
     }
+    const { createD1Db } = await import('@/db/d1');
     authOptions = { db: await createD1Db(dbBinding), sessionSecret };
   }
 
@@ -112,6 +114,13 @@ export const POST: APIRoute = async ({ request, cookies, locals }) => {
 
   if (isWorker) return uploadMediaToR2(files, bucket!);
 
+  const [{ default: fs }, path, { appConfig }, { registerOptimizedMedia }] = await Promise.all([
+    import('node:fs'),
+    import('node:path'),
+    import('@/lib/config'),
+    import('@/lib/media'),
+  ]);
+  const mediaRoot = path.resolve(path.join(appConfig.databasePath, '..', 'media'));
   const today = new Date().toISOString().slice(0, 10);
   const uploadDir = path.resolve(mediaRoot, 'uploads', today);
   if (!uploadDir.startsWith(mediaRoot + path.sep)) {
