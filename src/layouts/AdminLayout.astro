@@ -1,6 +1,7 @@
 ---
 import '@/styles/admin.css';
 import { getSettings } from '@/lib/settings';
+import { createD1Db } from '@/db/d1';
 import { siteIconHref } from '@/lib/site-icon';
 import { PERMISSIONS, hasPermission } from '@/lib/permissions';
 import { resolveFrontFeatures } from '@/lib/front-features';
@@ -15,7 +16,11 @@ interface Props {
 
 const { user, title = '後台管理' } = Astro.props;
 const pathname = Astro.url.pathname;
-const settings = await getSettings();
+const runtime = Astro.locals.runtime;
+const binding = runtime?.env?.DB_PREVIEW;
+if (runtime && !binding) return new Response('Preview database unavailable', { status: 503 });
+const adapter = binding ? await createD1Db(binding) : undefined;
+const settings = await getSettings(adapter);
 const features = resolveFrontFeatures(settings);
 const siteIconUrl = siteIconHref(settings);
 const activeStyle = styles[settings.activeStyle];

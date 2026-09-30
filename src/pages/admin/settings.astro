@@ -1,7 +1,16 @@
 ---
 import { getSession, hasAnyUsers } from '@/lib/auth';
-if (!await hasAnyUsers()) return Astro.redirect('/admin/setup');
-const user = await getSession(Astro.cookies);
+import { createD1Db } from '@/db/d1';
+
+const runtime = Astro.locals.runtime;
+const binding = runtime?.env?.DB_PREVIEW;
+const sessionSecret = runtime?.env?.SESSION_SECRET;
+if (runtime && (!binding || !sessionSecret)) return new Response('Preview database unavailable', { status: 503 });
+const adapter = binding ? await createD1Db(binding) : undefined;
+const authOptions = { db: adapter, sessionSecret };
+
+if (!await hasAnyUsers(authOptions)) return Astro.redirect('/admin/setup');
+const user = await getSession(Astro.cookies, authOptions);
 if (!user) return Astro.redirect('/admin/login');
 return Astro.redirect('/admin/settings/basic');
 ---

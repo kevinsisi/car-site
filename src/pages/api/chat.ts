@@ -1,9 +1,6 @@
 import type { APIRoute } from 'astro';
-import { getSettings } from '@/lib/settings';
-import { hasFeature, FEATURE_AI_CHATBOT, effectiveFeatureMask } from '@/lib/features';
-import { getOpenCodeServers, getOpenCodeTextModel, getOpenCodeTextVariant, getOpenCodeVisionModel, getOpenCodeVisionVariant, getOpenCodePassword } from '@/lib/opencode-settings';
-import { listPublicInventoryVehicles, type VehicleView } from '@/lib/vehicles';
-import { shareOriginFromRequest } from '@/lib/vehicle-share';
+import type { getSettings } from '@/lib/settings';
+import type { VehicleView } from '@/lib/vehicles';
 
 // Rate limit: 20 messages per minute per IP
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -260,7 +257,19 @@ function buildSystemPrompt(settings: Awaited<ReturnType<typeof getSettings>>, ve
   return lines.join('\n');
 }
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
+  if (locals.runtime) {
+    return Response.json({ error: 'AI 客服在預覽環境中已停用。', previewDisabled: true }, { status: 503 });
+  }
+
+  const [{ getSettings }, { hasFeature, FEATURE_AI_CHATBOT, effectiveFeatureMask }, openCodeSettings, { listPublicInventoryVehicles }, { shareOriginFromRequest }] = await Promise.all([
+    import('@/lib/settings'),
+    import('@/lib/features'),
+    import('@/lib/opencode-settings'),
+    import('@/lib/vehicles'),
+    import('@/lib/vehicle-share'),
+  ]);
+  const { getOpenCodeServers, getOpenCodeTextModel, getOpenCodeTextVariant, getOpenCodeVisionModel, getOpenCodeVisionVariant, getOpenCodePassword } = openCodeSettings;
   const reqUrl = new URL(request.url);
   const siteOrigin = shareOriginFromRequest(request, reqUrl);
   const ip =

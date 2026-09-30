@@ -7,13 +7,18 @@ import { getSettings } from '@/lib/settings';
 import { resolveFrontFeatures } from '@/lib/front-features';
 import { formatVehicleShareText, shareOriginFromRequest, vehicleShareUrl } from '@/lib/vehicle-share';
 import { getVehicleBySlug, listPublicVehicles, publicVehicleStatus } from '@/lib/vehicles';
+import { createD1Db } from '@/db/d1';
 import { devPlaceholderSpecs } from '@/lib/dev-placeholder-vehicle-specs';
 import GallerySlider from '@/components/gallery/GallerySlider.astro';
 import GalleryThumbnailStrip from '@/components/gallery/GalleryThumbnailStrip.astro';
 import GalleryGrid from '@/components/gallery/GalleryGrid.astro';
 
-const vehicle = await getVehicleBySlug(Astro.params.slug || '');
-const settings = await getSettings();
+const runtime = Astro.locals.runtime;
+const binding = runtime?.env?.DB_PREVIEW;
+if (runtime && !binding) return new Response('Preview database unavailable', { status: 503 });
+const adapter = binding ? await createD1Db(binding) : undefined;
+const vehicle = await getVehicleBySlug(Astro.params.slug || '', adapter);
+const settings = await getSettings(adapter);
 const features = resolveFrontFeatures(settings);
 if (!vehicle || !publicVehicleStatus(vehicle.status, settings.showSoldVehicles)) {
   return new Response('Not found', { status: 404 });
@@ -26,7 +31,7 @@ const legacyImportDescription = '此車由 carsmeet 現有庫存匯入，已附�
 const advisorDescription = vehicle.description === legacyImportDescription
   ? `${vehicle.title} 實拍現車，專人介紹車況、配備與保養紀錄${features.directContact ? '，歡迎透過 LINE 或電話預約賞車' : ''}。`
   : vehicle.description.replace(/carsmeet/gi, settings.siteName);
-const allVehicles = await listPublicVehicles();
+const allVehicles = await listPublicVehicles(adapter);
 const currentIndex = allVehicles.findIndex((v) => v.id === vehicle.id);
 const prevVehicle = currentIndex > 0 ? allVehicles[currentIndex - 1] : null;
 const nextVehicle = currentIndex >= 0 && currentIndex < allVehicles.length - 1 ? allVehicles[currentIndex + 1] : null;

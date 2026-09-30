@@ -5,6 +5,7 @@ import sharp from 'sharp';
 import { getAdminOrResponse } from '@/lib/auth';
 import { appConfig } from '@/lib/config';
 import { registerOptimizedMedia } from '@/lib/media';
+import { deleteMedia, putMedia, type R2MediaBucket } from '@/lib/r2-media';
 
 const mediaRoot = path.resolve(path.join(appConfig.databasePath, '..', 'media'));
 const allowedTypes: Record<string, string> = {
@@ -14,6 +15,37 @@ const allowedTypes: Record<string, string> = {
   'image/gif': '.gif',
 };
 const maxFileSize = 12 * 1024 * 1024;
+
+function validateFile(file: File): { error: string } | { ext: string } {
+  const ext = allowedTypes[file.type];
+  if (!ext) return { error: `不支援的圖片格式：${file.type || file.name}` };
+  if (file.size > maxFileSize) return { error: `${file.name} 檔案大小超過 12MB` };
+  return { ext };
+}
+
+export async function uploadMediaToR2(files: File[], bucket: R2MediaBucket): Promise<Response> {
+  const urls: string[] = [];
+  const createdIds: string[] = [];
+
+  try {
+    for (const file of files) {
+      const validation = validateFile(file);
+      if ('error' in validation) {
+        await Promise.allSettled(createdIds.map((id) => deleteMedia(bucket, 'vehicle', id)));
+        return Response.json({ error: validation.error }, { status: 400 });
+      }
+      const id = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}-${safeName(file.name)}${validation.ext}`;
+      await putMedia(bucket, 'vehicle', id, file, { contentType: file.type });
+      createdIds.push(id);
+      urls.push(`/media/vehicle/${id}`);
+    }
+  } catch {
+    await Promise.allSettled(createdIds.map((id) => deleteMedia(bucket, 'vehicle', id)));
+    return Response.json({ error: '圖片上傳失敗，請稍後再試' }, { status: 500 });
+  }
+
+  return Response.json({ ok: true, urls });
+}
 
 function safeName(name: string) {
   return name
@@ -46,7 +78,7 @@ async function generateOptimized(srcPath: string, relDir: string, baseName: stri
     .toFile(path.join(optimizedDir, `${baseName}-thumb.webp`));
 }
 
-export const POST: APIRoute = async ({ request, cookies }) => {
+export const POST: APIRoute = async ({ request, cookies, locals }) => {
   const _auth = await getAdminOrResponse(cookies);
   if (_auth instanceof Response) return _auth;
   const formData = await request.formData();
@@ -55,6 +87,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   if (!files.length) {
     return Response.json({ error: '請先選擇要上傳的圖片' }, { status: 400 });
   }
+
+  const bucket = locals.runtime?.env?.MEDIA_PREVIEW as R2MediaBucket | undefined;
+  if (bucket) return uploadMediaToR2(files, bucket);
 
   const today = new Date().toISOString().slice(0, 10);
   const uploadDir = path.resolve(mediaRoot, 'uploads', today);
@@ -65,13 +100,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   const urls: string[] = [];
   for (const file of files) {
-    const ext = allowedTypes[file.type];
-    if (!ext) {
-      return Response.json({ error: `不支援的圖片格式：${file.type || file.name}` }, { status: 400 });
-    }
-    if (file.size > maxFileSize) {
-      return Response.json({ error: `${file.name} 檔案大小超過 12MB` }, { status: 400 });
-    }
+    const validation = validateFile(file);
+    if ('error' in validation) return Response.json({ error: validation.error }, { status: 400 });
+    const ext = validation.ext;
 
     const id = crypto.randomUUID().slice(0, 8);
     const baseName = `${Date.now()}-${id}-${safeName(file.name)}`;

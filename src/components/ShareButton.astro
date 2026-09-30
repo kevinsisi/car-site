@@ -1,5 +1,6 @@
 ---
 import { getSettings } from '@/lib/settings';
+import { createD1Db } from '@/db/d1';
 import PremiumIcon from './PremiumIcon.astro';
 
 interface Props {
@@ -12,8 +13,20 @@ interface Props {
 
 const { title, url, text = '價格請洽，歡迎預約賞車。', label = '分享車款' } = Astro.props;
 const className = Astro.props.class || '';
-const settings = await getSettings();
-const shareIcon = settings.socialIcons.share;
+const runtime = Astro.locals.runtime;
+let shareIcon;
+if (runtime) {
+  const db = runtime.env.DB_PREVIEW;
+  if (!db) {
+    Astro.response.status = 503;
+  } else {
+    const settings = await getSettings(await createD1Db(db));
+    shareIcon = settings.socialIcons.share;
+  }
+} else {
+  const settings = await getSettings();
+  shareIcon = settings.socialIcons.share;
+}
 ---
 
 <button class={`icon-button share-button ${className}${shareIcon ? ' share-button--custom' : ''}`} type="button" data-share-title={title} data-share-text={text} data-share-url={url} aria-label={label}>

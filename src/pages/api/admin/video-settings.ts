@@ -4,22 +4,34 @@ import { PERMISSIONS } from '@/lib/permissions';
 import { resolveFrontFeatures } from '@/lib/front-features';
 import { sanitizeImageUrl, sanitizePublicHref } from '@/lib/safe-url';
 import { getSettingValue, getSettings, setSettings, type HeroVideo } from '@/lib/settings';
-import { fetchVideoThumbnail } from '@/lib/video-links';
-import { enqueueHeroVideoConversions } from '@/lib/hero-video-conversion';
 
 const videoPositions = new Set(['above-header', 'below-hero', 'below-featured', 'above-footer']);
 
-async function authorize(cookies: Parameters<APIRoute>[0]['cookies']) {
-  const _user = await getAdminOrResponse(cookies);
+async function authorize(cookies: Parameters<APIRoute>[0]['cookies'], locals: Parameters<APIRoute>[0]['locals']) {
+  const runtime = (locals as { runtime?: { env?: Record<string, unknown> } }).runtime;
+  let adapter: Awaited<ReturnType<typeof import('@/db/d1').createD1Db>> | undefined;
+  let authOptions: { db?: typeof adapter; sessionSecret?: string } = {};
+  if (runtime) {
+    const env = runtime.env ?? {};
+    const binding = env.DB_PREVIEW;
+    const sessionSecret = env.SESSION_SECRET;
+    if (!binding || typeof sessionSecret !== 'string' || !sessionSecret) {
+      return new Response(JSON.stringify({ error: 'preview_unavailable' }), { status: 503, headers: { 'content-type': 'application/json' } });
+    }
+    const { createD1Db } = await import('@/db/d1');
+    adapter = await createD1Db(binding as Parameters<typeof createD1Db>[0]);
+    authOptions = { db: adapter, sessionSecret };
+  }
+  const _user = await getAdminOrResponse(cookies, authOptions);
   if (_user instanceof Response) return _user;
   const user = _user;
-  const settings = await getSettings();
+  const settings = await getSettings(adapter);
   const features = resolveFrontFeatures(settings);
   const canCarousel = features.heroVideos && (user.role === 'superadmin' || (user.permissions & PERMISSIONS.VIDEOS_CAROUSEL) !== 0);
   const canLinks = features.videoLinks && (user.role === 'superadmin' || (user.permissions & PERMISSIONS.VIDEOS_LINKS) !== 0);
   const canVideos = canCarousel || canLinks;
   if (!canVideos) return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403, headers: { 'content-type': 'application/json' } });
-  return { settings, canCarousel, canLinks };
+  return { settings, canCarousel, canLinks, adapter, worker: Boolean(runtime) };
 }
 
 function parseExistingHeroVideos(): Promise<HeroVideo[]> {
@@ -53,7 +65,10 @@ async function sanitizeHeroVideos(value: unknown) {
     if (!url) continue;
     const type = record.type === 'mp4' ? 'mp4' : 'youtube';
     let thumbnailUrl = sanitizeImageUrl(record.thumbnailUrl);
-    if (!thumbnailUrl) thumbnailUrl = (await fetchVideoThumbnail(url)) || '';
+    if (!thumbnailUrl) {
+      const { fetchVideoThumbnail } = await import('@/lib/video-links');
+      thumbnailUrl = (await fetchVideoThumbnail(url)) || '';
+    }
     const id = String(record.id || crypto.randomUUID());
     const existing = existingById.get(id);
     const sourceUrl = type === 'youtube' ? String(record.sourceUrl || url) : '';
@@ -76,9 +91,10 @@ async function sanitizeHeroVideos(value: unknown) {
   return videos;
 }
 
-export const POST: APIRoute = async ({ request, cookies }) => {
-  const auth = await authorize(cookies);
+export const POST: APIRoute = async ({ request, cookies, locals }) => {
+  const auth = await authorize(cookies, locals);
   if (auth instanceof Response) return auth;
+  if (auth.worker) return Response.json({ error: 'preview_disabled', previewOnly: true }, { status: 501 });
 
   const body = await request.json();
   const updates: Parameters<typeof setSettings>[0] = {};
@@ -97,13 +113,16 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     updates.videoLinksSectionTitle = String(body.videoLinksSectionTitle || '');
   }
 
-  await setSettings(updates);
-  if (sanitizedHeroVideos) enqueueHeroVideoConversions(sanitizedHeroVideos);
+  await setSettings(updates, auth.adapter);
+  if (sanitizedHeroVideos) {
+    const { enqueueHeroVideoConversions } = await import('@/lib/hero-video-conversion');
+    enqueueHeroVideoConversions(sanitizedHeroVideos);
+  }
   return Response.json({ ok: true, heroVideos: sanitizedHeroVideos });
 };
 
-export const GET: APIRoute = async ({ cookies }) => {
-  const auth = await authorize(cookies);
+export const GET: APIRoute = async ({ cookies, locals }) => {
+  const auth = await authorize(cookies, locals);
   if (auth instanceof Response) return auth;
   const settings = auth.settings;
   return Response.json({

@@ -1,14 +1,24 @@
 import type { APIRoute } from 'astro';
+import { createD1Db } from '@/db/d1';
 import { getPermittedOrResponse } from '@/lib/auth';
 import { PERMISSIONS } from '@/lib/permissions';
-import { db } from '@/db/connection';
 import { adminUsers } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
-export const PATCH: APIRoute = async ({ params, cookies, request }) => {
-  const _actor = await getPermittedOrResponse(cookies, PERMISSIONS.USERS_MANAGE);
+export const PATCH: APIRoute = async ({ params, cookies, request, locals }) => {
+  const runtimeEnv = locals.runtime?.env;
+  if (locals.runtime && (!runtimeEnv?.DB_PREVIEW || !runtimeEnv.SESSION_SECRET)) {
+    return new Response('User storage unavailable', { status: 503 });
+  }
+  const adapter = runtimeEnv?.DB_PREVIEW ? await createD1Db(runtimeEnv.DB_PREVIEW) : undefined;
+  const authOptions = {
+    ...(adapter ? { db: adapter } : {}),
+    ...(runtimeEnv?.SESSION_SECRET ? { sessionSecret: runtimeEnv.SESSION_SECRET } : {}),
+  };
+  const _actor = await getPermittedOrResponse(cookies, PERMISSIONS.USERS_MANAGE, authOptions);
   if (_actor instanceof Response) return _actor;
   const actor = _actor;
+  const db = adapter ? adapter as unknown as typeof import('@/db/connection').db : (await import('@/db/connection')).db;
 
   const targetId = params.id!;
   if (targetId === actor.id) {
@@ -35,10 +45,20 @@ export const PATCH: APIRoute = async ({ params, cookies, request }) => {
   return Response.json({ ok: true });
 };
 
-export const DELETE: APIRoute = async ({ params, cookies }) => {
-  const _actor = await getPermittedOrResponse(cookies, PERMISSIONS.USERS_MANAGE);
+export const DELETE: APIRoute = async ({ params, cookies, locals }) => {
+  const runtimeEnv = locals.runtime?.env;
+  if (locals.runtime && (!runtimeEnv?.DB_PREVIEW || !runtimeEnv.SESSION_SECRET)) {
+    return new Response('User storage unavailable', { status: 503 });
+  }
+  const adapter = runtimeEnv?.DB_PREVIEW ? await createD1Db(runtimeEnv.DB_PREVIEW) : undefined;
+  const authOptions = {
+    ...(adapter ? { db: adapter } : {}),
+    ...(runtimeEnv?.SESSION_SECRET ? { sessionSecret: runtimeEnv.SESSION_SECRET } : {}),
+  };
+  const _actor = await getPermittedOrResponse(cookies, PERMISSIONS.USERS_MANAGE, authOptions);
   if (_actor instanceof Response) return _actor;
   const actor = _actor;
+  const db = adapter ? adapter as unknown as typeof import('@/db/connection').db : (await import('@/db/connection')).db;
   if (actor.role !== 'superadmin') {
     return Response.json({ error: '只有 superadmin 可以刪除用戶' }, { status: 403 });
   }

@@ -4,17 +4,23 @@ import BrandIcon from '@/components/BrandIcon.astro';
 import { getSettings } from '@/lib/settings';
 import { getFirstPublicHref, resolveFrontFeatures } from '@/lib/front-features';
 import { getVehicleBySlug, listPublicInventoryVehicles } from '@/lib/vehicles';
+import { createD1Db } from '@/db/d1';
 
-const settings = await getSettings();
+const runtime = Astro.locals.runtime;
+const binding = runtime?.env?.DB_PREVIEW;
+if (runtime && !binding) return new Response('Preview database unavailable', { status: 503 });
+const adapter = binding ? await createD1Db(binding) : undefined;
+const settings = await getSettings(adapter);
 const features = resolveFrontFeatures(settings);
 const fallbackHref = getFirstPublicHref(features);
 if (!features.compare) return Astro.redirect(fallbackHref);
 const idsParam = Astro.url.searchParams.get('ids') || '';
-const slugs = idsParam.split(',').map((s) => s.trim()).filter(Boolean);
+const MAX_COMPARE_VEHICLES = 4;
+const slugs = idsParam.split(',').map((s) => s.trim()).filter(Boolean).slice(0, MAX_COMPARE_VEHICLES);
 
 const [vehicles, allVehicles] = await Promise.all([
-  Promise.all(slugs.map((slug) => getVehicleBySlug(slug))).then((r) => r.filter(Boolean)),
-  listPublicInventoryVehicles(),
+  Promise.all(slugs.map((slug) => getVehicleBySlug(slug, adapter))).then((r) => r.filter(Boolean)),
+  listPublicInventoryVehicles(adapter),
 ]);
 
 // Vehicles available to add (not already in compare)

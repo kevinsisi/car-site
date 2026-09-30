@@ -1,20 +1,29 @@
 ---
 import AdminDashboard from '@/components/AdminDashboard.svelte';
 import AdminLayout from '@/layouts/AdminLayout.astro';
+import { createD1Db } from '@/db/d1';
 import { getSession, hasAnyUsers } from '@/lib/auth';
 import { listBrandAliases } from '@/lib/brand-aliases';
 import { getSettings } from '@/lib/settings';
 import { countUnreadSellInquiries } from '@/lib/sell-inquiries';
 import { listAdminVehicles } from '@/lib/vehicles';
 
-if (!await hasAnyUsers()) return Astro.redirect('/admin/setup');
-const user = await getSession(Astro.cookies);
+const runtime = Astro.locals.runtime;
+const env = runtime?.env;
+if (runtime && (!env?.DB_PREVIEW || !env.SESSION_SECRET)) {
+  return new Response('Admin preview storage unavailable', { status: 503 });
+}
+const db = env?.DB_PREVIEW ? await createD1Db(env.DB_PREVIEW) : undefined;
+const authOptions = { db, sessionSecret: env?.SESSION_SECRET };
+
+if (!await hasAnyUsers(authOptions)) return Astro.redirect('/admin/setup');
+const user = await getSession(Astro.cookies, authOptions);
 if (!user) return Astro.redirect('/admin/login');
 
-const vehicles = await listAdminVehicles();
-const settings = await getSettings();
-const brandAliases = await listBrandAliases();
-const unreadSellCount = await countUnreadSellInquiries();
+const vehicles = await listAdminVehicles(db, db ? 100 : undefined);
+const settings = await getSettings(db);
+const brandAliases = await listBrandAliases(db, db ? 100 : undefined);
+const unreadSellCount = await countUnreadSellInquiries(db);
 ---
 
 <AdminLayout user={user}>

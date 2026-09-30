@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { ADMIN_COOKIE, createSession } from '@/lib/auth';
-import { hashIp, logAdminActivity } from '@/lib/analytics';
+import { createD1Db } from '@/db/d1';
+import { checkSharedLimit, clearSharedLimit, createD1RateLimiter, recordSharedFailure } from '@/lib/shared-rate-limit';
 
 const MAX_ATTEMPTS = 5;
 const ATTEMPT_WINDOW_MS = 5 * 60 * 1000;
@@ -57,38 +58,61 @@ function clearAttempts(key: string): void {
   attempts.delete(key);
 }
 
-export const POST: APIRoute = async ({ request, cookies, redirect }) => {
+export const POST: APIRoute = async ({ request, cookies, redirect, locals }) => {
   const form = await request.formData();
   const username = String(form.get('username') || '');
   const password = String(form.get('password') || '');
   const key = getKey(request, username);
 
-  if (isLocked(key)) {
-    return redirect('/admin/login?limited=1');
-  }
+  const runtimeEnv = locals.runtime?.env;
+  const workerRequest = Boolean(locals.runtime);
+  const limiter = workerRequest && runtimeEnv?.DB_PREVIEW ? createD1RateLimiter(runtimeEnv.DB_PREVIEW) : undefined;
 
-  const session = await createSession(username, password);
+  if (workerRequest) {
+    if (!runtimeEnv?.DB_PREVIEW || !runtimeEnv.SESSION_SECRET || await checkSharedLimit(limiter, key, Date.now())) {
+      return redirect('/admin/login?limited=1');
+    }
+  } else if (isLocked(key)) return redirect('/admin/login?limited=1');
+
+  let session;
+  try {
+    const db = runtimeEnv?.DB_PREVIEW ? await createD1Db(runtimeEnv.DB_PREVIEW) : undefined;
+    session = await createSession(username, password, {
+      ...(db ? { db } : {}),
+      ...(runtimeEnv?.SESSION_SECRET ? { sessionSecret: runtimeEnv.SESSION_SECRET } : {}),
+    });
+  } catch (error) {
+    if (workerRequest) return redirect('/admin/login?limited=1');
+    throw error;
+  }
   if (!session) {
-    recordFailure(key);
+    if (workerRequest) {
+      if (!await recordSharedFailure(limiter, key, Date.now())) return redirect('/admin/login?limited=1');
+    } else recordFailure(key);
     return redirect('/admin/login?error=1');
   }
 
-  clearAttempts(key);
+  if (workerRequest) {
+    if (!await clearSharedLimit(limiter, key)) return redirect('/admin/login?limited=1');
+  } else clearAttempts(key);
   cookies.set(ADMIN_COOKIE, session.cookieValue, {
     path: '/',
     httpOnly: true,
     sameSite: 'strict',
-    secure: import.meta.env.PROD,
+    secure: import.meta.env?.PROD,
     expires: new Date(session.expiresAt),
   });
 
-  const ip = getClientIp(request);
-  logAdminActivity({
-    userId: session.user.id,
-    username: session.user.username,
-    action: 'login',
-    ipHash: hashIp(ip),
-  }).catch(() => {});
+  if (!workerRequest) {
+    const { hashIp, logAdminActivity } = await import('@/lib/analytics');
+    const ip = getClientIp(request);
+    logAdminActivity({
+      userId: session.user.id,
+      username: session.user.username,
+      action: 'login',
+      ipHash: hashIp(ip),
+    }).catch(() => {});
+  }
 
   return redirect('/admin');
 };

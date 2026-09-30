@@ -1,11 +1,9 @@
 import { eq } from 'drizzle-orm';
 import { defineMiddleware } from 'astro:middleware';
-import { db } from '@/db/connection';
 import { adminUsers } from '@/db/schema';
 import { getSession } from '@/lib/auth';
 import { verifyPassword } from '@/lib/crypto';
-import { migrateFeatures } from '@/lib/migrate-features';
-import { detectBot, detectDeviceType, hashIp, logPageView, normalizeReferrer } from '@/lib/analytics';
+import { createD1Db } from '@/db/d1';
 
 const SESSION_COOKIE = 'car_site_session';
 const SESSION_TTL_SECONDS = 24 * 60 * 60;
@@ -53,20 +51,34 @@ const FORCE_CHANGE_ALLOWLIST = ['/admin/account', '/admin/login', '/api/admin/ch
 
 let migrationPromise: Promise<void> | null = null;
 
-export const onRequest = defineMiddleware(async (context, next) => {
-  if (!migrationPromise) {
-    migrationPromise = migrateFeatures();
+export async function handleRequest(context: Parameters<Parameters<typeof defineMiddleware>[0]>[0], next: () => Promise<Response>): Promise<Response> {
+  const runtime = context.locals.runtime;
+  let requestDb: Awaited<ReturnType<typeof createD1Db>> | undefined;
+  let sessionSecret: string | undefined;
+
+  if (runtime) {
+    const env = runtime.env;
+    if (!env?.DB_PREVIEW || !env.SESSION_SECRET) {
+      return new Response('Authentication storage unavailable', { status: 503 });
+    }
+    requestDb = await createD1Db(env.DB_PREVIEW);
+    sessionSecret = env.SESSION_SECRET;
+  } else {
+    if (!migrationPromise) {
+      migrationPromise = import('@/lib/migrate-features').then(({ migrateFeatures }) => migrateFeatures());
+    }
+    await migrationPromise;
   }
-  await migrationPromise;
 
   if (context.url.pathname.startsWith('/api/admin/') && !sameHostPost(context.request)) {
     return new Response('Cross-site POST form submissions are forbidden', { status: 403 });
   }
-  context.locals.admin = (await getSession(context.cookies)) || undefined;
+  context.locals.admin = (await getSession(context.cookies, { db: requestDb, sessionSecret })) || undefined;
 
   if (context.locals.admin && context.url.pathname.startsWith('/admin')) {
     const allowed = FORCE_CHANGE_ALLOWLIST.some((p) => context.url.pathname === p || context.url.pathname.startsWith(p + '/'));
     if (!allowed) {
+      const db = requestDb ?? (await import('@/db/connection')).db;
       const user = (await db.select().from(adminUsers).where(eq(adminUsers.id, context.locals.admin.id)).limit(1))[0];
       if (user && verifyPassword('change-me-now', user.passwordHash)) {
         return context.redirect('/admin/account?force=1');
@@ -80,7 +92,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
     !context.url.pathname.startsWith('/api/') &&
     !context.url.pathname.startsWith('/admin');
 
-  if (!shouldTrack) return next();
+  if (!shouldTrack || runtime) return next();
+
+  const { detectBot, detectDeviceType, hashIp, logPageView, normalizeReferrer } = await import('@/lib/analytics');
 
   const ua = context.request.headers.get('user-agent') || '';
   const isBot = detectBot(ua);
@@ -121,4 +135,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }).catch((err) => console.error('[analytics] logPageView failed:', err));
 
   return response;
-});
+}
+
+export const onRequest = defineMiddleware(handleRequest);

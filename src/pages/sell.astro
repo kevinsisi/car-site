@@ -2,7 +2,12 @@
 import PublicLayout from '@/layouts/PublicLayout.astro';
 import { getSettings } from '@/lib/settings';
 import { getFirstPublicHref, resolveFrontFeatures } from '@/lib/front-features';
-const settings = await getSettings();
+import { createD1Db } from '@/db/d1';
+const runtime = Astro.locals.runtime;
+const binding = runtime?.env?.DB_PREVIEW;
+if (runtime && !binding) return new Response('Preview database unavailable', { status: 503 });
+const adapter = binding ? await createD1Db(binding) : undefined;
+const settings = await getSettings(adapter);
 const features = resolveFrontFeatures(settings);
 const fallbackHref = getFirstPublicHref(features);
 if (!features.sellInquiry) return Astro.redirect(fallbackHref);
