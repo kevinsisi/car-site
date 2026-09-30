@@ -2,8 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { APIRoute } from 'astro';
 import sharp from 'sharp';
-import { getAdminOrResponse } from '@/lib/auth';
+import { ADMIN_COOKIE, getAdminOrResponse } from '@/lib/auth';
 import { appConfig } from '@/lib/config';
+import { createD1Db } from '@/db/d1';
 import { registerOptimizedMedia } from '@/lib/media';
 import { deleteMedia, putMedia, type R2MediaBucket } from '@/lib/r2-media';
 
@@ -79,7 +80,28 @@ async function generateOptimized(srcPath: string, relDir: string, baseName: stri
 }
 
 export const POST: APIRoute = async ({ request, cookies, locals }) => {
-  const _auth = await getAdminOrResponse(cookies);
+  const runtime = locals?.runtime;
+  const env = runtime?.env;
+  const isWorker = Boolean(runtime);
+  let authOptions;
+  let bucket: R2MediaBucket | undefined;
+
+  if (isWorker) {
+    if (!cookies.get(ADMIN_COOKIE)?.value) {
+      const unauthenticated = await getAdminOrResponse(cookies);
+      if (unauthenticated instanceof Response) return unauthenticated;
+    }
+
+    const dbBinding = env?.DB_PREVIEW;
+    const sessionSecret = env?.SESSION_SECRET;
+    bucket = env?.MEDIA_PREVIEW as R2MediaBucket | undefined;
+    if (!dbBinding || !sessionSecret || !bucket) {
+      return Response.json({ error: '服務設定不完整' }, { status: 503 });
+    }
+    authOptions = { db: await createD1Db(dbBinding), sessionSecret };
+  }
+
+  const _auth = await getAdminOrResponse(cookies, authOptions);
   if (_auth instanceof Response) return _auth;
   const formData = await request.formData();
   const files = formData.getAll('files').filter((file): file is File => file instanceof File);
@@ -88,8 +110,7 @@ export const POST: APIRoute = async ({ request, cookies, locals }) => {
     return Response.json({ error: '請先選擇要上傳的圖片' }, { status: 400 });
   }
 
-  const bucket = locals.runtime?.env?.MEDIA_PREVIEW as R2MediaBucket | undefined;
-  if (bucket) return uploadMediaToR2(files, bucket);
+  if (isWorker) return uploadMediaToR2(files, bucket!);
 
   const today = new Date().toISOString().slice(0, 10);
   const uploadDir = path.resolve(mediaRoot, 'uploads', today);
