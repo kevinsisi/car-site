@@ -16,6 +16,7 @@
     color: #222;
   }
   .page { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 60px; }
+  .page > div { min-width: 0; }
 
   .section-title {
     font-size: 30px;
@@ -27,6 +28,7 @@
   /* ── Compare table ── */
   .compare-table {
     width: 100%;
+    min-width: 680px;
     border-collapse: collapse;
     background: #fff;
     border-radius: 12px;
@@ -53,7 +55,8 @@
   .compare-table tbody tr:nth-child(even) .col-ours { background: #213460; }
 
   /* ── Plan table ── */
-  .plan-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 16px rgba(0,0,0,.08); }
+  .plan-table { width: 100%; min-width: 760px; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 16px rgba(0,0,0,.08); }
+  .table-scroll { min-width: 0; max-width: 100%; overflow-x: auto; border-radius: 12px; }
   .plan-table th, .plan-table td { padding: 13px 20px; text-align: left; font-size: 19px; border-bottom: 1px solid #eee; }
   .plan-table tr:last-child td { border-bottom: none; }
   .plan-table thead th:first-child { background: #f0f0f0; color: #555; }
@@ -201,6 +204,24 @@
   #export-btn:hover { background: #243d6a; transform: translateY(-1px); }
   #export-btn:active { transform: translateY(0); }
   #export-btn:disabled { opacity: .6; cursor: default; transform: none; }
+
+  @media (max-width: 767px) {
+    body { padding: 24px 16px; }
+    .page { gap: 40px; }
+    .section-title { font-size: 25px; }
+    .pricing-row, .scope-row, .hosting-row { flex-direction: column; }
+    .pricing-row, .scope-row { gap: 16px; }
+    .pricing-card, .scope-box, .hosting-box { min-width: 0; width: 100%; }
+    .pricing-card-header { padding: 22px 20px 18px; }
+    .pricing-card-body { padding: 18px 20px 22px; }
+    .pricing-amount { font-size: 34px; }
+    .pricing-unit { font-size: 16px; }
+    .pricing-card-body li, .scope-box-body li { font-size: 17px; }
+    .hosting-row { gap: 12px; }
+    .hosting-box { padding: 18px 20px; }
+    .scope-note { padding: 10px 12px; }
+    #export-btn { right: 16px; bottom: 16px; padding: 12px 18px; }
+  }
 </style>
 <script is:inline src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
@@ -210,6 +231,7 @@
   <!-- ─── TABLE 1: Our platform vs WordPress ─── -->
   <div>
     <div class="section-title">我們的方案 vs WordPress</div>
+    <div class="table-scroll">
     <table class="compare-table">
       <thead>
         <tr>
@@ -276,12 +298,14 @@
         </tr>
       </tbody>
     </table>
+    </div>
     <p class="note">※ WordPress 插件費用依選用項目而異，常見需求（SEO、表單、圖庫、安全）每年合計約 NT$3,000–15,000 以上。</p>
   </div>
 
   <!-- ─── TABLE 2: Full version vs Basic ─── -->
   <div>
     <div class="section-title">功能方案比較</div>
+    <div class="table-scroll">
     <table class="plan-table">
       <thead>
         <tr>
@@ -441,6 +465,7 @@
         </tr>
       </tbody>
     </table>
+    </div>
     <p class="note">※ 基礎版適合初期測試市場；完整版提供完整的精品車商數位體驗。勾選選配功能可查看對應報價。</p>
   </div>
 

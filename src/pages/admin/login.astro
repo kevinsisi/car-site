@@ -1,6 +1,7 @@
 ---
 import '@/styles/admin.css';
 import { getSettings } from '@/lib/settings';
+import { createD1Db } from '@/db/d1';
 import { siteIconHref } from '@/lib/site-icon';
 import { styleVars, styles } from '@/lib/theme';
 
@@ -9,7 +10,11 @@ const hasError = params.get('error') === '1';
 const isExpired = params.get('expired') === '1';
 const isLimited = params.get('limited') === '1';
 const isSetup = params.get('setup') === '1';
-const settings = await getSettings();
+const runtime = Astro.locals.runtime;
+const binding = runtime?.env?.DB_PREVIEW;
+if (runtime && !binding) return new Response('Preview database unavailable', { status: 503 });
+const adapter = binding ? await createD1Db(binding) : undefined;
+const settings = await getSettings(adapter);
 const siteIconUrl = siteIconHref(settings);
 const activeStyle = styles[settings.activeStyle];
 const errorMessage = isExpired

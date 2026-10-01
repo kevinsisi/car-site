@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
+import { createD1Db } from '@/db/d1';
 import { getAdminOrResponse } from '@/lib/auth';
 import { PERMISSIONS, hasPermission } from '@/lib/permissions';
-import { hashIp, logAdminActivity } from '@/lib/analytics';
 import { detailSpecFieldOptions } from '@/lib/detail-spec-fields';
 import { FEATURE_DIRECT_CONTACT, FEATURE_SELL_INQUIRY, FEATURE_SOCIAL_ICONS, FEATURE_AI_CHATBOT, effectiveFeatureMask, hasFeature } from '@/lib/features';
 import { sanitizeImageUrl, sanitizePublicHref } from '@/lib/safe-url';
@@ -19,8 +19,17 @@ function jsonError(error: string, status = 403): Response {
   return new Response(JSON.stringify({ error }), { status, headers: { 'content-type': 'application/json' } });
 }
 
-export const POST: APIRoute = async ({ request, cookies }) => {
-  const _user = await getAdminOrResponse(cookies);
+export const POST: APIRoute = async ({ request, cookies, locals }) => {
+  const runtimeEnv = locals.runtime?.env;
+  if (locals.runtime && (!runtimeEnv?.DB_PREVIEW || !runtimeEnv.SESSION_SECRET)) {
+    return new Response('Settings storage unavailable', { status: 503 });
+  }
+  const adapter = runtimeEnv?.DB_PREVIEW ? await createD1Db(runtimeEnv.DB_PREVIEW) : undefined;
+  const authOptions = {
+    ...(adapter ? { db: adapter } : {}),
+    ...(runtimeEnv?.SESSION_SECRET ? { sessionSecret: runtimeEnv.SESSION_SECRET } : {}),
+  };
+  const _user = await getAdminOrResponse(cookies, authOptions);
   if (_user instanceof Response) return _user;
   const user = _user;
   const settingsPerms = PERMISSIONS.SETTINGS_BASIC | PERMISSIONS.SETTINGS_LAYOUT | PERMISSIONS.SETTINGS_GALLERY | PERMISSIONS.SETTINGS_AI_CHATBOT;
@@ -28,8 +37,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403, headers: { 'content-type': 'application/json' } });
   }
   const body = await request.json() as Record<string, unknown>;
+  if (locals.runtime && ['notificationEmail', 'gmailUser', 'gmailAppPassword'].some((key) => Object.prototype.hasOwnProperty.call(body, key))) {
+    return jsonError('SMTP settings are not available in preview', 400);
+  }
   const updates: Partial<Record<keyof SiteSettings, unknown>> = {};
-  const currentSettings = await getSettings();
+  const currentSettings = await getSettings(adapter);
   const currentMask = effectiveFeatureMask(currentSettings.featureMask, currentSettings.featureLicenseMask);
   const licenseMask = currentSettings.featureLicenseMask;
   const directFields: (keyof SiteSettings)[] = ['lineUrl', 'phoneNumber'];
@@ -115,20 +127,23 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   if (hasOwn(body, 'aiChatOpening')) updates.aiChatOpening = String(body.aiChatOpening || '');
   if (hasOwn(body, 'aiChatTone')) updates.aiChatTone = String(body.aiChatTone || '');
 
-  await setSettings(updates);
+  await setSettings(updates, adapter);
 
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    request.headers.get('cf-connecting-ip') ||
-    request.headers.get('x-real-ip') ||
-    'unknown';
-  logAdminActivity({
-    userId: user.id,
-    username: user.username,
-    action: 'settings_update',
-    targetType: 'settings',
-    details: { keys: Object.keys(updates) },
-    ipHash: hashIp(ip),
-  }).catch(() => {});
+  if (!locals.runtime) {
+    const { hashIp, logAdminActivity } = await import('@/lib/analytics');
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('cf-connecting-ip') ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
+    logAdminActivity({
+      userId: user.id,
+      username: user.username,
+      action: 'settings_update',
+      targetType: 'settings',
+      details: { keys: Object.keys(updates) },
+      ipHash: hashIp(ip),
+    }).catch(() => {});
+  }
 
   return Response.json({ ok: true });
 };

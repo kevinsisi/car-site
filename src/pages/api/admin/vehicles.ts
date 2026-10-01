@@ -1,11 +1,20 @@
 import type { APIRoute } from 'astro';
+import { createD1Db } from '@/db/d1';
 import { getPermittedOrResponse } from '@/lib/auth';
 import { PERMISSIONS } from '@/lib/permissions';
 import { upsertVehicle } from '@/lib/vehicles';
 import { isVehicleStatus } from '@/lib/vehicle-status';
 
-export const POST: APIRoute = async ({ request, cookies }) => {
-  const _auth = await getPermittedOrResponse(cookies, PERMISSIONS.VEHICLES_EDIT);
+export const POST: APIRoute = async ({ request, cookies, locals }) => {
+  const runtimeEnv = locals.runtime?.env;
+  if (locals.runtime && (!runtimeEnv?.DB_PREVIEW || !runtimeEnv.SESSION_SECRET)) {
+    return new Response('Vehicle storage unavailable', { status: 503 });
+  }
+  const adapter = runtimeEnv?.DB_PREVIEW ? await createD1Db(runtimeEnv.DB_PREVIEW) : undefined;
+  const _auth = await getPermittedOrResponse(cookies, PERMISSIONS.VEHICLES_EDIT, {
+    ...(adapter ? { db: adapter } : {}),
+    ...(runtimeEnv?.SESSION_SECRET ? { sessionSecret: runtimeEnv.SESSION_SECRET } : {}),
+  });
   if (_auth instanceof Response) return _auth;
   const user = _auth;
   const body = await request.json();
@@ -33,6 +42,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     monthlyRecommended: body.monthlyRecommended === true,
     showSoldCase: body.showSoldCase === true,
     images: Array.isArray(body.images) ? body.images.map(String) : [],
-  });
+    preserveImportMetadata: true,
+  }, adapter);
   return Response.json({ ok: true, vehicleId });
 };

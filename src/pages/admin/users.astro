@@ -3,24 +3,37 @@ import AdminLayout from '@/layouts/AdminLayout.astro';
 import Users from '@/components/admin/Users.svelte';
 import { getSession, hasAnyUsers } from '@/lib/auth';
 import { PERMISSIONS, PERMISSION_LABELS, hasPermission } from '@/lib/permissions';
-import { db } from '@/db/connection';
 import { adminUsers } from '@/db/schema';
 import { asc } from 'drizzle-orm';
+import { createD1Db } from '@/db/d1';
 
-if (!await hasAnyUsers()) return Astro.redirect('/admin/setup');
-const user = await getSession(Astro.cookies);
+const runtime = Astro.locals.runtime;
+const binding = runtime?.env?.DB_PREVIEW;
+const sessionSecret = runtime?.env?.SESSION_SECRET;
+if (runtime && (!binding || !sessionSecret)) return new Response('Preview database unavailable', { status: 503 });
+const adapter = binding ? await createD1Db(binding) : undefined;
+const authOptions = { db: adapter, sessionSecret };
+
+if (!await hasAnyUsers(authOptions)) return Astro.redirect('/admin/setup');
+const user = await getSession(Astro.cookies, authOptions);
 if (!user) return Astro.redirect('/admin/login');
 if (user.role !== 'superadmin' && !hasPermission(user.permissions, PERMISSIONS.USERS_MANAGE)) {
   return Astro.redirect('/admin');
 }
 
-const allUsers = await db.select({
+const columns = {
   id: adminUsers.id,
   username: adminUsers.username,
   role: adminUsers.role,
   permissions: adminUsers.permissions,
   createdAt: adminUsers.createdAt,
-}).from(adminUsers).orderBy(asc(adminUsers.createdAt));
+};
+const allUsers = adapter
+  ? await adapter.select(columns).from(adminUsers).orderBy(asc(adminUsers.createdAt), asc(adminUsers.id)).limit(100)
+  : await (async () => {
+      const { db } = await import('@/db/connection');
+      return db.select(columns).from(adminUsers).orderBy(asc(adminUsers.createdAt));
+    })();
 
 // Non-superadmin users must not see superadmin accounts
 const users = user.role === 'superadmin'

@@ -15,15 +15,15 @@ export function verifyPassword(password: string, stored: string): boolean {
   return expected.length === candidate.length && timingSafeEqual(candidate, expected);
 }
 
-export function signSession(sessionId: string): string {
-  const signature = createHmac('sha256', appConfig.sessionSecret).update(sessionId).digest('hex');
+export function signSession(sessionId: string, sessionSecret = appConfig.sessionSecret): string {
+  const signature = createHmac('sha256', sessionSecret).update(sessionId).digest('hex');
   return `${sessionId}.${signature}`;
 }
 
-export function verifySignedSession(value: string): string | null {
+export function verifySignedSession(value: string, sessionSecret = appConfig.sessionSecret): string | null {
   const [sessionId, signature] = value.split('.');
   if (!sessionId || !signature) return null;
-  const expected = createHmac('sha256', appConfig.sessionSecret).update(sessionId).digest('hex');
+  const expected = createHmac('sha256', sessionSecret).update(sessionId).digest('hex');
   const a = Buffer.from(signature, 'hex');
   const b = Buffer.from(expected, 'hex');
   return a.length === b.length && timingSafeEqual(a, b) ? sessionId : null;

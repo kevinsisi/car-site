@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { db } from '@/db/connection';
+import type { createD1Db } from '@/db/d1';
 import { siteSettings, type ImportBehavior } from '@/db/schema';
 import { defaultDetailSpecFields } from './detail-spec-fields';
 import { sanitizeImageUrl, sanitizePublicHref } from './safe-url';
@@ -7,6 +7,13 @@ import { resolveStyle, resolveTemplate, type StyleId, type TemplateId } from './
 import { DEFAULT_FEATURE_MASK, ALL_FEATURES_MASK } from './features';
 
 export type GalleryMode = 'lightbox' | 'slider' | 'thumbnail-strip' | 'grid';
+
+type SettingsDb = Awaited<ReturnType<typeof createD1Db>>;
+
+async function settingsDb(adapter?: SettingsDb): Promise<SettingsDb> {
+  if (adapter) return adapter;
+  return (await import('@/db/connection')).db as unknown as SettingsDb;
+}
 
 export interface HeroVideo {
   id: string;
@@ -202,8 +209,8 @@ function resolveDetailSpecFields(value: string | undefined): string[] {
   }
 }
 
-export async function getSettings(): Promise<SiteSettings> {
-  const rows = await db.select().from(siteSettings);
+export async function getSettings(adapter?: SettingsDb): Promise<SiteSettings> {
+  const rows = await (await settingsDb(adapter)).select().from(siteSettings);
   const map = new Map(rows.map((row) => [row.key, row.value]));
   const importBehavior = map.get('importBehavior');
   const settingValue = (key: keyof SiteSettings, fallback: string) => (map.has(key) ? map.get(key) || '' : fallback);
@@ -285,19 +292,19 @@ export async function getSettings(): Promise<SiteSettings> {
   };
 }
 
-export async function setSettingValue(key: string, value: string): Promise<void> {
+export async function setSettingValue(key: string, value: string, adapter?: SettingsDb): Promise<void> {
   const now = new Date().toISOString();
-  await db
+  await (await settingsDb(adapter))
     .insert(siteSettings)
     .values({ key, value, updatedAt: now })
     .onConflictDoUpdate({ target: siteSettings.key, set: { value, updatedAt: now } });
 }
 
-export async function deleteSettingValue(key: string): Promise<void> {
-  await db.delete(siteSettings).where(eq(siteSettings.key, key));
+export async function deleteSettingValue(key: string, adapter?: SettingsDb): Promise<void> {
+  await (await settingsDb(adapter)).delete(siteSettings).where(eq(siteSettings.key, key));
 }
 
-export async function setSettings(input: Partial<Record<keyof SiteSettings, unknown>>) {
+export async function setSettings(input: Partial<Record<keyof SiteSettings, unknown>>, adapter?: SettingsDb) {
   const now = new Date().toISOString();
   for (const [key, rawValue] of Object.entries(input)) {
     if (rawValue === undefined) continue;
@@ -305,14 +312,14 @@ export async function setSettings(input: Partial<Record<keyof SiteSettings, unkn
     if (Array.isArray(rawValue)) value = JSON.stringify(rawValue);
     else if (rawValue && typeof rawValue === 'object') value = JSON.stringify(rawValue);
     else value = String(rawValue);
-    await db
+    await (await settingsDb(adapter))
       .insert(siteSettings)
       .values({ key, value, updatedAt: now })
       .onConflictDoUpdate({ target: siteSettings.key, set: { value, updatedAt: now } });
   }
 }
 
-export async function getSettingValue(key: string): Promise<string | null> {
-  const row = await db.select().from(siteSettings).where(eq(siteSettings.key, key)).limit(1);
+export async function getSettingValue(key: string, adapter?: SettingsDb): Promise<string | null> {
+  const row = await (await settingsDb(adapter)).select().from(siteSettings).where(eq(siteSettings.key, key)).limit(1);
   return row[0]?.value ?? null;
 }

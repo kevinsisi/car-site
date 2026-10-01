@@ -5,22 +5,48 @@ import { getSession, hasAnyUsers } from '@/lib/auth';
 import { getSettings } from '@/lib/settings';
 import { hasFeature, FEATURE_AI_CHATBOT } from '@/lib/features';
 import { PERMISSIONS, hasPermission } from '@/lib/permissions';
-import { getOpenCodeStatus } from '@/lib/opencode-settings';
+import { createD1Db } from '@/db/d1';
 
-if (!await hasAnyUsers()) return Astro.redirect('/admin/setup');
-const user = await getSession(Astro.cookies);
+const runtime = Astro.locals.runtime;
+const env = runtime?.env;
+if (runtime && (!env?.DB_PREVIEW || !env.SESSION_SECRET)) {
+  return new Response('AI settings preview requires DB_PREVIEW and SESSION_SECRET bindings', { status: 503 });
+}
+const db = env?.DB_PREVIEW ? await createD1Db(env.DB_PREVIEW) : undefined;
+const authOptions = db && env?.SESSION_SECRET
+  ? { db, sessionSecret: env.SESSION_SECRET }
+  : undefined;
+
+if (!await hasAnyUsers(authOptions)) return Astro.redirect('/admin/setup');
+const user = await getSession(Astro.cookies, authOptions);
 if (!user) return Astro.redirect('/admin/login');
 
 const isSuper = user.role === 'superadmin';
 const canAccess = isSuper || hasPermission(user.permissions, PERMISSIONS.SETTINGS_AI_CHATBOT);
 if (!canAccess) return Astro.redirect('/admin');
 
-const settings = await getSettings();
+const settings = await getSettings(db);
 if (!hasFeature(settings.featureLicenseMask, FEATURE_AI_CHATBOT)) return Astro.redirect('/admin/settings/features');
 
-const openCodeStatus = isSuper ? await getOpenCodeStatus() : null;
+const openCodeStatus = isSuper
+  ? runtime ? {
+      servers: [],
+      serversSource: 'none',
+      textModel: '',
+      textModelSource: 'none',
+      visionModel: '',
+      visionModelSource: 'none',
+      textVariant: '',
+      textVariantSource: 'none',
+      visionVariant: '',
+      visionVariantSource: 'none',
+      envUrl: '',
+      previewDisabled: true,
+    } : await (await import('@/lib/opencode-settings')).getOpenCodeStatus()
+  : null;
 ---
 <AdminLayout user={user} title="AI 客服設定">
+  {runtime && <p role="status">Preview 環境已停用 OpenCode 設定；此頁不會讀取或呼叫 AI 服務。</p>}
   <SettingsAiChatbot
     client:load
     settings={settings}

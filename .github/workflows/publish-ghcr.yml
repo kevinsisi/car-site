@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -51,6 +52,7 @@ jobs:
           echo "digest=${{ steps.build.outputs.digest }}" >> "$GITHUB_OUTPUT"
 
   deploy-l390:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: [self-hosted, l390]
     needs: publish
     permissions:

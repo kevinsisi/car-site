@@ -1,6 +1,7 @@
 ---
 import '@/styles/admin.css';
 import { getSettings } from '@/lib/settings';
+import { createD1Db } from '@/db/d1';
 import { siteIconHref } from '@/lib/site-icon';
 import { PERMISSIONS, hasPermission } from '@/lib/permissions';
 import { resolveFrontFeatures } from '@/lib/front-features';
@@ -15,7 +16,11 @@ interface Props {
 
 const { user, title = '後台管理' } = Astro.props;
 const pathname = Astro.url.pathname;
-const settings = await getSettings();
+const runtime = Astro.locals.runtime;
+const binding = runtime?.env?.DB_PREVIEW;
+if (runtime && !binding) return new Response('Preview database unavailable', { status: 503 });
+const adapter = binding ? await createD1Db(binding) : undefined;
+const settings = await getSettings(adapter);
 const features = resolveFrontFeatures(settings);
 const siteIconUrl = siteIconHref(settings);
 const activeStyle = styles[settings.activeStyle];
@@ -180,6 +185,7 @@ const canSeeAiChatbot = hasFeature(settings.featureLicenseMask ?? 0, FEATURE_AI_
 /* ── Mobile header ── */
 .admin-header {
   display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  width: 100%; min-width: 0; box-sizing: border-box;
   height: 52px; padding: 0 1rem;
   background: color-mix(in srgb, var(--surface) 96%, transparent);
   backdrop-filter: blur(12px);
@@ -189,8 +195,8 @@ const canSeeAiChatbot = hasFeature(settings.featureLicenseMask ?? 0, FEATURE_AI_
 }
 .admin-header__hamburger { display: flex; flex-direction: column; gap: 5px; background: none; border: 0; padding: 5px; cursor: pointer; border-radius: 6px; }
 .admin-header__hamburger span { display: block; width: 20px; height: 1.5px; background: var(--text); border-radius: 2px; transition: all 0.2s; }
-.admin-header__title { font-weight: 700; font-size: 0.9rem; letter-spacing: 0.03em; }
-.admin-header__user { font-size: 0.78rem; color: var(--muted); }
+.admin-header__title { min-width: 0; font-weight: 700; font-size: 0.9rem; letter-spacing: 0.03em; }
+.admin-header__user { min-width: 0; overflow-wrap: anywhere; font-size: 0.78rem; color: var(--muted); }
 
 /* ── Sidebar ── */
 .admin-sidebar {
@@ -278,7 +284,7 @@ const canSeeAiChatbot = hasFeature(settings.featureLicenseMask ?? 0, FEATURE_AI_
 .admin-overlay.is-visible { display: block; }
 
 /* ── Main content ── */
-.admin-main { margin-left: 15.5rem; min-height: 100vh; padding: clamp(1.25rem, 3vw, 2.25rem); display: grid; gap: 1.5rem; align-content: start; }
+.admin-main { margin-left: 15.5rem; min-height: 100vh; padding: clamp(1.25rem, 3vw, 2.25rem); display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; align-content: start; }
 
 /* ── Mobile ── */
 @media (max-width: 768px) {

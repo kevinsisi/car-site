@@ -1,10 +1,20 @@
 import { and, asc, desc, eq, inArray, ne, sql } from 'drizzle-orm';
-import { db } from '@/db/connection';
+import type { createD1Db } from '@/db/d1';
 import { importMappings, vehicleImages, vehicles, type PublishMode, type VehicleStatus } from '@/db/schema';
 import { brandUrlSlug, getBrandAliasMap } from './brand-aliases';
-import { resolveMediaPair } from './media';
 import { getSettings } from './settings';
 import { alwaysPublicVehicleStatuses, isPublicVehicleStatus, mapSourceInventoryStatus } from './vehicle-status';
+
+const WORKER_PUBLIC_VEHICLE_LIMIT = 100;
+const MAX_PRESERVED_VEHICLE_IMAGES = 20_000;
+
+type VehicleReadDb = Awaited<ReturnType<typeof createD1Db>>;
+type VehicleWriteDb = VehicleReadDb;
+
+async function vehicleDb(adapter?: VehicleWriteDb): Promise<VehicleWriteDb> {
+  if (adapter) return adapter;
+  return (await import('@/db/connection')).db as unknown as VehicleWriteDb;
+}
 
 export interface VehicleImageView {
   id: string;
@@ -78,10 +88,11 @@ function normalizeRouteSlug(input: string | undefined | null): string {
     .slice(0, 90);
 }
 
-async function findVehicleBySlugInsensitive(slug: string): Promise<(typeof vehicles.$inferSelect) | undefined> {
+async function findVehicleBySlugInsensitive(slug: string, adapter?: VehicleReadDb): Promise<(typeof vehicles.$inferSelect) | undefined> {
   const normalized = normalizeRouteSlug(slug);
   if (!normalized) return undefined;
-  const [row] = await db
+  const reader = await vehicleDb(adapter);
+  const [row] = await reader
     .select()
     .from(vehicles)
     .where(sql`lower(${vehicles.slug}) = lower(${normalized})`)
@@ -113,16 +124,20 @@ function formatCardTitle(template: string, row: typeof vehicles.$inferSelect, br
   return cleanTemplateOutput(rendered) || row.title;
 }
 
-async function attachImages(rows: (typeof vehicles.$inferSelect)[]): Promise<VehicleView[]> {
+async function attachImages(rows: (typeof vehicles.$inferSelect)[], adapter?: VehicleReadDb): Promise<VehicleView[]> {
   if (!rows.length) return [];
-  const brandAliasMap = await getBrandAliasMap();
-  const settings = await getSettings();
-  const images = await db
+  const reader = await vehicleDb(adapter);
+  const brandAliasMap = await getBrandAliasMap(adapter);
+  const settings = await getSettings(adapter);
+  const images = await reader
     .select()
     .from(vehicleImages)
     .where(inArray(vehicleImages.vehicleId, rows.map((row) => row.id)))
     .orderBy(asc(vehicleImages.sortOrder));
   const imageMap = new Map<string, VehicleImageView[]>();
+  const resolveMediaPair = adapter
+    ? (url: string) => ({ url, thumbUrl: url })
+    : (await import('./media')).resolveMediaPair;
   for (const image of images) {
     const list = imageMap.get(image.vehicleId) || [];
     const media = resolveMediaPair(image.url);
@@ -168,9 +183,13 @@ async function attachImages(rows: (typeof vehicles.$inferSelect)[]): Promise<Veh
   });
 }
 
-export async function listPublicBrands(): Promise<{ displayName: string; urlSlug: string; count: number; iconUrl: string | null }[]> {
-  const allVehicles = await db.select({ brand: vehicles.brand }).from(vehicles).where(inArray(vehicles.status, alwaysPublicVehicleStatuses));
-  const brandAliasMap = await getBrandAliasMap();
+export async function listPublicBrands(adapter?: VehicleReadDb): Promise<{ displayName: string; urlSlug: string; count: number; iconUrl: string | null }[]> {
+  const reader = await vehicleDb(adapter);
+  const brandQuery = reader.select({ brand: vehicles.brand }).from(vehicles).where(inArray(vehicles.status, alwaysPublicVehicleStatuses));
+  const allVehicles = adapter
+    ? await brandQuery.orderBy(desc(vehicles.updatedAt), asc(vehicles.id)).limit(WORKER_PUBLIC_VEHICLE_LIMIT)
+    : await brandQuery;
+  const brandAliasMap = await getBrandAliasMap(adapter);
   const countMap = new Map<string, { displayName: string; urlSlug: string; count: number; iconUrl: string | null }>();
   for (const vehicle of allVehicles) {
     const brandAlias = brandAliasMap.get(vehicle.brand);
@@ -190,58 +209,79 @@ export async function listPublicBrands(): Promise<{ displayName: string; urlSlug
   return [...countMap.values()].sort((a, b) => a.displayName.localeCompare(b.displayName));
 }
 
-export async function listPublicVehiclesByBrand(urlSlug: string): Promise<VehicleView[]> {
-  return (await listPublicInventoryVehicles()).filter((vehicle) => vehicle.brandUrlSlug === urlSlug);
+export async function listPublicVehiclesByBrand(urlSlug: string, adapter?: VehicleReadDb): Promise<VehicleView[]> {
+  return (await listPublicInventoryVehicles(adapter)).filter((vehicle) => vehicle.brandUrlSlug === urlSlug);
 }
 
-export async function listPublicVehicles(): Promise<VehicleView[]> {
-  const settings = await getSettings();
+export async function listPublicVehicles(adapter?: VehicleReadDb): Promise<VehicleView[]> {
+  const reader = await vehicleDb(adapter);
+  const settings = await getSettings(adapter);
   const statusFilter = inArray(vehicles.status, settings.showSoldVehicles ? [...alwaysPublicVehicleStatuses, 'sold'] : alwaysPublicVehicleStatuses);
-  const rows = await db.select().from(vehicles).where(statusFilter).orderBy(desc(vehicles.updatedAt));
-  return attachImages(rows);
+  const query = reader.select().from(vehicles).where(statusFilter);
+  const rows = adapter
+    ? await query.orderBy(desc(vehicles.updatedAt), asc(vehicles.id)).limit(WORKER_PUBLIC_VEHICLE_LIMIT)
+    : await query.orderBy(desc(vehicles.updatedAt));
+  return attachImages(rows, adapter);
 }
 
-export async function listMonthlyRecommendedVehicles(): Promise<VehicleView[]> {
-  const rows = await db
+export async function listMonthlyRecommendedVehicles(adapter?: VehicleReadDb): Promise<VehicleView[]> {
+  const reader = await vehicleDb(adapter);
+  const query = reader
     .select()
     .from(vehicles)
-    .where(and(inArray(vehicles.status, alwaysPublicVehicleStatuses), eq(vehicles.monthlyRecommended, true)))
-    .orderBy(desc(vehicles.updatedAt));
-  return attachImages(rows);
+    .where(and(inArray(vehicles.status, alwaysPublicVehicleStatuses), eq(vehicles.monthlyRecommended, true)));
+  const rows = adapter
+    ? await query.orderBy(desc(vehicles.updatedAt), asc(vehicles.id)).limit(WORKER_PUBLIC_VEHICLE_LIMIT)
+    : await query.orderBy(desc(vehicles.updatedAt));
+  return attachImages(rows, adapter);
 }
 
-export async function listPublicInventoryVehicles(): Promise<VehicleView[]> {
-  const rows = await db.select().from(vehicles).where(inArray(vehicles.status, alwaysPublicVehicleStatuses)).orderBy(desc(vehicles.updatedAt));
-  return attachImages(rows);
+export async function listPublicInventoryVehicles(adapter?: VehicleReadDb): Promise<VehicleView[]> {
+  const reader = await vehicleDb(adapter);
+  const query = reader.select().from(vehicles).where(inArray(vehicles.status, alwaysPublicVehicleStatuses));
+  const rows = adapter
+    ? await query.orderBy(desc(vehicles.updatedAt), asc(vehicles.id)).limit(WORKER_PUBLIC_VEHICLE_LIMIT)
+    : await query.orderBy(desc(vehicles.updatedAt));
+  return attachImages(rows, adapter);
 }
 
-export async function listSoldVehicles(): Promise<VehicleView[]> {
-  const settings = await getSettings();
+export async function listSoldVehicles(adapter?: VehicleReadDb): Promise<VehicleView[]> {
+  const settings = await getSettings(adapter);
   if (!settings.showSoldVehicles) return [];
-  const rows = await db.select().from(vehicles).where(eq(vehicles.status, 'sold')).orderBy(desc(vehicles.soldAt), desc(vehicles.updatedAt));
-  return attachImages(rows);
+  const reader = await vehicleDb(adapter);
+  const query = reader.select().from(vehicles).where(eq(vehicles.status, 'sold'));
+  const rows = adapter
+    ? await query.orderBy(desc(vehicles.soldAt), desc(vehicles.updatedAt), asc(vehicles.id)).limit(WORKER_PUBLIC_VEHICLE_LIMIT)
+    : await query.orderBy(desc(vehicles.soldAt), desc(vehicles.updatedAt));
+  return attachImages(rows, adapter);
 }
 
-export async function listSoldCaseVehicles(limit = 6): Promise<VehicleView[]> {
-  const settings = await getSettings();
+export async function listSoldCaseVehicles(limit = 6, adapter?: VehicleReadDb): Promise<VehicleView[]> {
+  const settings = await getSettings(adapter);
   if (!settings.showSoldVehicles) return [];
-  const rows = await db
+  const reader = await vehicleDb(adapter);
+  const rows = await reader
     .select()
     .from(vehicles)
     .where(and(eq(vehicles.status, 'sold'), eq(vehicles.showSoldCase, true)))
     .orderBy(desc(vehicles.soldAt), desc(vehicles.updatedAt))
-    .limit(limit);
-  return attachImages(rows);
+    .limit(adapter ? Math.min(limit, WORKER_PUBLIC_VEHICLE_LIMIT) : limit);
+  return attachImages(rows, adapter);
 }
 
-export async function listAdminVehicles(): Promise<VehicleView[]> {
-  const rows = await db.select().from(vehicles).where(ne(vehicles.status, 'archived')).orderBy(desc(vehicles.updatedAt));
-  return attachImages(rows);
+export async function listAdminVehicles(adapter?: VehicleReadDb, limit?: number): Promise<VehicleView[]> {
+  const reader = await vehicleDb(adapter);
+  const query = reader.select().from(vehicles).where(ne(vehicles.status, 'archived'));
+  const rows = limit === undefined
+    ? await query.orderBy(desc(vehicles.updatedAt))
+    : await query.orderBy(desc(vehicles.updatedAt), asc(vehicles.id)).limit(limit);
+  return attachImages(rows, adapter);
 }
 
-export async function getVehicleBySlug(slug: string): Promise<VehicleView | null> {
-  const rows = await db.select().from(vehicles).where(eq(vehicles.slug, slug)).limit(1);
-  const [vehicle] = await attachImages(rows);
+export async function getVehicleBySlug(slug: string, adapter?: VehicleReadDb): Promise<VehicleView | null> {
+  const reader = await vehicleDb(adapter);
+  const rows = await reader.select().from(vehicles).where(eq(vehicles.slug, slug)).limit(1);
+  const [vehicle] = await attachImages(rows, adapter);
   return vehicle || null;
 }
 
@@ -267,12 +307,17 @@ export async function upsertVehicle(input: {
   source?: string;
   externalId?: string | null;
   images?: string[];
-}) {
+  preserveImportMetadata?: boolean;
+}, adapter?: VehicleWriteDb) {
+  if (input.preserveImportMetadata && input.images !== undefined && input.images.length > MAX_PRESERVED_VEHICLE_IMAGES) {
+    throw new Error(`Cannot preserve imported image identities for more than ${MAX_PRESERVED_VEHICLE_IMAGES} images`);
+  }
+  const writer = await vehicleDb(adapter);
   const now = new Date().toISOString();
   const baseSlug = slugify(`${input.year || ''} ${input.brand} ${input.model} ${input.subModel || ''}`);
   const requestedSlug = normalizeRouteSlug(input.slug);
-  const existingById = input.id ? await db.select().from(vehicles).where(eq(vehicles.id, input.id)).limit(1) : [];
-  const existingBySlug = requestedSlug ? await findVehicleBySlugInsensitive(requestedSlug) : undefined;
+  const existingById = input.id ? await writer.select().from(vehicles).where(eq(vehicles.id, input.id)).limit(1) : [];
+  const existingBySlug = requestedSlug ? await findVehicleBySlugInsensitive(requestedSlug, adapter) : undefined;
   const existing = existingById[0] || existingBySlug;
   const id = existing?.id || input.id || crypto.randomUUID();
   const slug = requestedSlug || existing?.slug || `${baseSlug}-${id.slice(0, 6)}`;
@@ -297,35 +342,52 @@ export async function upsertVehicle(input: {
     featuresJson: JSON.stringify(input.features || []),
     monthlyRecommended,
     showSoldCase,
-    source: input.source || 'manual',
-    externalId: input.externalId || null,
-    localEditsJson: JSON.stringify([]),
+    source: input.preserveImportMetadata && input.source === undefined ? existing?.source ?? 'manual' : input.source || 'manual',
+    externalId: input.preserveImportMetadata && input.externalId === undefined ? existing?.externalId ?? null : input.externalId || null,
+    localEditsJson: input.preserveImportMetadata ? existing?.localEditsJson ?? JSON.stringify([]) : JSON.stringify([]),
     soldAt: input.status === 'sold' ? now : null,
     createdAt: existing?.createdAt || now,
     updatedAt: now,
   };
 
-  await db.insert(vehicles).values(values).onConflictDoUpdate({ target: vehicles.id, set: values });
-
-  if (input.images) {
-    await db.delete(vehicleImages).where(eq(vehicleImages.vehicleId, id));
-    for (const [sortOrder, url] of input.images.filter(Boolean).entries()) {
-      await db.insert(vehicleImages).values({
-        id: crypto.randomUUID(),
+  const statements: any[] = [writer.insert(vehicles).values(values).onConflictDoUpdate({ target: vehicles.id, set: values })];
+  if (input.images !== undefined) {
+    const imageUrls = input.images.filter(Boolean);
+    const existingImages = input.preserveImportMetadata
+      ? await writer.select().from(vehicleImages).where(eq(vehicleImages.vehicleId, id)).orderBy(asc(vehicleImages.sortOrder), asc(vehicleImages.id)).limit(MAX_PRESERVED_VEHICLE_IMAGES + 1)
+      : [];
+    if (existingImages.length > MAX_PRESERVED_VEHICLE_IMAGES) {
+      throw new Error(`Cannot preserve imported image identities for more than ${MAX_PRESERVED_VEHICLE_IMAGES} retained rows`);
+    }
+    const availableByUrl = new Map<string, typeof existingImages>();
+    for (const image of existingImages) {
+      const matches = availableByUrl.get(image.url) || [];
+      matches.push(image);
+      availableByUrl.set(image.url, matches);
+    }
+    statements.push(writer.delete(vehicleImages).where(eq(vehicleImages.vehicleId, id)));
+    for (const [sortOrder, url] of imageUrls.entries()) {
+      const match = availableByUrl.get(url)?.shift();
+      statements.push(writer.insert(vehicleImages).values({
+        id: match?.id || crypto.randomUUID(),
         vehicleId: id,
         url,
         alt: input.title,
         sortOrder,
         isCover: sortOrder === 0,
-        createdAt: now,
-      });
+        createdAt: match?.createdAt || now,
+      }));
     }
   }
+  if (adapter) await adapter.batch(statements as any);
+  else for (const statement of statements) await statement;
   return id;
 }
 
-export async function updateVehicleStatus(id: string, status: VehicleStatus) {
-  await db.update(vehicles).set({ status, soldAt: status === 'sold' ? new Date().toISOString() : null, updatedAt: new Date().toISOString() }).where(eq(vehicles.id, id));
+export async function updateVehicleStatus(id: string, status: VehicleStatus, adapter?: VehicleWriteDb) {
+  const statement = (await vehicleDb(adapter)).update(vehicles).set({ status, soldAt: status === 'sold' ? new Date().toISOString() : null, updatedAt: new Date().toISOString() }).where(eq(vehicles.id, id));
+  if (adapter) await adapter.batch([statement] as any);
+  else await statement;
 }
 
 export function publicVehicleStatus(value: VehicleStatus, showSoldVehicles = false): boolean {
@@ -353,15 +415,16 @@ export async function importVehicle(input: {
   status?: VehicleStatus;
   sourceStatus?: string;
   publishMode?: PublishMode;
-}) {
-  const settings = await getSettings();
+}, adapter?: VehicleWriteDb) {
+  const writer = await vehicleDb(adapter);
+  const settings = await getSettings(adapter);
   const slug = normalizeRouteSlug(input.slug || input.externalId);
-  const existingMapping = await db
-    .select({ id: importMappings.id, vehicleId: importMappings.vehicleId })
+  const existingMapping = await writer
+    .select()
     .from(importMappings)
     .where(and(sql`lower(${importMappings.source}) = lower(${input.source})`, sql`lower(${importMappings.externalId}) = lower(${input.externalId})`))
     .limit(1);
-  const existingSlug = slug ? await findVehicleBySlugInsensitive(slug) : undefined;
+  const existingSlug = slug ? await findVehicleBySlugInsensitive(slug, adapter) : undefined;
 
   const hasPublicFields = Boolean(input.brand && input.model && (input.photos?.length || 0) > 0);
   const publishMode = input.publishMode || 'use_default';
@@ -375,7 +438,7 @@ export async function importVehicle(input: {
     return 'draft';
   })();
 
-  const vehicleId = await upsertVehicle({
+  const vehicleInput = {
     id: existingSlug?.id || existingMapping[0]?.vehicleId,
     slug,
     title: input.title || [input.year, input.brand, input.model, input.subModel].filter(Boolean).join(' '),
@@ -395,20 +458,62 @@ export async function importVehicle(input: {
     source: input.source,
     externalId: input.externalId,
     images: input.photos,
-  });
+  };
+
+  if (!adapter) {
+    const vehicleId = await upsertVehicle(vehicleInput);
+    const now = new Date().toISOString();
+    if (existingMapping[0]?.id) {
+      await writer.update(importMappings).set({ vehicleId, lastImportedAt: now }).where(eq(importMappings.id, existingMapping[0].id));
+    } else {
+      await writer.insert(importMappings).values({ id: crypto.randomUUID(), source: input.source, externalId: input.externalId, vehicleId, lastImportedAt: now })
+        .onConflictDoUpdate({ target: [importMappings.source, importMappings.externalId], set: { vehicleId, lastImportedAt: now } });
+    }
+    return { vehicleId, status, published: status === 'published', validation: { hasPublicFields } };
+  }
+
+  // Prepare the vehicle statements without submitting them so vehicle, images,
+  // and mapping are committed by the same D1 batch.
+  const nowForVehicle = new Date().toISOString();
+  const existingById = existingSlug?.id || existingMapping[0]?.vehicleId
+    ? await writer.select().from(vehicles).where(eq(vehicles.id, existingSlug?.id || existingMapping[0]!.vehicleId)).limit(1)
+    : [];
+  const existing = existingById[0] || existingSlug;
+  const vehicleId = existing?.id || existingSlug?.id || existingMapping[0]?.vehicleId || crypto.randomUUID();
+  const actualSlug = slug || existing?.slug || `${slugify(`${input.year || ''} ${input.brand} ${input.model} ${input.subModel || ''}`)}-${vehicleId.slice(0, 6)}`;
+  const vehicleValues = {
+    id: vehicleId, slug: actualSlug,
+    title: vehicleInput.title,
+    cardTitleSupplement: existing?.cardTitleSupplement ?? '', brand: input.brand, model: input.model,
+    subModel: input.subModel || '', year: input.year || '', mileage: input.mileage || '',
+    exteriorColor: input.exteriorColor || '', interiorColor: input.interiorColor || '',
+    condition: input.condition || '嚴選車況', status, headline: input.headline || '', description: input.description || '',
+    featuresJson: JSON.stringify(input.features || []), monthlyRecommended: input.monthlyRecommended ?? existing?.monthlyRecommended ?? false,
+    showSoldCase: existing?.showSoldCase ?? false, source: input.source || 'manual', externalId: input.externalId || null,
+    localEditsJson: JSON.stringify([]), soldAt: status === 'sold' ? nowForVehicle : null,
+    createdAt: existing?.createdAt || nowForVehicle, updatedAt: nowForVehicle,
+  };
+  const statements: any[] = [writer.insert(vehicles).values(vehicleValues).onConflictDoUpdate({ target: vehicles.id, set: vehicleValues })];
+  if (input.photos !== undefined) {
+    statements.push(writer.delete(vehicleImages).where(eq(vehicleImages.vehicleId, vehicleId)));
+    for (const [sortOrder, url] of input.photos.filter(Boolean).entries()) statements.push(writer.insert(vehicleImages).values({
+      id: crypto.randomUUID(), vehicleId, url, alt: vehicleInput.title, sortOrder, isCover: sortOrder === 0, createdAt: nowForVehicle,
+    }));
+  }
 
   const now = new Date().toISOString();
   if (existingMapping[0]?.id) {
-    await db.update(importMappings).set({ vehicleId, lastImportedAt: now }).where(eq(importMappings.id, existingMapping[0].id));
+    statements.push(writer.update(importMappings).set({ vehicleId, lastImportedAt: now }).where(eq(importMappings.id, existingMapping[0].id)));
   } else {
-    await db
+    statements.push(writer
       .insert(importMappings)
       .values({ id: crypto.randomUUID(), source: input.source, externalId: input.externalId, vehicleId, lastImportedAt: now })
       .onConflictDoUpdate({
         target: [importMappings.source, importMappings.externalId],
         set: { vehicleId, lastImportedAt: now },
-      });
+      }));
   }
+  await adapter.batch(statements as any);
 
   return { vehicleId, status, published: status === 'published', validation: { hasPublicFields } };
 }

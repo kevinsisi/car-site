@@ -5,12 +5,23 @@ import { getSession, hasAnyUsers } from '@/lib/auth';
 import { PERMISSIONS, hasPermission } from '@/lib/permissions';
 import { getSettings } from '@/lib/settings';
 import { FEATURE_ANALYTICS, hasFeature } from '@/lib/features';
+import { createD1Db } from '@/db/d1';
 
-if (!await hasAnyUsers()) return Astro.redirect('/admin/setup');
-const user = await getSession(Astro.cookies);
+const runtime = Astro.locals.runtime;
+const workerPreview = Boolean(runtime);
+const env = runtime?.env;
+if (workerPreview && (!env?.DB_PREVIEW || !env.SESSION_SECRET)) {
+  return new Response('Analytics preview unavailable: required bindings are missing.', { status: 503 });
+}
+const authOptions = workerPreview
+  ? { db: await createD1Db(env!.DB_PREVIEW!), sessionSecret: env!.SESSION_SECRET! }
+  : {};
+
+if (!await hasAnyUsers(authOptions)) return Astro.redirect('/admin/setup');
+const user = await getSession(Astro.cookies, authOptions);
 if (!user) return Astro.redirect('/admin/login');
 
-const settings = await getSettings();
+const settings = await getSettings(workerPreview ? authOptions.db : undefined);
 if (!hasFeature(settings.featureLicenseMask ?? 0, FEATURE_ANALYTICS)) {
   return new Response('Forbidden', { status: 403 });
 }
@@ -23,10 +34,15 @@ if (user.role !== 'superadmin' && !hasPermission(user.permissions, PERMISSIONS.A
   <div class="page-header">
     <h1 class="page-title">流量分析</h1>
   </div>
-  <AdminAnalytics client:load />
+  {workerPreview ? (
+    <p class="analytics-unavailable" role="status">流量分析目前無法在 Worker 預覽環境使用。</p>
+  ) : (
+    <AdminAnalytics client:load />
+  )}
 </AdminLayout>
 
 <style>
 .page-header { margin-bottom: 0.25rem; }
 .page-title { font-size: 1.35rem; font-weight: 800; margin: 0; color: var(--text); }
+.analytics-unavailable { margin: 1.5rem 0; color: var(--muted); }
 </style>

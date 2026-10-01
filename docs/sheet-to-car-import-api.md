@@ -2,6 +2,10 @@
 
 `sheet-to-car` pushes vehicles into this site's independent database. The public site never reads or mounts `sheet-to-car` storage.
 
+The Worker import endpoint accepts exactly these `source` values: `preview`, `sheet-to-car`, and `carsmeet-sheet-to-car`. `preview` imports must use a `DEMO-`-prefixed `externalId`; the two established importer namespaces may use their original non-demo external IDs. This permits explicit imports into the site's independent database; it does not migrate canonical source data or provide automatic synchronization.
+
+Worker requests require `Authorization: Bearer <IMPORT_PREVIEW_TOKEN>` and the preview D1 binding. Worker photos must resolve to the same origin as the request; external photo URLs are rejected. The non-Worker Node import path continues to use `IMPORT_API_TOKEN` and its existing arbitrary-source contract.
+
 ```http
 POST /api/import/cars
 Authorization: Bearer <IMPORT_API_TOKEN>

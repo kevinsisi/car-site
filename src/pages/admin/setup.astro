@@ -1,12 +1,18 @@
 ---
 import '@/styles/admin.css';
-import { hasAnyUsers } from '@/lib/auth';
-import { hashPassword } from '@/lib/crypto';
-import { db } from '@/db/connection';
-import { adminUsers } from '@/db/schema';
-import { getSettings } from '@/lib/settings';
-import { styleVars, styles } from '@/lib/theme';
+const runtime = Astro.locals.runtime;
+if (runtime) {
+  return new Response('Admin setup is disabled in Worker preview', { status: 403 });
+}
 
+const [{ hasAnyUsers }, { hashPassword }, { db }, { adminUsers }, { getSettings }, { styleVars, styles }] = await Promise.all([
+  import('@/lib/auth'),
+  import('@/lib/crypto'),
+  import('@/db/connection'),
+  import('@/db/schema'),
+  import('@/lib/settings'),
+  import('@/lib/theme'),
+]);
 const settings = await getSettings();
 const activeStyle = styles[settings.activeStyle];
 

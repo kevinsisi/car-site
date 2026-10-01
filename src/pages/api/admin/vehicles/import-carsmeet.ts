@@ -1,16 +1,34 @@
 import type { APIRoute } from 'astro';
-import { CarsmeetImportError, importableCarsmeetData } from '@/lib/carsmeet-import';
+import { CarsmeetImportError, importableCarsmeetData, parseCarsmeetUrl } from '@/lib/carsmeet-import';
+import { createD1Db } from '@/db/d1';
 import { getPermittedOrResponse } from '@/lib/auth';
 import { PERMISSIONS } from '@/lib/permissions';
 import { importVehicle } from '@/lib/vehicles';
 
-export const POST: APIRoute = async ({ request, cookies }) => {
-  const _auth = await getPermittedOrResponse(cookies, PERMISSIONS.VEHICLES_EDIT);
+export const POST: APIRoute = async ({ request, cookies, locals }) => {
+  const runtimeEnv = locals.runtime?.env;
+  if (locals.runtime && (!runtimeEnv?.DB_PREVIEW || !runtimeEnv.SESSION_SECRET)) {
+    return new Response('Vehicle storage unavailable', { status: 503 });
+  }
+  const adapter = runtimeEnv?.DB_PREVIEW ? await createD1Db(runtimeEnv.DB_PREVIEW) : undefined;
+  const _auth = await getPermittedOrResponse(cookies, PERMISSIONS.VEHICLES_EDIT, {
+    ...(adapter ? { db: adapter } : {}),
+    ...(runtimeEnv?.SESSION_SECRET ? { sessionSecret: runtimeEnv.SESSION_SECRET } : {}),
+  });
   if (_auth instanceof Response) return _auth;
 
   try {
     const body = await request.json();
     const url = String(body.url || '');
+    if (locals.runtime) {
+      parseCarsmeetUrl(url);
+      return Response.json({
+        ok: false,
+        previewOnly: true,
+        error: 'Carsmeet import is disabled in preview; no vehicle was imported.',
+      }, { status: 501 });
+    }
+
     const data = await importableCarsmeetData(url);
     const result = await importVehicle({
       source: 'carsmeet',

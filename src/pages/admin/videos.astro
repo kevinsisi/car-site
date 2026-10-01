@@ -7,11 +7,29 @@ import { resolveFrontFeatures } from '@/lib/front-features';
 import { getSettings } from '@/lib/settings';
 import { listVideoLinks } from '@/lib/video-links';
 
-if (!await hasAnyUsers()) return Astro.redirect('/admin/setup');
-const user = await getSession(Astro.cookies);
+const runtime = (Astro.locals as { runtime?: { env?: Record<string, unknown> } }).runtime;
+let adapter: Awaited<ReturnType<typeof import('@/db/d1').createD1Db>> | undefined;
+let authOptions: { db?: typeof adapter; sessionSecret?: string } = {};
+if (runtime) {
+  const env = runtime.env ?? {};
+  const binding = env.DB_PREVIEW;
+  const sessionSecret = env.SESSION_SECRET;
+  if (!binding || typeof sessionSecret !== 'string' || !sessionSecret) {
+    return new Response(JSON.stringify({ error: 'preview_unavailable' }), {
+      status: 503,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+  const { createD1Db } = await import('@/db/d1');
+  adapter = await createD1Db(binding as Parameters<typeof createD1Db>[0]);
+  authOptions = { db: adapter, sessionSecret };
+}
+
+if (!await hasAnyUsers(authOptions)) return Astro.redirect('/admin/setup');
+const user = await getSession(Astro.cookies, authOptions);
 if (!user) return Astro.redirect('/admin/login');
 
-const settings = await getSettings();
+const settings = await getSettings(adapter);
 const features = resolveFrontFeatures(settings);
 const canCarousel = features.heroVideos && (user.role === 'superadmin' || hasPermission(user.permissions, PERMISSIONS.VIDEOS_CAROUSEL));
 const canLinks = features.videoLinks && (user.role === 'superadmin' || hasPermission(user.permissions, PERMISSIONS.VIDEOS_LINKS));
@@ -21,8 +39,21 @@ const videoSettings = {
   heroVideos: canCarousel ? settings.heroVideos : [],
   videoLinksSectionTitle: canLinks ? settings.videoLinksSectionTitle : '',
 };
-const videoLinks = canLinks ? await listVideoLinks() : [];
+const videoLinks = canLinks ? await listVideoLinks(adapter) : [];
 ---
 <AdminLayout user={user} title="影片管理">
+  {runtime && <p role="status" class="preview-notice">Worker 預覽環境目前無法執行影片轉檔或變更影片連結；相關操作在此環境不會生效。</p>}
   <Videos client:load settings={videoSettings} videoLinks={videoLinks} canCarousel={canCarousel} canLinks={canLinks} />
 </AdminLayout>
+
+<style>
+  .preview-notice {
+    margin: 0 0 1rem;
+    padding: 0.875rem 1rem;
+    border: 1px solid #f0c36d;
+    border-radius: 0.5rem;
+    background: #fff8e6;
+    color: #694b00;
+    line-height: 1.5;
+  }
+</style>

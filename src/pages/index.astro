@@ -9,13 +9,21 @@ import { resolveFrontFeatures } from '@/lib/front-features';
 import { formatVehicleShareText, shareOriginFromRequest, vehicleShareUrl } from '@/lib/vehicle-share';
 import { listPublicVehicles, listSoldCaseVehicles, listPublicBrands } from '@/lib/vehicles';
 import { listVideoLinks } from '@/lib/video-links';
+import { createD1Db } from '@/db/d1';
 
-const settings = await getSettings();
+const runtime = Astro.locals.runtime;
+const isWorkerRequest = Boolean(runtime);
+const binding = runtime?.env?.DB_PREVIEW;
+if (isWorkerRequest && !binding) {
+  return new Response('Preview database unavailable', { status: 503 });
+}
+const adapter = binding ? await createD1Db(binding) : undefined;
+const settings = await getSettings(adapter);
 const features = resolveFrontFeatures(settings);
-const vehicles = await listPublicVehicles();
-const soldCaseVehicles = await listSoldCaseVehicles(6);
-const brands = await listPublicBrands();
-const videoLinks = await listVideoLinks();
+const vehicles = await listPublicVehicles(adapter);
+const soldCaseVehicles = await listSoldCaseVehicles(6, adapter);
+const brands = await listPublicBrands(adapter);
+const videoLinks = await listVideoLinks(adapter);
 const featuredVehicles = vehicles.filter((vehicle) => vehicle.status !== 'sold');
 const heroBySlug = settings.heroVehicleSlug ? featuredVehicles.find((v) => v.slug === settings.heroVehicleSlug) : null;
 const hero = heroBySlug || featuredVehicles[0] || soldCaseVehicles[0];

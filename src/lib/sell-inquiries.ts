@@ -1,6 +1,15 @@
-import { desc, eq, isNull } from 'drizzle-orm';
-import { db } from '@/db/connection';
+import { count, desc, eq, isNull } from 'drizzle-orm';
+import type { createD1Db } from '@/db/d1';
 import { sellInquiries } from '@/db/schema';
+
+type SellInquiryDb = Awaited<ReturnType<typeof createD1Db>>;
+const PREVIEW_INQUIRY_LIMIT = 100;
+
+async function getDb(adapter?: SellInquiryDb): Promise<SellInquiryDb> {
+  if (adapter) return adapter;
+  const { db } = await import('@/db/connection');
+  return db as unknown as SellInquiryDb;
+}
 
 export interface SellInquiryView {
   id: string;
@@ -26,8 +35,11 @@ function parsePhotoUrls(raw: string): string[] {
   }
 }
 
-export async function listSellInquiries(): Promise<SellInquiryView[]> {
-  const rows = await db.select().from(sellInquiries).orderBy(desc(sellInquiries.createdAt));
+export async function listSellInquiries(adapter?: SellInquiryDb): Promise<SellInquiryView[]> {
+  const db = await getDb(adapter);
+  const rows = adapter
+    ? await db.select().from(sellInquiries).orderBy(desc(sellInquiries.createdAt)).limit(PREVIEW_INQUIRY_LIMIT)
+    : await db.select().from(sellInquiries).orderBy(desc(sellInquiries.createdAt));
   return rows.map((row) => ({
     id: row.id,
     brand: row.brand,
@@ -44,10 +56,10 @@ export async function listSellInquiries(): Promise<SellInquiryView[]> {
   }));
 }
 
-export async function createSellInquiry(input: Omit<SellInquiryView, 'id' | 'createdAt' | 'readAt'>): Promise<string> {
+export async function createSellInquiry(input: Omit<SellInquiryView, 'id' | 'createdAt' | 'readAt'>, adapter?: SellInquiryDb): Promise<string> {
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
-  await db.insert(sellInquiries).values({
+  await (await getDb(adapter)).insert(sellInquiries).values({
     id,
     brand: input.brand,
     model: input.model,
@@ -64,11 +76,11 @@ export async function createSellInquiry(input: Omit<SellInquiryView, 'id' | 'cre
   return id;
 }
 
-export async function markSellInquiryRead(id: string): Promise<void> {
-  await db.update(sellInquiries).set({ readAt: new Date().toISOString() }).where(eq(sellInquiries.id, id));
+export async function markSellInquiryRead(id: string, adapter?: SellInquiryDb): Promise<void> {
+  await (await getDb(adapter)).update(sellInquiries).set({ readAt: new Date().toISOString() }).where(eq(sellInquiries.id, id));
 }
 
-export async function countUnreadSellInquiries(): Promise<number> {
-  const rows = await db.select({ id: sellInquiries.id }).from(sellInquiries).where(isNull(sellInquiries.readAt));
-  return rows.length;
+export async function countUnreadSellInquiries(adapter?: SellInquiryDb): Promise<number> {
+  const [result] = await (await getDb(adapter)).select({ value: count() }).from(sellInquiries).where(isNull(sellInquiries.readAt));
+  return result.value;
 }

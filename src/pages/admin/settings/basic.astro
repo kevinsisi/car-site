@@ -5,14 +5,22 @@ import { getSession, hasAnyUsers } from '@/lib/auth';
 import { PERMISSIONS, hasPermission } from '@/lib/permissions';
 import { resolveFrontFeatures } from '@/lib/front-features';
 import { getSettings } from '@/lib/settings';
+import { createD1Db } from '@/db/d1';
 
-if (!await hasAnyUsers()) return Astro.redirect('/admin/setup');
-const user = await getSession(Astro.cookies);
+const runtime = Astro.locals.runtime;
+const binding = runtime?.env?.DB_PREVIEW;
+const sessionSecret = runtime?.env?.SESSION_SECRET;
+if (runtime && (!binding || !sessionSecret)) return new Response('Preview database unavailable', { status: 503 });
+const adapter = binding ? await createD1Db(binding) : undefined;
+const authOptions = { db: adapter, sessionSecret };
+
+if (!await hasAnyUsers(authOptions)) return Astro.redirect('/admin/setup');
+const user = await getSession(Astro.cookies, authOptions);
 if (!user) return Astro.redirect('/admin/login');
 if (user.role !== 'superadmin' && !hasPermission(user.permissions, PERMISSIONS.SETTINGS_BASIC)) {
   return Astro.redirect('/admin');
 }
-const settings = await getSettings();
+const settings = await getSettings(adapter);
 const features = resolveFrontFeatures(settings);
 ---
 <AdminLayout user={user} title="基本設定">

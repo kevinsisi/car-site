@@ -5,16 +5,24 @@ import { getSession, hasAnyUsers } from '@/lib/auth';
 import { PERMISSIONS, hasPermission } from '@/lib/permissions';
 import { listBrandAliases } from '@/lib/brand-aliases';
 import { listAdminVehicles } from '@/lib/vehicles';
+import { createD1Db } from '@/db/d1';
 
-if (!await hasAnyUsers()) return Astro.redirect('/admin/setup');
-const user = await getSession(Astro.cookies);
+const runtime = Astro.locals.runtime;
+const binding = runtime?.env?.DB_PREVIEW;
+const sessionSecret = runtime?.env?.SESSION_SECRET;
+if (runtime && (!binding || !sessionSecret)) return new Response('Preview database unavailable', { status: 503 });
+const adapter = binding ? await createD1Db(binding) : undefined;
+const authOptions = { db: adapter, sessionSecret };
+
+if (!await hasAnyUsers(authOptions)) return Astro.redirect('/admin/setup');
+const user = await getSession(Astro.cookies, authOptions);
 if (!user) return Astro.redirect('/admin/login');
 if (user.role !== 'superadmin' && !hasPermission(user.permissions, PERMISSIONS.BRANDS_VIEW)) {
   return Astro.redirect('/admin');
 }
 
-const brandAliases = await listBrandAliases();
-const vehicles = await listAdminVehicles();
+const brandAliases = await listBrandAliases(adapter, adapter ? 100 : undefined);
+const vehicles = await listAdminVehicles(adapter, adapter ? 100 : undefined);
 const canUploadIcon = user.role === 'superadmin' || hasPermission(user.permissions, PERMISSIONS.BRANDS_ICON);
 ---
 <AdminLayout user={user} title="品牌管理">

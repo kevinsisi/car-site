@@ -1,10 +1,8 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import { asc } from 'drizzle-orm';
-import sharp from 'sharp';
-import { db } from '@/db/connection';
+import type { createD1Db } from '@/db/d1';
 import { siteVideoLinks } from '@/db/schema';
-import { appConfig } from './config';
+
+type VideoLinksDb = Awaited<ReturnType<typeof createD1Db>>;
 
 export interface VideoLinkView {
   id: string;
@@ -14,8 +12,6 @@ export interface VideoLinkView {
   sortOrder: number;
 }
 
-const mediaRoot = path.resolve(path.dirname(appConfig.databasePath), 'media');
-const thumbnailDir = path.join(mediaRoot, 'video-thumbnails');
 const imageTypes: Record<string, string> = {
   'image/jpeg': '.jpg',
   'image/png': '.png',
@@ -24,8 +20,9 @@ const imageTypes: Record<string, string> = {
 };
 const maxThumbnailBytes = 8 * 1024 * 1024;
 
-export async function listVideoLinks(): Promise<VideoLinkView[]> {
-  const rows = await db.select().from(siteVideoLinks).orderBy(asc(siteVideoLinks.sortOrder));
+export async function listVideoLinks(adapter?: VideoLinksDb): Promise<VideoLinkView[]> {
+  const reader = adapter ?? (await import('@/db/connection')).db;
+  const rows = await reader.select().from(siteVideoLinks).orderBy(asc(siteVideoLinks.sortOrder));
   return rows.map((row) => ({
     id: row.id,
     title: row.title,
@@ -33,6 +30,12 @@ export async function listVideoLinks(): Promise<VideoLinkView[]> {
     thumbnailUrl: row.thumbnailUrl ?? null,
     sortOrder: row.sortOrder,
   }));
+}
+
+async function thumbnailPaths() {
+  const [{ default: path }, { appConfig }] = await Promise.all([import('node:path'), import('./config')]);
+  const mediaRoot = path.resolve(path.dirname(appConfig.databasePath), 'media');
+  return { path, mediaRoot, thumbnailDir: path.join(mediaRoot, 'video-thumbnails') };
 }
 
 function youtubeId(url: string): string | null {
@@ -92,6 +95,7 @@ async function downloadThumbnail(url: string): Promise<string | null> {
     const buffer = Buffer.from(await res.arrayBuffer());
     if (!buffer.length || buffer.length > maxThumbnailBytes) return null;
 
+    const [{ default: fs }, { path, mediaRoot, thumbnailDir }] = await Promise.all([import('node:fs'), thumbnailPaths()]);
     const today = new Date().toISOString().slice(0, 10);
     const dir = path.join(thumbnailDir, today);
     const root = path.resolve(mediaRoot);
@@ -109,6 +113,10 @@ async function downloadThumbnail(url: string): Promise<string | null> {
 
 async function writeGeneratedThumbnail(): Promise<string | null> {
   try {
+    const [{ default: fs }, { default: path }, { default: sharp }, paths] = await Promise.all([
+      import('node:fs'), import('node:path'), import('sharp'), thumbnailPaths(),
+    ]);
+    const { mediaRoot, thumbnailDir } = paths;
     const today = new Date().toISOString().slice(0, 10);
     const dir = path.join(thumbnailDir, today);
     const root = path.resolve(mediaRoot);
@@ -189,6 +197,7 @@ export async function fetchOgImage(url: string): Promise<string | null> {
 }
 
 export async function setVideoLinks(input: Omit<VideoLinkView, 'id'>[]): Promise<VideoLinkView[]> {
+  const { db } = await import('@/db/connection');
   const now = new Date().toISOString();
   const saved: VideoLinkView[] = [];
   await db.delete(siteVideoLinks);
