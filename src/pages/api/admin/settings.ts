@@ -37,7 +37,8 @@ export const POST: APIRoute = async ({ request, cookies, locals }) => {
     return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403, headers: { 'content-type': 'application/json' } });
   }
   const body = await request.json() as Record<string, unknown>;
-  if (locals.runtime && ['notificationEmail', 'gmailUser', 'gmailAppPassword'].some((key) => Object.prototype.hasOwnProperty.call(body, key))) {
+  const productionWorker = runtimeEnv?.MITA_ENV === 'production' && runtimeEnv.MITA_PUBLIC_SYNC_ENABLED === 'true';
+  if (locals.runtime && !productionWorker && ['notificationEmail', 'gmailUser', 'gmailAppPassword'].some((key) => Object.prototype.hasOwnProperty.call(body, key))) {
     return jsonError('SMTP settings are not available in preview', 400);
   }
   const updates: Partial<Record<keyof SiteSettings, unknown>> = {};

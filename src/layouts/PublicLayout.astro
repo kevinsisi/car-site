@@ -10,6 +10,7 @@ import { getPublicNavItems, resolveFrontFeatures } from '@/lib/front-features';
 import { siteIconHref } from '@/lib/site-icon';
 import { styleVars, styles, templates } from '@/lib/theme';
 import { shareOriginFromRequest } from '@/lib/vehicle-share';
+import { shouldHidePublicAiChat } from '@/lib/production-feature-policy';
 import '@/styles/global.css';
 
 interface Props {
@@ -30,6 +31,7 @@ if (runtime && !binding) return new Response('Preview database unavailable', { s
 const adapter = binding ? await createD1Db(binding) : undefined;
 const settings = await getSettings(adapter);
 const features = resolveFrontFeatures(settings);
+const hidePublicAiChat = shouldHidePublicAiChat(runtime);
 const title = Astro.props.title || settings.siteName;
 const description = Astro.props.description || '私人高級車顧問，嚴選高端中古車款。';
 const pageShareText = Astro.props.shareText || description;
@@ -252,7 +254,7 @@ const navItems = getPublicNavItems(features);
         }
       });
     </script>
-    {features.aiChatbot && (
+    {features.aiChatbot && !hidePublicAiChat && (
       <ChatWidget client:load openingMessage={settings.aiChatOpening} />
     )}
   </body>

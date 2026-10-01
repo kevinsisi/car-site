@@ -1,7 +1,13 @@
-import * as cheerio from 'cheerio';
+import * as cheerio from 'cheerio/slim';
 
 const CARSMEET_HOST = 'carsmeet.tw';
 const FETCH_TIMEOUT_MS = 15000;
+const MAX_HTML_BYTES = 2 * 1024 * 1024;
+const MAX_REDIRECTS = 3;
+
+export interface CarsmeetFetchOptions {
+  workerSafe?: boolean;
+}
 
 export interface CarsmeetImportData {
   sourceUrl: string;
@@ -45,25 +51,70 @@ export function parseCarsmeetUrl(input: string): { url: string; externalId: stri
   return { url: `https://${CARSMEET_HOST}/${segments[0]}/`, externalId: segments[0] };
 }
 
-export async function importableCarsmeetData(inputUrl: string): Promise<CarsmeetImportData> {
+export async function importableCarsmeetData(
+  inputUrl: string,
+  options: CarsmeetFetchOptions = {},
+  fetcher: typeof fetch = fetch,
+): Promise<CarsmeetImportData> {
   const { url, externalId } = parseCarsmeetUrl(inputUrl);
-  const html = await fetchCarsmeetHtml(url);
+  const html = await fetchCarsmeetHtml(url, options, fetcher);
   return parseCarsmeetHtml(html, url, externalId);
 }
 
-async function fetchCarsmeetHtml(url: string): Promise<string> {
+async function fetchCarsmeetHtml(url: string, options: CarsmeetFetchOptions, fetcher: typeof fetch): Promise<string> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        'user-agent': 'car-site-admin-import/1.0',
-        accept: 'text/html,application/xhtml+xml',
-      },
-    });
-    if (!response.ok) throw new CarsmeetImportError(`Carsmeet 回應 ${response.status}，無法匯入`, 502);
-    return await response.text();
+    if (!options.workerSafe) {
+      const response = await fetcher(url, {
+        signal: controller.signal,
+        headers: { 'user-agent': 'car-site-admin-import/1.0', accept: 'text/html,application/xhtml+xml' },
+      });
+      if (!response.ok) throw new CarsmeetImportError(`Carsmeet 回應 ${response.status}，無法匯入`, 502);
+      return await response.text();
+    }
+
+    let currentUrl = url;
+    for (let redirectCount = 0; ; redirectCount += 1) {
+      const response = await fetcher(currentUrl, {
+        signal: controller.signal,
+        redirect: 'manual',
+        headers: { 'user-agent': 'car-site-admin-import/1.0', accept: 'text/html,application/xhtml+xml' },
+      });
+      if (response.status >= 300 && response.status < 400) {
+        const location = response.headers.get('location');
+        if (!location || redirectCount >= MAX_REDIRECTS) throw new CarsmeetImportError('Carsmeet 重新導向次數超過限制', 502);
+        let nextUrl: URL;
+        try { nextUrl = new URL(location, currentUrl); } catch { throw new CarsmeetImportError('Carsmeet 重新導向網址無效', 502); }
+        if (nextUrl.protocol !== 'https:' || nextUrl.hostname !== CARSMEET_HOST || nextUrl.port || nextUrl.username || nextUrl.password) {
+          throw new CarsmeetImportError('Carsmeet 重新導向網址不受支援', 502);
+        }
+        currentUrl = nextUrl.toString();
+        continue;
+      }
+      if (!response.ok) throw new CarsmeetImportError(`Carsmeet 回應 ${response.status}，無法匯入`, 502);
+      if (!response.headers.get('content-type')?.toLowerCase().includes('text/html')) throw new CarsmeetImportError('Carsmeet 回應不是有效的 HTML 頁面', 502);
+      const declaredLength = Number(response.headers.get('content-length'));
+      if (Number.isFinite(declaredLength) && declaredLength > MAX_HTML_BYTES) throw new CarsmeetImportError('Carsmeet 頁面超過大小限制', 502);
+      if (!response.body) throw new CarsmeetImportError('Carsmeet 頁面內容為空', 502);
+      const reader = response.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let totalBytes = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        totalBytes += value.byteLength;
+        if (totalBytes > MAX_HTML_BYTES) {
+          await reader.cancel();
+          throw new CarsmeetImportError('Carsmeet 頁面超過大小限制', 502);
+        }
+        chunks.push(value);
+      }
+      const bytes = new Uint8Array(totalBytes);
+      let offset = 0;
+      for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+      return new TextDecoder().decode(bytes);
+    }
   } catch (error) {
     if (error instanceof CarsmeetImportError) throw error;
     const message = error instanceof Error && error.name === 'AbortError' ? '連線 Carsmeet 逾時，請稍後再試' : '無法連線 Carsmeet，請確認網址後再試';
