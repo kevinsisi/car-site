@@ -5,6 +5,8 @@ import { getPermittedOrResponse } from '@/lib/auth';
 import { PERMISSIONS } from '@/lib/permissions';
 import { importVehicle } from '@/lib/vehicles';
 
+const MAX_PRODUCTION_WORKER_CARSMEET_PHOTOS = 32;
+
 export const POST: APIRoute = async ({ request, cookies, locals }) => {
   const runtimeEnv = locals.runtime?.env;
   if (locals.runtime && (!runtimeEnv?.DB_PREVIEW || !runtimeEnv.SESSION_SECRET)) {
@@ -33,6 +35,9 @@ export const POST: APIRoute = async ({ request, cookies, locals }) => {
     }
 
     const data = await importableCarsmeetData(url, locals.runtime ? { workerSafe: true } : undefined);
+    if (locals.runtime && data.photos.length > MAX_PRODUCTION_WORKER_CARSMEET_PHOTOS) {
+      throw new CarsmeetImportError(`Carsmeet 車輛照片最多可匯入 ${MAX_PRODUCTION_WORKER_CARSMEET_PHOTOS} 張，請調整來源頁面後再試`, 422);
+    }
     const result = await importVehicle({
       source: 'carsmeet',
       externalId: data.externalId,
