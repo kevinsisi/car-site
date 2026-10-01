@@ -306,6 +306,7 @@ export async function upsertVehicle(input: {
   source?: string;
   externalId?: string | null;
   images?: string[];
+  preserveImportMetadata?: boolean;
 }, adapter?: VehicleWriteDb) {
   const writer = await vehicleDb(adapter);
   const now = new Date().toISOString();
@@ -337,9 +338,9 @@ export async function upsertVehicle(input: {
     featuresJson: JSON.stringify(input.features || []),
     monthlyRecommended,
     showSoldCase,
-    source: input.source || 'manual',
-    externalId: input.externalId || null,
-    localEditsJson: JSON.stringify([]),
+    source: input.preserveImportMetadata && input.source === undefined ? existing?.source ?? 'manual' : input.source || 'manual',
+    externalId: input.preserveImportMetadata && input.externalId === undefined ? existing?.externalId ?? null : input.externalId || null,
+    localEditsJson: input.preserveImportMetadata ? existing?.localEditsJson ?? JSON.stringify([]) : JSON.stringify([]),
     soldAt: input.status === 'sold' ? now : null,
     createdAt: existing?.createdAt || now,
     updatedAt: now,
