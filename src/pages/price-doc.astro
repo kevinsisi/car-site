@@ -1,5 +1,8 @@
 ---
 // Public route — no auth, no layout
+import { isPageAvailable } from '@/lib/production-page-availability';
+
+if (!isPageAvailable(Astro.locals.runtime?.env?.MITA_ENV)) return new Response('', { status: 404 });
 ---
 <!DOCTYPE html>
 <html lang="zh-TW">
