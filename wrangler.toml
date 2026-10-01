@@ -12,6 +12,7 @@ run_worker_first = true
 [env.preview]
 name = "mita-cloudflare-preview-isolated"
 workers_dev = true
+account_id = "74d9f73903d0d1fbcf55742b46c3cf80"
 
 [env.preview.vars]
 MITA_ENV = "preview"
@@ -24,7 +25,7 @@ run_worker_first = true
 [[env.preview.d1_databases]]
 binding = "DB_PREVIEW"
 database_name = "mita-preview"
-database_id = ""
+database_id = "c4b54478-3dc2-458f-8c3b-f0dea4212726"
 migrations_dir = "migrations/d1"
 
 [[env.preview.r2_buckets]]
