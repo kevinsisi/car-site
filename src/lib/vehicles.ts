@@ -6,6 +6,7 @@ import { getSettings } from './settings';
 import { alwaysPublicVehicleStatuses, isPublicVehicleStatus, mapSourceInventoryStatus } from './vehicle-status';
 
 const WORKER_PUBLIC_VEHICLE_LIMIT = 100;
+const MAX_PRESERVED_VEHICLE_IMAGES = 20_000;
 
 type VehicleReadDb = Awaited<ReturnType<typeof createD1Db>>;
 type VehicleWriteDb = VehicleReadDb;
@@ -308,6 +309,9 @@ export async function upsertVehicle(input: {
   images?: string[];
   preserveImportMetadata?: boolean;
 }, adapter?: VehicleWriteDb) {
+  if (input.preserveImportMetadata && input.images !== undefined && input.images.length > MAX_PRESERVED_VEHICLE_IMAGES) {
+    throw new Error(`Cannot preserve imported image identities for more than ${MAX_PRESERVED_VEHICLE_IMAGES} images`);
+  }
   const writer = await vehicleDb(adapter);
   const now = new Date().toISOString();
   const baseSlug = slugify(`${input.year || ''} ${input.brand} ${input.model} ${input.subModel || ''}`);
@@ -348,16 +352,30 @@ export async function upsertVehicle(input: {
 
   const statements: any[] = [writer.insert(vehicles).values(values).onConflictDoUpdate({ target: vehicles.id, set: values })];
   if (input.images !== undefined) {
+    const imageUrls = input.images.filter(Boolean);
+    const existingImages = input.preserveImportMetadata
+      ? await writer.select().from(vehicleImages).where(eq(vehicleImages.vehicleId, id)).orderBy(asc(vehicleImages.sortOrder), asc(vehicleImages.id)).limit(MAX_PRESERVED_VEHICLE_IMAGES + 1)
+      : [];
+    if (existingImages.length > MAX_PRESERVED_VEHICLE_IMAGES) {
+      throw new Error(`Cannot preserve imported image identities for more than ${MAX_PRESERVED_VEHICLE_IMAGES} retained rows`);
+    }
+    const availableByUrl = new Map<string, typeof existingImages>();
+    for (const image of existingImages) {
+      const matches = availableByUrl.get(image.url) || [];
+      matches.push(image);
+      availableByUrl.set(image.url, matches);
+    }
     statements.push(writer.delete(vehicleImages).where(eq(vehicleImages.vehicleId, id)));
-    for (const [sortOrder, url] of input.images.filter(Boolean).entries()) {
+    for (const [sortOrder, url] of imageUrls.entries()) {
+      const match = availableByUrl.get(url)?.shift();
       statements.push(writer.insert(vehicleImages).values({
-        id: crypto.randomUUID(),
+        id: match?.id || crypto.randomUUID(),
         vehicleId: id,
         url,
         alt: input.title,
         sortOrder,
         isCover: sortOrder === 0,
-        createdAt: now,
+        createdAt: match?.createdAt || now,
       }));
     }
   }

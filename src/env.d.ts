@@ -19,6 +19,7 @@ interface CloudflareEnv {
   DB_PREVIEW?: D1Database;
   IMPORT_PREVIEW_TOKEN?: string;
   MEDIA_PREVIEW?: R2Bucket;
+  MITA_PUBLIC_SYNC_ENABLED?: string;
   ASSETS?: Fetcher;
   SESSION_SECRET?: string;
   LOGIN_RATE_LIMITER?: import('./lib/shared-rate-limit').SharedRateLimiter;

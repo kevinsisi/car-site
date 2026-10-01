@@ -31,3 +31,26 @@ migrations_dir = "migrations/d1"
 [[env.preview.r2_buckets]]
 binding = "MEDIA_PREVIEW"
 bucket_name = "mita-preview"
+
+[env.production]
+name = "mita"
+account_id = "74d9f73903d0d1fbcf55742b46c3cf80"
+workers_dev = false
+
+[[env.production.routes]]
+pattern = "mita.sisihome.org"
+custom_domain = true
+
+[env.production.vars]
+MITA_ENV = "production"
+MITA_PUBLIC_SYNC_ENABLED = "true"
+
+[[env.production.d1_databases]]
+binding = "DB_PREVIEW"
+database_name = "mita-public-original"
+database_id = "80c5d7ba-a026-41c0-b267-11d4e0954eea"
+migrations_dir = "migrations/d1"
+
+[[env.production.r2_buckets]]
+binding = "MEDIA_PREVIEW"
+bucket_name = "mita-public-original"

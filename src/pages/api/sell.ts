@@ -34,7 +34,7 @@ function checkRateLimit(ip: string): boolean {
 type SellSettings = Awaited<ReturnType<typeof getSettings>>;
 
 export async function handleSellInquiry(
-  { request, locals }: { request: Request; locals?: { runtime?: { env?: { DB_PREVIEW?: import('@/lib/shared-rate-limit').D1RateLimitBinding; MEDIA_PREVIEW?: R2MediaBucket } } } },
+  { request, locals }: { request: Request; locals?: { runtime?: { env?: { DB_PREVIEW?: import('@/lib/shared-rate-limit').D1RateLimitBinding; MEDIA_PREVIEW?: R2MediaBucket; MITA_PUBLIC_SYNC_ENABLED?: string } } } },
   dependencies?: {
     getSettings?: () => Promise<SellSettings>;
     createSellInquiry?: (input: Parameters<typeof createSellInquiry>[0], adapter?: Awaited<ReturnType<typeof createD1Db>>) => Promise<string>;
@@ -95,7 +95,7 @@ export async function handleSellInquiry(
       headers: { 'content-type': 'application/json' },
     });
   }
-  if (workerRequest && (!contactInfo.startsWith('DEMO-') || !contactName.startsWith('DEMO-'))) {
+  if (workerRequest && env?.MITA_PUBLIC_SYNC_ENABLED !== 'true' && (!contactInfo.startsWith('DEMO-') || !contactName.startsWith('DEMO-'))) {
     return Response.json({ success: false, error: '預覽聯絡資料格式錯誤' }, { status: 400 });
   }
 
