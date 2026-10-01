@@ -28,8 +28,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const externalId = String(body.externalId);
   const photos: string[] = Array.isArray(body.photos) ? body.photos.map(String) : [];
   if (workerRequest) {
-    if (source !== 'preview' || !externalId.startsWith('DEMO-')) {
-      return Response.json({ error: 'Worker imports must use preview source and DEMO- externalId' }, { status: 400 });
+    if (!['preview', 'sheet-to-car', 'carsmeet-sheet-to-car'].includes(source) || (source === 'preview' && !externalId.startsWith('DEMO-'))) {
+      return Response.json({ error: 'Worker imports require an allowed source; preview imports must use DEMO- externalId' }, { status: 400 });
     }
     const requestOrigin = new URL(request.url).origin;
     if (photos.some((photo) => {

@@ -26,7 +26,7 @@ jobs:
         run: npm ci
 
       - name: Run worker identity regression tests
-        run: node --import tsx --test tests/db/vehicle-source-preservation.test.mjs tests/db/vehicles-d1-writes.test.mjs tests/db/vehicles-d1.test.mjs tests/routes/t6d-admin-vehicles.test.mjs
+        run: node --import tsx --test tests/routes/original-source-import.test.mjs tests/db/vehicle-source-preservation.test.mjs tests/db/vehicles-d1-writes.test.mjs tests/db/vehicles-d1.test.mjs tests/routes/t6d-admin-vehicles.test.mjs
 
   validate:
     runs-on: ubuntu-latest
