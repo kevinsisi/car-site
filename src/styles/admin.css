@@ -233,7 +233,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .admin-link-card span { color: var(--accent-strong); font-weight: 800; }
 .admin-link-card strong { font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1; }
 .admin-link-card small { color: var(--muted); line-height: 1.55; }
-.vehicle-admin-list { display: grid; min-width: 0; gap: 0.8rem; }
+.vehicle-admin-list { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; gap: 0.8rem; }
 .carsmeet-import { display: grid; grid-template-columns: minmax(0, 1fr) minmax(18rem, 1.35fr); gap: 0.9rem; align-items: end; padding: 1rem; border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--line)); border-radius: 1rem; background: color-mix(in srgb, var(--bg) 84%, var(--surface)); }
 .carsmeet-import strong { color: var(--accent-strong); }
 .carsmeet-import .form-hint { margin: 0.25rem 0 0; }
@@ -370,7 +370,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 @media (max-width: 640px) { .form-row { grid-template-columns: 1fr; } }
 .form-actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
 /* Admin page wrapper */
-.admin-page { max-width: 960px; min-width: 0; display: grid; gap: 1.5rem; align-content: start; }
+.admin-page { width: 100%; max-width: 960px; min-width: 0; grid-template-columns: minmax(0, 1fr); display: grid; gap: 1.5rem; align-content: start; }
 /* Muted text */
 .muted { color: var(--muted); font-size: 0.92rem; line-height: 1.55; }
 /* Empty state */
