@@ -34,7 +34,7 @@ function checkRateLimit(ip: string): boolean {
 type SellSettings = Awaited<ReturnType<typeof getSettings>>;
 
 export async function handleSellInquiry(
-  { request, locals }: { request: Request; locals?: { runtime?: { env?: { DB_PREVIEW?: import('@/lib/shared-rate-limit').D1RateLimitBinding; MEDIA_PREVIEW?: R2MediaBucket; MITA_PUBLIC_SYNC_ENABLED?: string } } } },
+  { request, locals }: { request: Request; locals?: { runtime?: { env?: { MITA_ENV?: string; DB_PREVIEW?: import('@/lib/shared-rate-limit').D1RateLimitBinding; MEDIA_PREVIEW?: R2MediaBucket; MITA_PUBLIC_SYNC_ENABLED?: string } } } },
   dependencies?: {
     getSettings?: () => Promise<SellSettings>;
     createSellInquiry?: (input: Parameters<typeof createSellInquiry>[0], adapter?: Awaited<ReturnType<typeof createD1Db>>) => Promise<string>;
@@ -159,9 +159,15 @@ export async function handleSellInquiry(
     await createSellInquiryFn({ brand, model, year, mileage, exteriorColor, notes, contactInfo, contactName, photoUrls }, adapter);
   }
 
+  const notificationValues = { brand, model, year, mileage, exteriorColor, notes, contactInfo, contactName, photoCount: photoUrls.length };
   if (!workerRequest) {
     const sendNotificationFn = dependencies?.sendNotification ?? sendNotification;
-    await sendNotificationFn(settings, { brand, model, year, mileage, exteriorColor, notes, contactInfo, contactName, photoCount: photoUrls.length });
+    await sendNotificationFn(settings, notificationValues);
+  } else if (env?.MITA_ENV === 'production' && env.MITA_PUBLIC_SYNC_ENABLED === 'true') {
+    const sendNotificationFn = dependencies?.sendNotification ?? (async (currentSettings, values) => {
+      await (await import('@/lib/worker-notification')).sendWorkerSellNotification(currentSettings, values);
+    });
+    await sendNotificationFn(settings, notificationValues);
   }
 
   return new Response(JSON.stringify({ success: true }), {

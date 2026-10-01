@@ -22,14 +22,17 @@ export const POST: APIRoute = async ({ request, cookies, locals }) => {
     const url = String(body.url || '');
     if (locals.runtime) {
       parseCarsmeetUrl(url);
-      return Response.json({
-        ok: false,
-        previewOnly: true,
-        error: 'Carsmeet import is disabled in preview; no vehicle was imported.',
-      }, { status: 501 });
+      const productionEnabled = runtimeEnv?.MITA_ENV === 'production' && runtimeEnv.MITA_PUBLIC_SYNC_ENABLED === 'true';
+      if (!productionEnabled) {
+        return Response.json({
+          ok: false,
+          previewOnly: true,
+          error: 'Carsmeet import is disabled in preview; no vehicle was imported.',
+        }, { status: 501 });
+      }
     }
 
-    const data = await importableCarsmeetData(url);
+    const data = await importableCarsmeetData(url, locals.runtime ? { workerSafe: true } : undefined);
     const result = await importVehicle({
       source: 'carsmeet',
       externalId: data.externalId,
@@ -48,7 +51,7 @@ export const POST: APIRoute = async ({ request, cookies, locals }) => {
       features: data.features,
       photos: data.photos,
       publishMode: 'draft',
-    });
+    }, adapter);
 
     return Response.json({
       ok: true,
