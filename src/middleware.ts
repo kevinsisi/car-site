@@ -48,6 +48,28 @@ const sameHostPost = (request: Request) => {
 };
 
 const FORCE_CHANGE_ALLOWLIST = ['/admin/account', '/admin/login', '/api/admin/change-password', '/api/admin/logout'];
+const PUBLIC_HTML_CACHE_TTL_SECONDS = 120;
+
+function publicHtmlCacheKey(request: Request): Request | null {
+  if (request.method !== 'GET' || request.headers.get('cookie')?.split(';').some((cookie) => cookie.trim().startsWith('car_site_admin='))) return null;
+  const url = new URL(request.url);
+  if (url.search) return null;
+  if (url.pathname === '/') return new Request(url.toString(), { method: 'GET' });
+  if (url.pathname === '/cars' || url.pathname === '/cars/') {
+    url.pathname = '/cars';
+    return new Request(url.toString(), { method: 'GET' });
+  }
+  if (/^\/cars\/[^/]+\/?$/.test(url.pathname)) {
+    if (url.pathname.replace(/\/$/, '').endsWith('/compare')) return null;
+    url.pathname = url.pathname.replace(/\/$/, '');
+    return new Request(url.toString(), { method: 'GET' });
+  }
+  return null;
+}
+
+function defaultCache(): Cache | undefined {
+  return (globalThis as typeof globalThis & { caches?: CacheStorage & { default?: Cache } }).caches?.default;
+}
 
 let migrationPromise: Promise<void> | null = null;
 
@@ -55,11 +77,21 @@ export async function handleRequest(context: Parameters<Parameters<typeof define
   const runtime = context.locals.runtime;
   let requestDb: Awaited<ReturnType<typeof createD1Db>> | undefined;
   let sessionSecret: string | undefined;
+  const cacheKey = runtime ? publicHtmlCacheKey(context.request) : null;
+  const cache = cacheKey ? defaultCache() : undefined;
 
   if (runtime) {
     const env = runtime.env;
     if (!env?.DB_PREVIEW || !env.SESSION_SECRET) {
       return new Response('Authentication storage unavailable', { status: 503 });
+    }
+    if (cache && cacheKey) {
+      try {
+        const cached = await cache.match(cacheKey);
+        if (cached) return cached;
+      } catch {
+        // A cache failure must not make an otherwise available public page fail.
+      }
     }
     requestDb = await createD1Db(env.DB_PREVIEW);
     sessionSecret = env.SESSION_SECRET;
@@ -92,7 +124,22 @@ export async function handleRequest(context: Parameters<Parameters<typeof define
     !context.url.pathname.startsWith('/api/') &&
     !context.url.pathname.startsWith('/admin');
 
-  if (!shouldTrack || runtime) return next();
+  if (!shouldTrack || runtime) {
+    const response = await next();
+    if (runtime && cache && cacheKey && response.status === 200 && response.headers.get('content-type')?.split(';', 1)[0].trim().toLowerCase() === 'text/html' && !response.headers.has('set-cookie')) {
+      const headers = new Headers(response.headers);
+      headers.set('cache-control', `public, s-maxage=${PUBLIC_HTML_CACHE_TTL_SECONDS}`);
+      const cachedResponse = new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+      // Admin-side content changes become visible after the 120-second TTL; no active purge is performed.
+      try {
+        await cache.put(cacheKey, cachedResponse.clone());
+      } catch {
+        // A cache write failure must not prevent returning the rendered page.
+      }
+      return cachedResponse;
+    }
+    return response;
+  }
 
   const { detectBot, detectDeviceType, hashIp, logPageView, normalizeReferrer } = await import('@/lib/analytics');
 

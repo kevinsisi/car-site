@@ -3,6 +3,7 @@ import type { createD1Db } from '@/db/d1';
 import { importMappings, vehicleImages, vehicles, type PublishMode, type VehicleStatus } from '@/db/schema';
 import { brandUrlSlug, getBrandAliasMap } from './brand-aliases';
 import { getSettings } from './settings';
+import type { SiteSettings } from './settings';
 import { alwaysPublicVehicleStatuses, isPublicVehicleStatus, mapSourceInventoryStatus } from './vehicle-status';
 
 const WORKER_PUBLIC_VEHICLE_LIMIT = 100;
@@ -10,6 +11,29 @@ const MAX_PRESERVED_VEHICLE_IMAGES = 20_000;
 
 type VehicleReadDb = Awaited<ReturnType<typeof createD1Db>>;
 type VehicleWriteDb = VehicleReadDb;
+
+export interface VehicleReadContext {
+  settings: SiteSettings;
+  brandAliasMap: Awaited<ReturnType<typeof getBrandAliasMap>>;
+}
+
+const requestReadContexts = new WeakMap<object, Promise<VehicleReadContext>>();
+const adapterReadContexts = new WeakMap<object, VehicleReadContext>();
+
+export async function getVehicleReadContext(locals: object, adapter?: VehicleReadDb, settings?: SiteSettings): Promise<VehicleReadContext> {
+  let context = requestReadContexts.get(locals);
+  if (!context) {
+    context = Promise.all([settings ?? getSettings(adapter), getBrandAliasMap(adapter)]).then(([settings, brandAliasMap]) => ({ settings, brandAliasMap }));
+    requestReadContexts.set(locals, context);
+  }
+  const result = await context;
+  if (adapter) adapterReadContexts.set(adapter, result);
+  return result;
+}
+
+function cachedReadContext(adapter?: VehicleReadDb, context?: VehicleReadContext): VehicleReadContext | undefined {
+  return context ?? (adapter ? adapterReadContexts.get(adapter) : undefined);
+}
 
 async function vehicleDb(adapter?: VehicleWriteDb): Promise<VehicleWriteDb> {
   if (adapter) return adapter;
@@ -124,16 +148,27 @@ function formatCardTitle(template: string, row: typeof vehicles.$inferSelect, br
   return cleanTemplateOutput(rendered) || row.title;
 }
 
-async function attachImages(rows: (typeof vehicles.$inferSelect)[], adapter?: VehicleReadDb): Promise<VehicleView[]> {
+async function attachImages(rows: (typeof vehicles.$inferSelect)[], adapter?: VehicleReadDb, context?: VehicleReadContext, includeAllImages = !cachedReadContext(adapter, context)): Promise<VehicleView[]> {
   if (!rows.length) return [];
   const reader = await vehicleDb(adapter);
-  const brandAliasMap = await getBrandAliasMap(adapter);
-  const settings = await getSettings(adapter);
-  const images = await reader
-    .select()
-    .from(vehicleImages)
-    .where(inArray(vehicleImages.vehicleId, rows.map((row) => row.id)))
-    .orderBy(asc(vehicleImages.sortOrder));
+  const readContext: VehicleReadContext = cachedReadContext(adapter, context) ?? await Promise.all([getBrandAliasMap(adapter), getSettings(adapter)]).then(([brandAliasMap, settings]) => ({ brandAliasMap, settings }));
+  const { brandAliasMap, settings } = readContext;
+  const imageQuery = reader.select().from(vehicleImages);
+  const images = includeAllImages
+    ? await imageQuery
+      .where(inArray(vehicleImages.vehicleId, rows.map((row) => row.id)))
+      .orderBy(asc(vehicleImages.sortOrder), asc(vehicleImages.id))
+    : await imageQuery
+      .where(inArray(vehicleImages.id, sql`(
+        SELECT (
+          SELECT preferred.id
+          FROM vehicle_images AS preferred
+          WHERE preferred.vehicle_id = requested_vehicles.value
+          ORDER BY preferred.is_cover DESC, preferred.sort_order ASC, preferred.id ASC
+          LIMIT 1
+        )
+        FROM json_each(${JSON.stringify(rows.map((row) => row.id))}) AS requested_vehicles
+      )`));
   const imageMap = new Map<string, VehicleImageView[]>();
   const resolveMediaPair = adapter
     ? (url: string) => ({ url, thumbUrl: url })
@@ -183,13 +218,13 @@ async function attachImages(rows: (typeof vehicles.$inferSelect)[], adapter?: Ve
   });
 }
 
-export async function listPublicBrands(adapter?: VehicleReadDb): Promise<{ displayName: string; urlSlug: string; count: number; iconUrl: string | null }[]> {
+export async function listPublicBrands(adapter?: VehicleReadDb, context?: VehicleReadContext): Promise<{ displayName: string; urlSlug: string; count: number; iconUrl: string | null }[]> {
   const reader = await vehicleDb(adapter);
   const brandQuery = reader.select({ brand: vehicles.brand }).from(vehicles).where(inArray(vehicles.status, alwaysPublicVehicleStatuses));
   const allVehicles = adapter
     ? await brandQuery.orderBy(desc(vehicles.updatedAt), asc(vehicles.id)).limit(WORKER_PUBLIC_VEHICLE_LIMIT)
     : await brandQuery;
-  const brandAliasMap = await getBrandAliasMap(adapter);
+  const brandAliasMap = cachedReadContext(adapter, context)?.brandAliasMap ?? await getBrandAliasMap(adapter);
   const countMap = new Map<string, { displayName: string; urlSlug: string; count: number; iconUrl: string | null }>();
   for (const vehicle of allVehicles) {
     const brandAlias = brandAliasMap.get(vehicle.brand);
@@ -209,22 +244,22 @@ export async function listPublicBrands(adapter?: VehicleReadDb): Promise<{ displ
   return [...countMap.values()].sort((a, b) => a.displayName.localeCompare(b.displayName));
 }
 
-export async function listPublicVehiclesByBrand(urlSlug: string, adapter?: VehicleReadDb): Promise<VehicleView[]> {
-  return (await listPublicInventoryVehicles(adapter)).filter((vehicle) => vehicle.brandUrlSlug === urlSlug);
+export async function listPublicVehiclesByBrand(urlSlug: string, adapter?: VehicleReadDb, context?: VehicleReadContext): Promise<VehicleView[]> {
+  return (await listPublicInventoryVehicles(adapter, context)).filter((vehicle) => vehicle.brandUrlSlug === urlSlug);
 }
 
-export async function listPublicVehicles(adapter?: VehicleReadDb): Promise<VehicleView[]> {
+export async function listPublicVehicles(adapter?: VehicleReadDb, context?: VehicleReadContext): Promise<VehicleView[]> {
   const reader = await vehicleDb(adapter);
-  const settings = await getSettings(adapter);
+  const settings = cachedReadContext(adapter, context)?.settings ?? await getSettings(adapter);
   const statusFilter = inArray(vehicles.status, settings.showSoldVehicles ? [...alwaysPublicVehicleStatuses, 'sold'] : alwaysPublicVehicleStatuses);
   const query = reader.select().from(vehicles).where(statusFilter);
   const rows = adapter
     ? await query.orderBy(desc(vehicles.updatedAt), asc(vehicles.id)).limit(WORKER_PUBLIC_VEHICLE_LIMIT)
     : await query.orderBy(desc(vehicles.updatedAt));
-  return attachImages(rows, adapter);
+  return attachImages(rows, adapter, context);
 }
 
-export async function listMonthlyRecommendedVehicles(adapter?: VehicleReadDb): Promise<VehicleView[]> {
+export async function listMonthlyRecommendedVehicles(adapter?: VehicleReadDb, context?: VehicleReadContext): Promise<VehicleView[]> {
   const reader = await vehicleDb(adapter);
   const query = reader
     .select()
@@ -233,31 +268,31 @@ export async function listMonthlyRecommendedVehicles(adapter?: VehicleReadDb): P
   const rows = adapter
     ? await query.orderBy(desc(vehicles.updatedAt), asc(vehicles.id)).limit(WORKER_PUBLIC_VEHICLE_LIMIT)
     : await query.orderBy(desc(vehicles.updatedAt));
-  return attachImages(rows, adapter);
+  return attachImages(rows, adapter, context);
 }
 
-export async function listPublicInventoryVehicles(adapter?: VehicleReadDb): Promise<VehicleView[]> {
+export async function listPublicInventoryVehicles(adapter?: VehicleReadDb, context?: VehicleReadContext): Promise<VehicleView[]> {
   const reader = await vehicleDb(adapter);
   const query = reader.select().from(vehicles).where(inArray(vehicles.status, alwaysPublicVehicleStatuses));
   const rows = adapter
     ? await query.orderBy(desc(vehicles.updatedAt), asc(vehicles.id)).limit(WORKER_PUBLIC_VEHICLE_LIMIT)
     : await query.orderBy(desc(vehicles.updatedAt));
-  return attachImages(rows, adapter);
+  return attachImages(rows, adapter, context);
 }
 
-export async function listSoldVehicles(adapter?: VehicleReadDb): Promise<VehicleView[]> {
-  const settings = await getSettings(adapter);
+export async function listSoldVehicles(adapter?: VehicleReadDb, context?: VehicleReadContext): Promise<VehicleView[]> {
+  const settings = cachedReadContext(adapter, context)?.settings ?? await getSettings(adapter);
   if (!settings.showSoldVehicles) return [];
   const reader = await vehicleDb(adapter);
   const query = reader.select().from(vehicles).where(eq(vehicles.status, 'sold'));
   const rows = adapter
     ? await query.orderBy(desc(vehicles.soldAt), desc(vehicles.updatedAt), asc(vehicles.id)).limit(WORKER_PUBLIC_VEHICLE_LIMIT)
     : await query.orderBy(desc(vehicles.soldAt), desc(vehicles.updatedAt));
-  return attachImages(rows, adapter);
+  return attachImages(rows, adapter, context);
 }
 
-export async function listSoldCaseVehicles(limit = 6, adapter?: VehicleReadDb): Promise<VehicleView[]> {
-  const settings = await getSettings(adapter);
+export async function listSoldCaseVehicles(limit = 6, adapter?: VehicleReadDb, context?: VehicleReadContext): Promise<VehicleView[]> {
+  const settings = cachedReadContext(adapter, context)?.settings ?? await getSettings(adapter);
   if (!settings.showSoldVehicles) return [];
   const reader = await vehicleDb(adapter);
   const rows = await reader
@@ -266,7 +301,7 @@ export async function listSoldCaseVehicles(limit = 6, adapter?: VehicleReadDb): 
     .where(and(eq(vehicles.status, 'sold'), eq(vehicles.showSoldCase, true)))
     .orderBy(desc(vehicles.soldAt), desc(vehicles.updatedAt))
     .limit(adapter ? Math.min(limit, WORKER_PUBLIC_VEHICLE_LIMIT) : limit);
-  return attachImages(rows, adapter);
+  return attachImages(rows, adapter, context);
 }
 
 export async function listAdminVehicles(adapter?: VehicleReadDb, limit?: number): Promise<VehicleView[]> {
@@ -275,13 +310,20 @@ export async function listAdminVehicles(adapter?: VehicleReadDb, limit?: number)
   const rows = limit === undefined
     ? await query.orderBy(desc(vehicles.updatedAt))
     : await query.orderBy(desc(vehicles.updatedAt), asc(vehicles.id)).limit(limit);
-  return attachImages(rows, adapter);
+  return attachImages(rows, adapter, undefined, true);
 }
 
 export async function getVehicleBySlug(slug: string, adapter?: VehicleReadDb): Promise<VehicleView | null> {
   const reader = await vehicleDb(adapter);
   const rows = await reader.select().from(vehicles).where(eq(vehicles.slug, slug)).limit(1);
   const [vehicle] = await attachImages(rows, adapter);
+  return vehicle || null;
+}
+
+export async function getVehicleDetailBySlug(slug: string, adapter?: VehicleReadDb): Promise<VehicleView | null> {
+  const reader = await vehicleDb(adapter);
+  const rows = await reader.select().from(vehicles).where(eq(vehicles.slug, slug)).limit(1);
+  const [vehicle] = await attachImages(rows, adapter, cachedReadContext(adapter), true);
   return vehicle || null;
 }
 

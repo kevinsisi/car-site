@@ -3,10 +3,10 @@ import PublicLayout from '@/layouts/PublicLayout.astro';
 import PremiumIcon from '@/components/PremiumIcon.astro';
 import BrandIcon from '@/components/BrandIcon.astro';
 import ShareButton from '@/components/ShareButton.astro';
-import { getSettings } from '@/lib/settings';
 import { resolveFrontFeatures } from '@/lib/front-features';
 import { formatVehicleShareText, shareOriginFromRequest, vehicleShareUrl } from '@/lib/vehicle-share';
-import { getVehicleBySlug, listPublicVehicles, publicVehicleStatus } from '@/lib/vehicles';
+import { getVehicleReadContext, getVehicleDetailBySlug as getVehicleBySlug, listPublicVehicles, publicVehicleStatus } from '@/lib/vehicles';
+import { getSettings } from '@/lib/settings';
 import { createD1Db } from '@/db/d1';
 import { devPlaceholderSpecs } from '@/lib/dev-placeholder-vehicle-specs';
 import GallerySlider from '@/components/gallery/GallerySlider.astro';
@@ -17,8 +17,9 @@ const runtime = Astro.locals.runtime;
 const binding = runtime?.env?.DB_PREVIEW;
 if (runtime && !binding) return new Response('Preview database unavailable', { status: 503 });
 const adapter = binding ? await createD1Db(binding) : undefined;
-const vehicle = await getVehicleBySlug(Astro.params.slug || '', adapter);
 const settings = await getSettings(adapter);
+const readContext = await getVehicleReadContext(Astro.locals, adapter, settings);
+const vehicle = await getVehicleBySlug(Astro.params.slug || '', adapter);
 const features = resolveFrontFeatures(settings);
 if (!vehicle || !publicVehicleStatus(vehicle.status, settings.showSoldVehicles)) {
   return new Response('Not found', { status: 404 });
@@ -88,7 +89,7 @@ const specRows = [
 const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findIndex((image) => image.id === vehicle.coverImage?.id)) : 0;
 ---
 
-<PublicLayout title={`${vehicle.title}｜${settings.siteName}`} description={vehicle.headline || vehicle.description} shareText={shareText} shareUrl={shareUrl} ogImage={vehicle.coverImage?.url} ogType="product" jsonLd={[vehicleJsonLd, breadcrumbJsonLd]}>
+  <PublicLayout title={`${vehicle.title}｜${settings.siteName}`} settings={settings} description={vehicle.headline || vehicle.description} shareText={shareText} shareUrl={shareUrl} ogImage={vehicle.coverImage?.url} ogType="product" jsonLd={[vehicleJsonLd, breadcrumbJsonLd]}>
   <article class="detail-page luxury-enter">
     <div class="detail-gallery-top">
       {settings.galleryMode === 'slider' ? (

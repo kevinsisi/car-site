@@ -38,6 +38,9 @@ const binding = {
 };
 const workerDb = await createD1Db(binding);
 const secret = 'synthetic-worker-session-secret';
+let d1PrepareCalls = 0;
+const originalPrepare = binding.prepare;
+binding.prepare = (query) => { d1PrepareCalls++; return originalPrepare(query); };
 const cookies = (token) => ({ get: (name) => name === 'car_site_admin' && token ? { value: token } : undefined, set() {} });
 const contextFor = (pathname, token, env = { DB_PREVIEW: binding, SESSION_SECRET: secret }) => ({
   request: new Request(`https://preview.example${pathname}`),
@@ -48,6 +51,24 @@ const contextFor = (pathname, token, env = { DB_PREVIEW: binding, SESSION_SECRET
 });
 
 after(() => sqlite.close());
+
+function installCache() {
+  const originalCaches = globalThis.caches;
+  const stored = new Map();
+  const cache = {
+    async match(request) { return stored.get(request.url)?.clone(); },
+    async put(request, response) { stored.set(request.url, response.clone()); },
+    async delete(request) { return stored.delete(typeof request === 'string' ? request : request.url); },
+  };
+  Object.defineProperty(globalThis, 'caches', { configurable: true, value: { default: cache } });
+  return {
+    stored,
+    restore() {
+      if (originalCaches === undefined) delete globalThis.caches;
+      else Object.defineProperty(globalThis, 'caches', { configurable: true, value: originalCaches });
+    },
+  };
+}
 
 test('Worker middleware returns 503 before continuing when either required binding is missing', async () => {
   for (const env of [{ DB_PREVIEW: binding }, { SESSION_SECRET: secret }, {}]) {
@@ -62,6 +83,63 @@ test('unauthenticated public Worker request proceeds without page tracking', asy
   const response = await handleRequest(contextFor('/'), async () => new Response('public page'));
   assert.equal(await response.text(), 'public page');
   assert.equal(response.headers.has('set-cookie'), false);
+});
+
+test('public HTML cache serves the second request without D1 reads', async () => {
+  const cacheHarness = installCache();
+  try {
+    let renders = 0;
+    const beforeReads = d1PrepareCalls;
+    const first = await handleRequest(contextFor('/cars'), async () => {
+      renders++;
+      await workerDb.select().from(schema.adminUsers);
+      return new Response('<html>cars</html>', { status: 200, headers: { 'content-type': 'text/html' } });
+    });
+    assert.equal(first.headers.get('cache-control'), 'public, s-maxage=120');
+    const readsAfterRender = d1PrepareCalls;
+    assert.ok(readsAfterRender > beforeReads);
+    const second = await handleRequest(contextFor('/cars/'), async () => {
+      renders++;
+      return new Response('unexpected');
+    });
+    assert.equal(await second.text(), '<html>cars</html>');
+    assert.equal(renders, 1);
+    assert.equal(d1PrepareCalls, readsAfterRender);
+  } finally {
+    cacheHarness.restore();
+  }
+});
+
+test('administrator session cookie bypasses the public HTML cache', async () => {
+  const cacheHarness = installCache();
+  try {
+    await handleRequest(contextFor('/cars'), async () => new Response('cached'));
+    const context = contextFor('/cars', 'invalid-session');
+    context.request = new Request('https://preview.example/cars', { headers: { cookie: 'car_site_admin=invalid-session' } });
+    let renders = 0;
+    const response = await handleRequest(context, async () => { renders++; return new Response('bypass'); });
+    assert.equal(renders, 1);
+    assert.equal(await response.text(), 'bypass');
+  } finally {
+    cacheHarness.restore();
+  }
+});
+
+test('public HTML response with Set-Cookie is not cached', async () => {
+  const cacheHarness = installCache();
+  try {
+    let renders = 0;
+    const render = async () => {
+      renders++;
+      return new Response('private', { status: 200, headers: { 'set-cookie': 'private=value; HttpOnly' } });
+    };
+    await handleRequest(contextFor('/'), render);
+    await handleRequest(contextFor('/'), render);
+    assert.equal(renders, 2);
+    assert.equal(cacheHarness.stored.size, 0);
+  } finally {
+    cacheHarness.restore();
+  }
 });
 
 test('same-host POST guard remains active for Worker admin API requests', async () => {

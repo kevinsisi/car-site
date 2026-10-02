@@ -4,10 +4,10 @@ import VehicleCard from '@/components/VehicleCard.astro';
 import BrandStrip from '@/components/BrandStrip.astro';
 import VideoCarousel from '@/components/VideoCarousel.astro';
 import VideoLinksSection from '@/components/VideoLinksSection.astro';
-import { getSettings } from '@/lib/settings';
 import { resolveFrontFeatures } from '@/lib/front-features';
 import { formatVehicleShareText, shareOriginFromRequest, vehicleShareUrl } from '@/lib/vehicle-share';
-import { listPublicVehicles, listSoldCaseVehicles, listPublicBrands } from '@/lib/vehicles';
+import { getVehicleReadContext, listPublicVehicles, listSoldCaseVehicles, listPublicBrands } from '@/lib/vehicles';
+import { getSettings } from '@/lib/settings';
 import { listVideoLinks } from '@/lib/video-links';
 import { createD1Db } from '@/db/d1';
 
@@ -19,6 +19,7 @@ if (isWorkerRequest && !binding) {
 }
 const adapter = binding ? await createD1Db(binding) : undefined;
 const settings = await getSettings(adapter);
+const readContext = await getVehicleReadContext(Astro.locals, adapter, settings);
 const features = resolveFrontFeatures(settings);
 const vehicles = await listPublicVehicles(adapter);
 const soldCaseVehicles = await listSoldCaseVehicles(6, adapter);
@@ -35,7 +36,7 @@ const quickBrands = brands
   .slice(0, 9);
 ---
 
-<PublicLayout title={`私人高級車顧問｜${settings.siteName}`}>
+  <PublicLayout title={`私人高級車顧問｜${settings.siteName}`} settings={settings}>
   <section class="hero luxury-enter">
     <div class="hero__copy">
       <p class="eyebrow">{settings.homepageEyebrow}</p>
