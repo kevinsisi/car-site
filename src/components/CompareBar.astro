@@ -19,13 +19,7 @@
 
 <script>
   const bar = document.getElementById('compare-bar')!;
-  // The compare page IS the compare list — the floating bar would only cover
-  // the table it duplicates, so drop it there entirely.
-  if (location.pathname.replace(/\/+$/, '') === '/cars/compare') {
-    bar.remove();
-  } else {
-    initCompareBar();
-  }
+  initCompareBar();
 
   function initCompareBar() {
   const itemsEl = document.getElementById('compare-bar-items')!;
@@ -33,13 +27,13 @@
   const goBtn = document.getElementById('compare-go') as HTMLAnchorElement;
   const clearBtn = document.getElementById('compare-clear')!;
 
-  interface CompareItem { slug: string; title: string; thumb: string; }
+  interface CompareItem { slug: string; title: string; model: string; thumb: string; }
 
   function getItems(): CompareItem[] {
     try {
       const slugs: string[] = JSON.parse(localStorage.getItem('compare_slugs') || '[]');
-      const meta: Record<string, { title: string; thumb: string }> = JSON.parse(localStorage.getItem('compare_meta') || '{}');
-      return slugs.map((slug) => ({ slug, title: meta[slug]?.title || slug, thumb: meta[slug]?.thumb || '' }));
+      const meta: Record<string, { title: string; model?: string; thumb: string }> = JSON.parse(localStorage.getItem('compare_meta') || '{}');
+      return slugs.map((slug) => ({ slug, title: meta[slug]?.title || slug, model: meta[slug]?.model || '', thumb: meta[slug]?.thumb || '' }));
     } catch { return []; }
   }
 
@@ -51,14 +45,39 @@
     labelEl.textContent = `比較清單 (${items.length})`;
 
     itemsEl.innerHTML = '';
-    items.forEach(({ slug, title, thumb }) => {
+    items.forEach(({ slug, title, model, thumb }) => {
       const el = document.createElement('div');
       el.className = 'compare-bar__item';
-      el.innerHTML = `
-        ${thumb ? `<img src="${thumb}" alt="" width="36" height="24" onerror="this.remove()" />` : ''}
-        <span>${title}</span>
-        <button type="button" data-remove="${slug}" aria-label="移除 ${title}">✕</button>
-      `;
+      if (thumb) {
+        const image = document.createElement('img');
+        image.src = thumb;
+        image.alt = '';
+        image.width = 36;
+        image.height = 24;
+        image.onerror = () => image.remove();
+        el.appendChild(image);
+      }
+      const copy = document.createElement('div');
+      copy.className = 'compare-bar__copy';
+      const name = document.createElement('span');
+      name.className = 'compare-bar__name';
+      name.textContent = title;
+      const modelText = document.createElement('small');
+      modelText.className = 'compare-bar__model';
+      modelText.textContent = model || '';
+      const helper = document.createElement('small');
+      helper.className = 'compare-bar__helper';
+      helper.textContent = '比較清單';
+      copy.append(name);
+      if (model) copy.append(modelText);
+      copy.append(helper);
+      el.appendChild(copy);
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.dataset.remove = slug;
+      remove.setAttribute('aria-label', `移除 ${title}`);
+      remove.textContent = '✕';
+      el.appendChild(remove);
       el.querySelector<HTMLButtonElement>('[data-remove]')!.addEventListener('click', () => {
         const slugs: string[] = JSON.parse(localStorage.getItem('compare_slugs') || '[]');
         localStorage.setItem('compare_slugs', JSON.stringify(slugs.filter((s) => s !== slug)));
@@ -75,9 +94,10 @@
     if (!btn) return;
     const slug = btn.dataset.compareSlug!;
     const title = btn.dataset.compareTitle || slug;
+    const model = btn.dataset.compareModel || '';
     const thumb = btn.dataset.compareThumb || '';
-    const meta: Record<string, { title: string; thumb: string }> = JSON.parse(localStorage.getItem('compare_meta') || '{}');
-    meta[slug] = { title, thumb };
+    const meta: Record<string, { title: string; model: string; thumb: string }> = JSON.parse(localStorage.getItem('compare_meta') || '{}');
+    meta[slug] = { title, model, thumb };
     localStorage.setItem('compare_meta', JSON.stringify(meta));
     render();
   });
@@ -100,17 +120,20 @@
     namespaced with compare-bar__ so nothing leaks. */}
 <style is:global>
 .compare-bar {
+  display: none;
   position: fixed;
-  bottom: -120px;
-  left: 0; right: 0;
-  z-index: 300;
-  transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  inset: auto 0 0;
+  z-index: 80;
+  width: 100%;
   pointer-events: none;
 }
 .compare-bar.is-visible {
-  bottom: 0;
+  display: block;
   pointer-events: auto;
 }
+.compare-bar__clear,
+.compare-bar__item button { min-width: 44px; min-height: 44px; display: inline-grid; place-items: center; }
+.compare-bar__go { min-height: 44px; display: inline-flex; align-items: center; }
 .compare-bar__inner {
   display: flex;
   align-items: center;
@@ -126,6 +149,7 @@
   border-top: 2px solid var(--accent, #2f66ad);
   box-shadow: 0 -4px 24px rgba(0,0,0,0.12);
   margin: 0 auto;
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 }
 .compare-bar__label {
   font-weight: 700;
@@ -165,11 +189,31 @@
   border-radius: 3px;
   flex-shrink: 0;
 }
-.compare-bar__item span {
+.compare-bar__copy {
   flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  display: grid;
+  gap: 0.1rem;
+  white-space: normal;
+}
+.compare-bar__name { padding-bottom: 4px; font-size: 0.82rem; font-weight: 750; line-height: 1; }
+.compare-bar__model { font-size: 0.74rem; font-weight: 600; line-height: 1.25; }
+.compare-bar__helper { font-size: 0.7rem; font-weight: 450; line-height: 1.2; color: var(--muted, #777); }
+.compare-bar__item small,
+.compare-bar__item strong { display: block; }
+.compare-bar__copy { overflow: visible; }
+.compare-bar__name,
+.compare-bar__model,
+.compare-bar__helper { overflow-wrap: anywhere; text-overflow: clip; }
+.compare-bar__copy { flex: 1 1 auto; }
+.compare-bar__name { max-width: none; }
+.compare-bar__model { max-width: none; }
+.compare-bar__helper { max-width: none; }
+.compare-bar__item .compare-bar__copy {
+  overflow: visible;
+}
+.compare-bar__item .compare-bar__name {
+  white-space: normal;
 }
 .compare-bar__item button {
   background: none;
@@ -213,22 +257,46 @@
     max-width: 100vw;
   }
   .compare-bar__label {
+    display: none;
     font-size: 0.75rem;
     white-space: nowrap;
     flex-shrink: 0;
   }
   .compare-bar__item {
-    max-width: 100px;
+    max-width: 210px;
     padding: 3px 6px 3px 3px;
     gap: 0.3rem;
   }
   .compare-bar__item img {
-    width: 32px;
-    height: 22px;
+    display: none;
   }
-  .compare-bar__item span { font-size: 0.72rem; max-width: 52px; }
+  .compare-bar__item .compare-bar__copy { min-width: 120px; }
+  .compare-bar__item .compare-bar__name { font-size: 0.82rem; }
   .compare-bar__actions { gap: 0.35rem; }
   .compare-bar__go { font-size: 0.78rem; padding: 0.35rem 0.75rem; white-space: nowrap; }
   .compare-bar__clear { font-size: 0.75rem; padding: 0.3rem 0.5rem; white-space: nowrap; }
+}
+@media (max-width: 768px) {
+  .compare-bar__inner { flex-wrap: wrap; align-items: stretch; gap: 0.35rem; }
+  .compare-bar__label { display: none; }
+  .compare-bar__items { order: 1; flex: 1 0 100%; width: 100%; align-items: stretch; }
+  .compare-bar__item { box-sizing: border-box; width: 280px; max-width: min(280px, calc(100vw - 1.5rem)); align-items: flex-start; }
+  .compare-bar__item .compare-bar__copy { width: auto; min-width: 0; }
+  .compare-bar__item .compare-bar__name { font-size: 0.78rem; line-height: 1.05; }
+  .compare-bar__item .compare-bar__model { font-size: 0.72rem; line-height: 1.3; white-space: nowrap; overflow-x: auto; text-overflow: clip; }
+  .compare-bar__item .compare-bar__helper { display: none; }
+  .compare-bar__items { scrollbar-width: none; }
+  .compare-bar__actions { order: 2; margin-left: auto; }
+}
+@media (min-width: 769px) and (max-width: 1100px) {
+  .compare-bar__inner { flex-wrap: wrap; align-items: stretch; gap: 0.4rem; }
+  .compare-bar__label { display: none; }
+  .compare-bar__items { order: 1; flex: 1 0 100%; width: 100%; max-width: 100%; align-items: stretch; overflow-x: auto; }
+  .compare-bar__item { box-sizing: border-box; width: 280px; max-width: 280px; align-items: flex-start; }
+  .compare-bar__item .compare-bar__copy { width: auto; min-width: 0; }
+  .compare-bar__item .compare-bar__name { font-size: 0.82rem; line-height: 1.05; }
+  .compare-bar__item .compare-bar__model { font-size: 0.74rem; line-height: 1.25; white-space: nowrap; overflow-x: auto; text-overflow: clip; }
+  .compare-bar__item .compare-bar__helper { display: none; }
+  .compare-bar__actions { order: 2; margin-left: auto; }
 }
 </style>

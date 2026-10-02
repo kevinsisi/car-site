@@ -3,29 +3,33 @@ import type { VehicleView } from '@/lib/vehicles';
 import ShareButton from './ShareButton.astro';
 import BrandIcon from './BrandIcon.astro';
 import { vehicleStatusLabels } from '@/lib/vehicle-status';
+import { formatMileage } from '@/lib/format-mileage';
 
 interface Props {
   vehicle: VehicleView;
   shareText?: string;
   variant?: 'featured' | 'listing';
   compareEnabled?: boolean;
+  imagePriority?: boolean;
 }
 
-const { vehicle, shareText, variant = 'featured', compareEnabled = true } = Astro.props;
+const { vehicle, shareText, variant = 'featured', compareEnabled = true, imagePriority = false } = Astro.props;
 const image = vehicle.coverImage;
-const imageSrc = image ? (variant === 'featured' ? image.url : image.thumbUrl) : '';
+const imageSrc = image ? (variant === 'featured' ? image.url : image.thumbUrl || image.url) : '';
+const imageSrcSet = image && variant === 'listing' && image.url !== image.thumbUrl ? `${image.thumbUrl} 600w, ${image.url} 1800w` : undefined;
 const statusBadge = vehicle.status !== 'published' ? vehicleStatusLabels[vehicle.status] : '';
 const specs = [
   { label: '年份', value: vehicle.year, icon: 'calendar' },
-  { label: '里程', value: vehicle.mileage, icon: 'gauge' },
+  { label: '里程', value: formatMileage(vehicle.mileage), icon: 'gauge' },
   { label: '車況', value: vehicle.condition, icon: 'car' },
-].filter((spec) => spec.value);
+];
+
 ---
 
 <article class:list={['vehicle-card', 'reveal-card', `vehicle-card--${variant}`]}>
   <a href={`/cars/${vehicle.slug}`} aria-label={`查看 ${vehicle.title}`} rel="prefetch">
     <div class="vehicle-card__media">
-      {image ? <img src={imageSrc} alt={image.alt || `${vehicle.title} 封面照`} loading="lazy" decoding="async" width="800" height="533" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px" /> : <div class="image-placeholder">相片整理中</div>}
+      {image ? <img src={imageSrc} srcset={imageSrcSet} alt={image.alt || `${vehicle.title} 封面照`} loading={imagePriority ? 'eager' : 'lazy'} fetchpriority={imagePriority ? 'high' : undefined} decoding="async" width="800" height="533" sizes="(max-width: 640px) 90vw, (max-width: 900px) 600px, (max-width: 1279px) 45vw, 29vw" /> : <div class="image-placeholder">相片整理中</div>}
       {statusBadge ? (
         <span class={`vehicle-badge${vehicle.status === 'sold' ? ' vehicle-badge--sold' : ''}`}>{statusBadge}</span>
       ) : vehicle.monthlyRecommended ? (
@@ -38,9 +42,10 @@ const specs = [
           <p class="eyebrow">{vehicle.brandDisplayName}</p>
         </div>
         <h2>{vehicle.cardTitle}</h2>
+        <p class="vehicle-card__price">價格請洽</p>
         <ul class="spec-list" aria-label="車輛資訊">
           {specs.map((spec) => (
-            <li class="spec-item">
+            <li class:list={['spec-item', spec.label === '年份' && 'spec-item--year', spec.label === '里程' && 'spec-item--mileage', spec.label === '車況' && 'spec-item--condition']}>
               <span class="spec-icon" aria-hidden="true">
                 {spec.icon === 'calendar' && (
                   <svg viewBox="0 0 24 24" focusable="false">
@@ -58,29 +63,32 @@ const specs = [
                   </svg>
                 )}
               </span>
-              <span class="spec-copy"><span>{spec.label}</span><strong>{spec.value}</strong></span>
+              <span class="spec-copy" title={spec.label === '車況' ? String(spec.value || '') : undefined}>
+                <span>{spec.label}</span>
+                <strong class:list={[spec.label === '年份' && 'spec-value--year', spec.label === '車況' && 'spec-value--condition', spec.label === '里程' && /\u00a0km$/.test(String(spec.value || '')) && 'spec-value--mileage']} title={spec.label === '車況' ? String(spec.value || '—') : undefined}>{spec.value || '—'}</strong>
+              </span>
             </li>
           ))}
         </ul>
-        <div class="card-footer">
-        <span>價格請洽</span>
-        <span>查看詳情</span>
-      </div>
     </div>
   </a>
   <ShareButton class="vehicle-share" title={vehicle.title} url={`/cars/${vehicle.slug}`} text={shareText} />
-  {compareEnabled && (
-    <button
-      type="button"
-      class="compare-btn"
-      data-compare-slug={vehicle.slug}
-      data-compare-title={vehicle.cardTitle}
-      data-compare-thumb={vehicle.coverImage?.thumbUrl || vehicle.coverImage?.url || ''}
-      aria-label={`加入比較：${vehicle.title}`}
-    >
-      ＋ 比較
-    </button>
-  )}
+  <div class="card-footer">
+    <a class="vehicle-card__details" href={`/cars/${vehicle.slug}`}>查看詳情</a>
+    {compareEnabled && (
+      <button
+        type="button"
+        class="compare-btn"
+        data-compare-slug={vehicle.slug}
+        data-compare-title={vehicle.cardTitle}
+        data-compare-model={[vehicle.model, vehicle.subModel].filter(Boolean).join(' ')}
+        data-compare-thumb={vehicle.coverImage?.thumbUrl || vehicle.coverImage?.url || ''}
+        aria-label={`加入比較：${vehicle.title}`}
+      >
+        ＋ 比較
+      </button>
+    )}
+  </div>
 </article>
 
 {compareEnabled && (
@@ -116,7 +124,11 @@ const specs = [
 
 <style>
   .compare-btn {
-    display: inline-block;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
     font-size: 0.75rem;
     padding: 3px 10px;
     border: 1px solid var(--border, #e5e5e5);
@@ -124,7 +136,7 @@ const specs = [
     background: none;
     cursor: pointer;
     color: var(--muted, #777);
-    transition: all 0.15s;
+    transition: transform 150ms ease, border-color 150ms ease, color 150ms ease, background-color 150ms ease;
   }
   .compare-btn--active {
     border-color: var(--accent, #0066cc);
@@ -132,4 +144,5 @@ const specs = [
     background: var(--accent-subtle, #f0f6ff);
   }
   .compare-btn:hover { opacity: 0.8; }
+  .compare-btn:active { transform: translateY(1px); }
 </style>

@@ -37,7 +37,7 @@ export function buildDefaultSiteIconSvg(settings: SiteSettings): string {
   <rect width="256" height="256" rx="58" fill="url(#glow)"/>
   <path d="M45 174c20-37 41-61 83-61s63 24 83 61" fill="none" stroke="${tokens['--accent']}" stroke-width="16" stroke-linecap="round"/>
   <path d="M67 170h24m65 0h24" stroke="${tokens['--accent-strong']}" stroke-width="13" stroke-linecap="round"/>
-  <text x="128" y="104" text-anchor="middle" dominant-baseline="central" font-family="Inter, Arial, sans-serif" font-size="88" font-weight="900" fill="${tokens['--accent-strong']}">${mark}</text>
+  <text x="128" y="104" text-anchor="middle" dominant-baseline="central" font-family="'DM Sans Variable', 'PingFang TC', 'Noto Sans TC', sans-serif" font-size="88" font-weight="900" fill="${tokens['--accent-strong']}">${mark}</text>
   <rect x="22" y="22" width="212" height="212" rx="44" fill="none" stroke="${tokens['--accent']}" stroke-opacity="0.28" stroke-width="6"/>
 </svg>`;
 }

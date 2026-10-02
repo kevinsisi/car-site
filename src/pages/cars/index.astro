@@ -160,7 +160,7 @@ const vehicles = sortedVehicles;
         </div>
       ) : (
         <div class="vehicle-grid listing-grid">
-          {vehicles.map((vehicle) => <VehicleCard vehicle={vehicle} variant="listing" compareEnabled={features.compare} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
+          {vehicles.map((vehicle, index) => <VehicleCard vehicle={vehicle} variant="listing" imagePriority={index < 2} compareEnabled={features.compare} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
         </div>
       )}
     </div>

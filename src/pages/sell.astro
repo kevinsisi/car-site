@@ -12,7 +12,7 @@ const features = resolveFrontFeatures(settings);
 const fallbackHref = getFirstPublicHref(features);
 if (!features.sellInquiry) return Astro.redirect(fallbackHref);
 ---
-<PublicLayout title={`賣車詢問｜${settings.siteName}`} description="填寫車輛資訊，讓我們為您評估">
+<PublicLayout title={`賣車詢問｜${settings.siteName}`} description="填寫車輛資訊，讓我們為您評估" r2PublicPage>
   <div class="sell-page">
     <div class="sell-page__header">
       <p class="eyebrow">賣車詢問</p>

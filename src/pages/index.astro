@@ -49,8 +49,9 @@ const quickBrands = brands
         </div>
       )}
     </div>
-    <div class="hero__media">
-      {hero?.coverImage && <img src={hero.coverImage.url} alt={hero.title} fetchpriority="high" decoding="async" />}
+    <div class:list={['hero__media', !hero?.coverImage && 'hero__media--empty']}>
+      {hero?.coverImage && <img src={hero.coverImage.url} alt={hero.title} width="1600" height="1067" sizes="(max-width: 900px) 100vw, 50vw" loading="eager" fetchpriority="high" decoding="async" />}
+      {!hero?.coverImage && <span class="hero__frame" aria-hidden="true"></span>}
       <div class="hero__badge">{settings.homepageBadge}</div>
     </div>
   </section>
@@ -75,7 +76,7 @@ const quickBrands = brands
   </section>
   {featuredVehicles.length > 0 && (
     <div class="vehicle-grid home-featured-grid">
-      {featuredVehicles.slice(0, featuredCount).map((vehicle) => <VehicleCard vehicle={vehicle} variant="featured" compareEnabled={features.compare} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
+      {featuredVehicles.slice(0, featuredCount).map((vehicle, index) => <VehicleCard vehicle={vehicle} variant="featured" imagePriority={index < 2} compareEnabled={features.compare} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
     </div>
   )}
 

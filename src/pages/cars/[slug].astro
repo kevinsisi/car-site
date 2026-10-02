@@ -12,6 +12,7 @@ import { devPlaceholderSpecs } from '@/lib/dev-placeholder-vehicle-specs';
 import GallerySlider from '@/components/gallery/GallerySlider.astro';
 import GalleryThumbnailStrip from '@/components/gallery/GalleryThumbnailStrip.astro';
 import GalleryGrid from '@/components/gallery/GalleryGrid.astro';
+import { formatMileage } from '@/lib/format-mileage';
 
 const runtime = Astro.locals.runtime;
 const binding = runtime?.env?.DB_PREVIEW;
@@ -22,7 +23,8 @@ const readContext = await getVehicleReadContext(Astro.locals, adapter, settings)
 const vehicle = await getVehicleBySlug(Astro.params.slug || '', adapter);
 const features = resolveFrontFeatures(settings);
 if (!vehicle || !publicVehicleStatus(vehicle.status, settings.showSoldVehicles)) {
-  return new Response('Not found', { status: 404 });
+  Astro.response.status = 404;
+  return Astro.rewrite('/404');
 }
 const publicOrigin = shareOriginFromRequest(Astro.request, Astro.url);
 const shareUrl = vehicleShareUrl(vehicle, publicOrigin);
@@ -36,6 +38,9 @@ const allVehicles = await listPublicVehicles(adapter);
 const currentIndex = allVehicles.findIndex((v) => v.id === vehicle.id);
 const prevVehicle = currentIndex > 0 ? allVehicles[currentIndex - 1] : null;
 const nextVehicle = currentIndex >= 0 && currentIndex < allVehicles.length - 1 ? allVehicles[currentIndex + 1] : null;
+const prevThumbnailUrl = prevVehicle?.coverImage?.thumbUrl || prevVehicle?.coverImage?.url || '';
+const nextThumbnailUrl = nextVehicle?.coverImage?.thumbUrl || nextVehicle?.coverImage?.url || '';
+const hasAdvisorNote = Boolean(advisorDescription.trim());
 
 const origin = publicOrigin;
 const vehicleJsonLd: Record<string, unknown> = {
@@ -74,7 +79,7 @@ const breadcrumbJsonLd = {
 };
 const specRows = [
   { key: 'year', label: '年份', value: vehicle.year },
-  { key: 'mileage', label: '里程', value: vehicle.mileage },
+  { key: 'mileage', label: '里程', value: formatMileage(vehicle.mileage) },
   { key: 'warranty', label: '保固', value: known.warranty },
   { key: 'spec', label: '規格', value: known.spec || vehicle.headline },
   { key: 'body', label: '車型', value: known.body || [vehicle.model, vehicle.subModel].filter(Boolean).join(' ') },
@@ -91,6 +96,7 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
 
   <PublicLayout title={`${vehicle.title}｜${settings.siteName}`} settings={settings} description={vehicle.headline || vehicle.description} shareText={shareText} shareUrl={shareUrl} ogImage={vehicle.coverImage?.url} ogType="product" jsonLd={[vehicleJsonLd, breadcrumbJsonLd]}>
   <article class="detail-page luxury-enter">
+    {vehicle.images.length > 0 && (
     <div class="detail-gallery-top">
       {settings.galleryMode === 'slider' ? (
         <GallerySlider images={vehicle.images} title={vehicle.title} coverImageIndex={coverImageIndex} />
@@ -100,7 +106,7 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
         <>
           {vehicle.coverImage && (
             <button class="detail-cover" type="button" data-gallery-index={coverImageIndex} aria-label="開啟封面大圖">
-              <img src={vehicle.coverImage.url} alt={vehicle.coverImage.alt || `${vehicle.title} 封面照`} fetchpriority="high" decoding="async" />
+              <img src={vehicle.coverImage.url} alt={vehicle.coverImage.alt || `${vehicle.title} 封面照`} width="1600" height="1000" sizes="(max-width: 900px) 100vw, 88rem" fetchpriority="high" decoding="async" />
             </button>
           )}
           <GalleryGrid images={vehicle.images} title={vehicle.title} />
@@ -109,7 +115,7 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
         <>
           {vehicle.coverImage && (
             <button class="detail-cover" type="button" data-gallery-index={coverImageIndex} aria-label="開啟封面大圖">
-              <img src={vehicle.coverImage.url} alt={vehicle.coverImage.alt || `${vehicle.title} 封面照`} fetchpriority="high" decoding="async" />
+              <img src={vehicle.coverImage.url} alt={vehicle.coverImage.alt || `${vehicle.title} 封面照`} width="1600" height="1000" sizes="(max-width: 900px) 100vw, 88rem" fetchpriority="high" decoding="async" />
             </button>
           )}
           {vehicle.images.length > 0 && (
@@ -123,7 +129,7 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
               const index = vehicle.images.findIndex((candidate) => candidate.id === image.id);
               return (
               <button class="gallery-item" type="button" data-gallery-index={index} aria-label={`開啟第 ${index + 1} 張大圖`}>
-                <img src={image.url} alt={image.alt || `${vehicle.title} 圖片 ${index + 1} / ${vehicle.images.length}`} loading={index === coverImageIndex ? 'eager' : 'lazy'} decoding="async" />
+                <img src={image.url} alt={image.alt || `${vehicle.title} 圖片 ${index + 1} / ${vehicle.images.length}`} width="1200" height="800" loading={index === coverImageIndex ? 'eager' : 'lazy'} fetchpriority={index === coverImageIndex ? 'high' : undefined} decoding="async" />
                 <span class="gallery-item__zoom" aria-hidden="true">
                   <svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" stroke="currentColor" stroke-width="2" fill="none" /></svg>
                 </span>
@@ -134,6 +140,7 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
         </>
       )}
     </div>
+    )}
     <section class="detail-hero">
       <div class="detail-copy">
         <p class="eyebrow">
@@ -143,6 +150,12 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
           </span>
         </p>
         <h1>{vehicle.title}</h1>
+        <p class="detail-quick-price">價格請洽</p>
+        <div class="detail-quick-specs" aria-label="主要規格">
+          {specRows.filter(({ key }) => key !== 'price').slice(0, 3).map(({ label, value }) => (
+            <div><span>{label}</span><strong>{value}</strong></div>
+          ))}
+        </div>
         <p class="detail-headline">{vehicle.headline || vehicle.condition}</p>
         <div class="detail-actions">
           {features.directContact && settings.lineUrl && settings.lineUrl !== '#' && (
@@ -170,23 +183,27 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
         {specRows.map(({ label, value }) => <div><span>{label}</span><strong>{value}</strong></div>)}
       </div>
     </section>
-    <section class="story-grid reveal-section">
-      <div>
-        <p class="eyebrow">{settings.detailNotesEyebrow}</p>
-        <h2>{settings.detailNotesTitle}</h2>
-      </div>
-      <div class="advisor-note">
-        <p>{advisorDescription}</p>
-        <p class="advisor-note__signature">— {settings.salespersonName}</p>
-      </div>
-    </section>
+    {hasAdvisorNote && (
+      <section class="story-grid reveal-section">
+        <div>
+          <p class="eyebrow">{settings.detailNotesEyebrow}</p>
+          <h2>{settings.detailNotesTitle}</h2>
+        </div>
+        <div class="advisor-note">
+          <p>{advisorDescription}</p>
+          <p class="advisor-note__signature">— {settings.salespersonName}</p>
+        </div>
+      </section>
+    )}
     <nav class="detail-pager reveal-section" aria-label="車輛切換">
       {prevVehicle ? (
         <a class="detail-pager__link detail-pager__link--prev" href={`/cars/${prevVehicle.slug}`} rel="prev">
-          {prevVehicle.coverImage && (
+          {prevThumbnailUrl ? (
             <span class="detail-pager__thumb" aria-hidden="true">
-              <img src={prevVehicle.coverImage.thumbUrl || prevVehicle.coverImage.url} alt="" loading="lazy" decoding="async" />
+              <img src={prevThumbnailUrl} alt="" loading="lazy" decoding="async" width="120" height="80" />
             </span>
+          ) : (
+            <span class="detail-pager__thumb detail-pager__thumb--empty" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 17.5 9.2 12l3.2 3 3.1-3.3 4.5 5.8M4 5.5h16v13H4z" /></svg></span>
           )}
           <span class="detail-pager__copy">
             <span class="eyebrow">上一台</span>
@@ -204,10 +221,12 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
             <span class="eyebrow">下一台</span>
             <strong>{nextVehicle.title}</strong>
           </span>
-          {nextVehicle.coverImage && (
+          {nextThumbnailUrl ? (
             <span class="detail-pager__thumb" aria-hidden="true">
-              <img src={nextVehicle.coverImage.thumbUrl || nextVehicle.coverImage.url} alt="" loading="lazy" decoding="async" />
+              <img src={nextThumbnailUrl} alt="" loading="lazy" decoding="async" width="120" height="80" />
             </span>
+          ) : (
+            <span class="detail-pager__thumb detail-pager__thumb--empty" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 17.5 9.2 12l3.2 3 3.1-3.3 4.5 5.8M4 5.5h16v13H4z" /></svg></span>
           )}
         </a>
       ) : (<span class="detail-pager__placeholder" aria-hidden="true"></span>)}

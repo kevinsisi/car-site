@@ -17,3 +17,4 @@ playwright-*.png
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+/.tmp-ui-shots/
