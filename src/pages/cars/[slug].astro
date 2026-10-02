@@ -22,7 +22,8 @@ const readContext = await getVehicleReadContext(Astro.locals, adapter, settings)
 const vehicle = await getVehicleBySlug(Astro.params.slug || '', adapter);
 const features = resolveFrontFeatures(settings);
 if (!vehicle || !publicVehicleStatus(vehicle.status, settings.showSoldVehicles)) {
-  return new Response('Not found', { status: 404 });
+  Astro.response.status = 404;
+  return Astro.rewrite('/404');
 }
 const publicOrigin = shareOriginFromRequest(Astro.request, Astro.url);
 const shareUrl = vehicleShareUrl(vehicle, publicOrigin);
@@ -89,7 +90,7 @@ const specRows = [
 const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findIndex((image) => image.id === vehicle.coverImage?.id)) : 0;
 ---
 
-  <PublicLayout title={`${vehicle.title}｜${settings.siteName}`} settings={settings} description={vehicle.headline || vehicle.description} shareText={shareText} shareUrl={shareUrl} ogImage={vehicle.coverImage?.url} ogType="product" jsonLd={[vehicleJsonLd, breadcrumbJsonLd]}>
+   <PublicLayout title={`${vehicle.title}｜${settings.siteName}`} settings={settings} description={vehicle.headline || vehicle.description} shareText={shareText} shareUrl={shareUrl} ogImage={vehicle.coverImage?.url} ogType="product" jsonLd={[vehicleJsonLd, breadcrumbJsonLd]}>
   <article class="detail-page luxury-enter">
     <div class="detail-gallery-top">
       {settings.galleryMode === 'slider' ? (
@@ -100,7 +101,7 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
         <>
           {vehicle.coverImage && (
             <button class="detail-cover" type="button" data-gallery-index={coverImageIndex} aria-label="開啟封面大圖">
-              <img src={vehicle.coverImage.url} alt={vehicle.coverImage.alt || `${vehicle.title} 封面照`} fetchpriority="high" decoding="async" />
+              <img src={vehicle.coverImage.url} alt={vehicle.coverImage.alt || `${vehicle.title} 封面照`} width="1600" height="1000" sizes="(max-width: 900px) 100vw, 88rem" fetchpriority="high" decoding="async" />
             </button>
           )}
           <GalleryGrid images={vehicle.images} title={vehicle.title} />
@@ -109,7 +110,7 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
         <>
           {vehicle.coverImage && (
             <button class="detail-cover" type="button" data-gallery-index={coverImageIndex} aria-label="開啟封面大圖">
-              <img src={vehicle.coverImage.url} alt={vehicle.coverImage.alt || `${vehicle.title} 封面照`} fetchpriority="high" decoding="async" />
+              <img src={vehicle.coverImage.url} alt={vehicle.coverImage.alt || `${vehicle.title} 封面照`} width="1600" height="1000" sizes="(max-width: 900px) 100vw, 88rem" fetchpriority="high" decoding="async" />
             </button>
           )}
           {vehicle.images.length > 0 && (
@@ -123,7 +124,7 @@ const coverImageIndex = vehicle.coverImage ? Math.max(0, vehicle.images.findInde
               const index = vehicle.images.findIndex((candidate) => candidate.id === image.id);
               return (
               <button class="gallery-item" type="button" data-gallery-index={index} aria-label={`開啟第 ${index + 1} 張大圖`}>
-                <img src={image.url} alt={image.alt || `${vehicle.title} 圖片 ${index + 1} / ${vehicle.images.length}`} loading={index === coverImageIndex ? 'eager' : 'lazy'} decoding="async" />
+                <img src={image.url} alt={image.alt || `${vehicle.title} 圖片 ${index + 1} / ${vehicle.images.length}`} width="1200" height="800" loading={index === coverImageIndex ? 'eager' : 'lazy'} fetchpriority={index === coverImageIndex ? 'high' : undefined} decoding="async" />
                 <span class="gallery-item__zoom" aria-hidden="true">
                   <svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" stroke="currentColor" stroke-width="2" fill="none" /></svg>
                 </span>

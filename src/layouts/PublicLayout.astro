@@ -25,6 +25,7 @@ interface Props {
   showMobileActions?: boolean;
   showBackToTop?: boolean;
   settings?: SiteSettings;
+  r1PublicPage?: boolean;
 }
 
 const runtime = Astro.locals.runtime;
@@ -63,6 +64,7 @@ const themeColors: Record<typeof settings.activeStyle, string> = {
 };
 const themeColor = themeColors[settings.activeStyle] || '#070605';
 const pathname = Astro.url.pathname;
+const isRoundOnePublicPage = Astro.props.r1PublicPage ?? (pathname === '/' || pathname === '/cars' || (pathname.startsWith('/cars/') && pathname !== '/cars/compare') || pathname === '/404' || pathname === '/500');
 const showHeaderVideo = pathname === '/' && features.heroVideos && settings.videoSectionPosition === 'above-header' && settings.heroVideos.length > 0;
 const isCurrentPath = (test: string) => {
   if (test === '/') return pathname === '/';
@@ -86,12 +88,13 @@ const navItems = getPublicNavItems(features);
 ---
 
 <!doctype html>
-<html lang="zh-Hant" class={`${template.layoutClass} ${style.className}`} style={styleVars(settings.activeStyle)}>
+<html lang="zh-Hant" class={`${template.layoutClass} ${style.className}${isRoundOnePublicPage ? ' ui-r1-public' : ''}`} style={styleVars(settings.activeStyle)}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="description" content={description} />
     <meta name="theme-color" content={themeColor} />
+    {isRoundOnePublicPage && <link rel="preload" href="/fonts/dm-sans-latin.woff2" as="font" type="font/woff2" crossorigin />}
     <link rel="canonical" href={canonicalUrl} />
     {settings.siteIconUrl ? <link rel="icon" href={siteIconUrl} /> : <link rel="icon" type="image/svg+xml" href={siteIconUrl} />}
     {settings.siteIconUrl && <link rel="apple-touch-icon" href={siteIconUrl} />}
@@ -129,7 +132,7 @@ const navItems = getPublicNavItems(features);
           </a>
         )}
         {features.directContact && settings.lineUrl && settings.lineUrl !== '#' && (
-          <a class="site-cta__link site-cta__link--line" href={settings.lineUrl}>
+          <a class="site-cta__link site-cta__link--line" href={settings.lineUrl} aria-label="LINE 洽詢">
             <PremiumIcon platform="line" label="LINE" customIcon={socialIcons.line} />
             <span>LINE 洽詢</span>
           </a>

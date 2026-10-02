@@ -49,8 +49,9 @@ const quickBrands = brands
         </div>
       )}
     </div>
-    <div class="hero__media">
-      {hero?.coverImage && <img src={hero.coverImage.url} alt={hero.title} fetchpriority="high" decoding="async" />}
+    <div class:list={['hero__media', !hero?.coverImage && 'hero__media--empty']}>
+      {hero?.coverImage && <img src={hero.coverImage.url} alt={hero.title} width="1600" height="1067" sizes="(max-width: 900px) 100vw, 50vw" loading="eager" fetchpriority="high" decoding="async" />}
+      {!hero?.coverImage && <span class="hero__frame" aria-hidden="true"></span>}
       <div class="hero__badge">{settings.homepageBadge}</div>
     </div>
   </section>
