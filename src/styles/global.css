@@ -1118,6 +1118,9 @@ html.ui-r1-public .detail-quick-specs strong { font-size: 0.84rem; line-height: 
   html.ui-r2-public .checkbox-label input { width: 44px; height: 44px; flex: 0 0 44px; }
   html.ui-r2-public .sell-form__submit { margin-top: 0.85rem; }
   html.ui-r2-public .compare-bar__item .compare-bar__copy { min-width: 132px; }
+  html.ui-r1-public .detail-gallery-top .gallery-strip__main { aspect-ratio: 4 / 3; max-height: 45vh; }
+  html.ui-r1-public .detail-gallery-top .gallery-strip__main img { max-height: 45vh; object-fit: contain; }
+  html.ui-r1-public .detail-copy .detail-actions { gap: 0.45rem; margin-top: 0.75rem; }
   body:has(.compare-bar.is-visible) { padding-bottom: 16rem; }
   html.ui-r1-public .inventory-toolbar { gap: 0.3rem 0.45rem; }
   html.ui-r1-public .inventory-toolbar > div:first-child { display: flex; align-items: baseline; gap: 0.4rem; }
@@ -1127,6 +1130,15 @@ html.ui-r1-public .detail-quick-specs strong { font-size: 0.84rem; line-height: 
   html.ui-r1-public .inventory-toolbar__controls .sort-control select { height: 40px; min-height: 40px; padding: 0.25rem 0.5rem; }
   html.ui-r1-public .mobile-filter-strip { gap: 0.35rem; margin-top: 0; }
   html.ui-r1-public .mobile-filter-strip .filter-toggle { height: 40px; min-height: 40px; padding-block: 0.3rem; padding-inline: 0.6rem; }
+}
+@media (min-width: 641px) and (max-width: 768px) {
+  body:has(.compare-bar.is-visible) { padding-bottom: 12rem; }
+}
+@media (min-width: 769px) and (max-width: 1100px) {
+  body:has(.compare-bar.is-visible) { padding-bottom: 12rem; }
+}
+@media (min-width: 1101px) {
+  body:has(.compare-bar.is-visible) { padding-bottom: 12rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
