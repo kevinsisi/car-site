@@ -55,8 +55,18 @@ function makeBinding(seed = {}) {
           if (limit) selected = selected.slice(0, Number(params.at(-1)));
         }
         if (table === 'vehicle_images') {
-          selected = selected.filter((row) => params.includes(row.vehicle_id));
+          const coverLookup = normalized.includes('order by preferred.is_cover desc');
+          const vehicleIds = coverLookup ? JSON.parse(params.find((value) => typeof value === 'string' && value.startsWith('[')) ?? '[]') : params;
+          selected = selected.filter((row) => vehicleIds.includes(row.vehicle_id));
           selected.sort((a, b) => a.sort_order - b.sort_order);
+          if (coverLookup) {
+            const preferred = new Map();
+            for (const row of selected) {
+              const current = preferred.get(row.vehicle_id);
+              if (!current || row.is_cover > current.is_cover || (row.is_cover === current.is_cover && row.sort_order < current.sort_order) || (row.is_cover === current.is_cover && row.sort_order === current.sort_order && row.id < current.id)) preferred.set(row.vehicle_id, row);
+            }
+            selected = [...preferred.values()];
+          }
         }
         if (table === 'site_settings' && normalized.includes('"key" =')) selected = selected.filter((row) => row.key === params[0]);
         if (table === 'brand_aliases') selected.sort((a, b) => a.source_brand.localeCompare(b.source_brand));
@@ -150,4 +160,22 @@ test('brand aliases map display fields and fallback, while settings hide or show
   assert.equal(publicVehicles.find((v) => v.id === 'fallback').brandIconUrl, null);
   assert.equal(publicVehicles.find((v) => v.id === 'alias').images.length, 0);
   assert.ok([...visible.binding.calls, ...hidden.binding.calls].every(({ query }) => /^\s*select/i.test(query)));
+});
+
+test('public list reads images once and returns exactly the preferred cover per vehicle', async () => {
+  const { db, binding } = await adapterFor({
+    vehicles: [makeVehicle('one'), makeVehicle('two'), makeVehicle('three')],
+    vehicle_images: [
+      { id: 'one-early', vehicle_id: 'one', url: '/one-early.jpg', alt: '', sort_order: 0, is_cover: 0, created_at: 'now' },
+      { id: 'one-cover', vehicle_id: 'one', url: '/one-cover.jpg', alt: '', sort_order: 4, is_cover: 1, created_at: 'now' },
+      { id: 'one-later', vehicle_id: 'one', url: '/one-later.jpg', alt: '', sort_order: 8, is_cover: 0, created_at: 'now' },
+      { id: 'two-later', vehicle_id: 'two', url: '/two-later.jpg', alt: '', sort_order: 3, is_cover: 0, created_at: 'now' },
+      { id: 'two-first', vehicle_id: 'two', url: '/two-first.jpg', alt: '', sort_order: 1, is_cover: 0, created_at: 'now' },
+    ],
+  });
+  await repo.getVehicleReadContext({}, db);
+  const listed = await repo.listPublicInventoryVehicles(db);
+  const imageQueries = binding.calls.filter(({ query }) => query.toLowerCase().includes('from "vehicle_images"'));
+  assert.equal(imageQueries.length, 1);
+  assert.deepEqual(listed.map((vehicle) => vehicle.images.map((image) => image.id)), [['one-cover'], ['two-first'], []]);
 });

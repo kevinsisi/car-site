@@ -1,9 +1,9 @@
 ---
 import PublicLayout from '@/layouts/PublicLayout.astro';
 import BrandIcon from '@/components/BrandIcon.astro';
-import { getSettings } from '@/lib/settings';
 import { getFirstPublicHref, resolveFrontFeatures } from '@/lib/front-features';
-import { getVehicleBySlug, listPublicInventoryVehicles } from '@/lib/vehicles';
+import { getVehicleReadContext, getVehicleBySlug, listPublicInventoryVehicles } from '@/lib/vehicles';
+import { getSettings } from '@/lib/settings';
 import { createD1Db } from '@/db/d1';
 
 const runtime = Astro.locals.runtime;
@@ -11,6 +11,7 @@ const binding = runtime?.env?.DB_PREVIEW;
 if (runtime && !binding) return new Response('Preview database unavailable', { status: 503 });
 const adapter = binding ? await createD1Db(binding) : undefined;
 const settings = await getSettings(adapter);
+const readContext = await getVehicleReadContext(Astro.locals, adapter, settings);
 const features = resolveFrontFeatures(settings);
 const fallbackHref = getFirstPublicHref(features);
 if (!features.compare) return Astro.redirect(fallbackHref);
@@ -74,7 +75,7 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
 }
 ---
 
-<PublicLayout title={`車輛比較｜${settings.siteName}`} description="比較多款車輛規格">
+<PublicLayout title={`車輛比較｜${settings.siteName}`} settings={settings} description="比較多款車輛規格">
   <div class="compare-page">
     <div class="compare-page__header">
       <p class="eyebrow">車輛比較</p>
