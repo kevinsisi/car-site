@@ -15,6 +15,7 @@
     "test:workers-d1": "npm run test:d1-schema && node --import tsx --test tests/db/d1-adapter.test.mjs && node --import tsx --test tests/db/vehicles-d1.test.mjs && node --import tsx --test tests/db/settings-d1.test.mjs && node --import tsx --test tests/db/vehicles-d1-writes.test.mjs && node --test tests/db/demo-fixtures-d1.test.mjs",
     "test:workers-media": "node --import tsx --test tests/media/*.test.mjs",
     "test:workers-auth": "node --import tsx --test tests/auth/*.test.mjs",
+    "test:workers-cache": "node scripts/test-workers-cache.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:migrate": "tsx src/db/migrate.ts",
