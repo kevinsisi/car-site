@@ -398,11 +398,11 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
 .location-section__map { width: 100%; min-height: 20rem; border: 0; border-radius: 1rem; filter: saturate(0.78) contrast(0.94); background: var(--surface-soft); pointer-events: none; }
 
 .detail-page { max-width: var(--page-max-width); margin-inline: auto; padding-bottom: 6rem; }
-.detail-pager { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: stretch; margin: 3rem clamp(1.25rem, 5vw, 6rem) 0; padding: 1.4rem; border: 1px solid var(--line); border-radius: 1.6rem; background: color-mix(in srgb, var(--surface) 84%, transparent); }
-.detail-pager__link { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 0.75rem; padding: 0.55rem 0.75rem; border-radius: 1rem; color: var(--text); }
+.detail-pager { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr); gap: 1rem; align-items: stretch; margin: 3rem clamp(1.25rem, 5vw, 6rem) 0; padding: 1.4rem; border: 1px solid var(--line); border-radius: 1.6rem; background: color-mix(in srgb, var(--surface) 84%, transparent); }
+.detail-pager__link { box-sizing: border-box; width: 100%; min-width: 0; justify-self: stretch; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 0.75rem; padding: 0.55rem 0.75rem; border-radius: 1rem; color: var(--text); }
 .detail-pager__link:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); color: var(--accent-strong); }
 .detail-pager__link--prev { justify-self: start; text-align: left; }
-.detail-pager__link--next { grid-template-columns: minmax(0, 1fr) auto; justify-self: end; text-align: right; }
+.detail-pager__link--next { grid-template-columns: minmax(0, 1fr) auto; text-align: right; }
 .detail-pager__copy { min-width: 0; display: grid; gap: 0.25rem; }
 .detail-pager__thumb { width: clamp(5.2rem, 8vw, 7.5rem); aspect-ratio: 3/2; display: block; overflow: hidden; border: 1px solid color-mix(in srgb, var(--line) 72%, transparent); border-radius: 0.78rem; background: color-mix(in srgb, var(--surface-soft) 78%, var(--surface)); }
 .detail-pager__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -723,13 +723,21 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
   .site-footer p { text-align: left; }
 }
 
+@media (max-width: 768px) {
+  html .compare-bar__items { overflow-x: auto; overscroll-behavior-inline: contain; }
+  html .compare-bar__item { flex: 0 0 280px; width: 280px; max-width: 280px; }
+  html .compare-bar__item .compare-bar__copy { min-width: 0; }
+  html .compare-bar__item .compare-bar__name { font-size: 0.875rem; line-height: 1.2; }
+  html .detail-pager .detail-pager__thumb { width: clamp(4rem, 18vw, 4.5rem); }
+}
+
 @media (max-width: 900px) {
   .detail-pager { grid-template-columns: 1fr; gap: 0.6rem; padding: 0.95rem; margin-top: 2rem; }
   .detail-pager__link--prev,
   .detail-pager__link--next { grid-template-columns: auto minmax(0, 1fr); justify-self: stretch; text-align: left; padding: 0.55rem 0.85rem; }
   .detail-pager__link--next { text-align: left; }
   .detail-pager__link--next .detail-pager__thumb { order: -1; }
-  .detail-pager__thumb { width: clamp(4.8rem, 25vw, 6rem); }
+  .detail-pager__thumb { width: clamp(4.25rem, 20vw, 5rem); }
   .detail-pager__home { order: 3; justify-self: stretch; justify-content: center; }
   .detail-pager__placeholder { display: none; }
   .gallery-header { padding: 1.6rem clamp(1.25rem, 5vw, 6rem) 0.7rem; }
@@ -1058,7 +1066,6 @@ html.ui-r2-public .compare-bar__item { max-width: 220px; }
 html.ui-r2-public .compare-bar__item .compare-bar__copy { min-width: 132px; }
 html.ui-r2-public .compare-bar__item .compare-bar__name,
 html.ui-r2-public .compare-bar__item .compare-bar__model { overflow: visible; }
-
 html.ui-r1-public .empty-state { gap: 1rem; }
 html.ui-r1-public .empty-state h3 { max-width: 36rem; font-size: clamp(1.05rem, 4.6vw, 1.55rem); text-wrap: balance; }
 html.ui-r1-public .empty-state p:not(.eyebrow) { max-width: 42rem; font-size: 0.72rem; line-height: 1.45; text-wrap: pretty; }
