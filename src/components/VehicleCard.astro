@@ -17,9 +17,18 @@ const imageSrc = image ? (variant === 'featured' ? image.url : image.thumbUrl) :
 const statusBadge = vehicle.status !== 'published' ? vehicleStatusLabels[vehicle.status] : '';
 const specs = [
   { label: '年份', value: vehicle.year, icon: 'calendar' },
-  { label: '里程', value: vehicle.mileage, icon: 'gauge' },
+  { label: '里程', value: formatMileage(vehicle.mileage), icon: 'gauge' },
   { label: '車況', value: vehicle.condition, icon: 'car' },
-].filter((spec) => spec.value);
+];
+
+function formatMileage(value: string): string {
+  const raw = String(value ?? '').trim();
+  const match = raw.match(/^(\d[\d,]*(?:\.\d+)?)\s*(km)?$/i);
+  if (!match) return value;
+  const amount = Number(match[1].replaceAll(',', ''));
+  if (!Number.isFinite(amount)) return value;
+  return `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(amount)}\u00a0km`;
+}
 ---
 
 <article class:list={['vehicle-card', 'reveal-card', `vehicle-card--${variant}`]}>
@@ -58,7 +67,7 @@ const specs = [
                   </svg>
                 )}
               </span>
-              <span class="spec-copy"><span>{spec.label}</span><strong>{spec.value}</strong></span>
+              <span class="spec-copy"><span>{spec.label}</span><strong>{spec.value || '—'}</strong></span>
             </li>
           ))}
         </ul>

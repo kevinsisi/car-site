@@ -115,7 +115,10 @@ const navItems = getPublicNavItems(features);
     {showHeaderVideo && <VideoCarousel videos={settings.heroVideos} variant="top-strip" />}
     <header class="site-header">
       <a class="brand-mark" href="/" aria-current={pathname === '/' ? 'page' : undefined}>{settings.siteName}</a>
-      <nav class="site-nav" aria-label="主選單">
+      <button class="site-menu-toggle" type="button" aria-label="開啟主選單" aria-expanded="false" aria-controls="site-nav">
+        <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+      </button>
+      <nav class="site-nav" id="site-nav" aria-label="主選單">
         {navItems.map((item) => <a href={item.href} aria-current={isCurrentPath(item.activeMatch) ? 'page' : undefined}>{item.label}</a>)}
       </nav>
       <div class="site-cta">
@@ -185,6 +188,21 @@ const navItems = getPublicNavItems(features);
       const backToTop = document.querySelector('.back-to-top');
       const mobileContactBar = document.querySelector('.mobile-contact-bar');
       const header = document.querySelector('.site-header');
+      const menuToggle = document.querySelector<HTMLButtonElement>('.site-menu-toggle');
+      const siteNav = document.querySelector<HTMLElement>('.site-nav');
+      const closeSiteNav = () => {
+        menuToggle?.setAttribute('aria-expanded', 'false');
+        menuToggle?.setAttribute('aria-label', '開啟主選單');
+        siteNav?.classList.remove('is-open');
+      };
+      menuToggle?.addEventListener('click', () => {
+        const open = menuToggle.getAttribute('aria-expanded') !== 'true';
+        menuToggle.setAttribute('aria-expanded', String(open));
+        menuToggle.setAttribute('aria-label', open ? '關閉主選單' : '開啟主選單');
+        siteNav?.classList.toggle('is-open', open);
+      });
+      siteNav?.querySelectorAll('a').forEach((link) => link.addEventListener('click', closeSiteNav));
+      window.matchMedia('(min-width: 901px)').addEventListener('change', closeSiteNav);
       let lastScrollY = window.scrollY;
       const updateBackToTop = () => {
         const currentScrollY = window.scrollY;
