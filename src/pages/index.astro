@@ -76,7 +76,7 @@ const quickBrands = brands
   </section>
   {featuredVehicles.length > 0 && (
     <div class="vehicle-grid home-featured-grid">
-      {featuredVehicles.slice(0, featuredCount).map((vehicle) => <VehicleCard vehicle={vehicle} variant="featured" compareEnabled={features.compare} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
+      {featuredVehicles.slice(0, featuredCount).map((vehicle, index) => <VehicleCard vehicle={vehicle} variant="featured" imagePriority={index < 2} compareEnabled={features.compare} shareText={formatVehicleShareText(vehicle, settings.shareMessageTemplate, vehicleShareUrl(vehicle, shareOrigin))} />)}
     </div>
   )}
 
