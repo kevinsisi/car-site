@@ -88,7 +88,13 @@ export async function handleRequest(context: Parameters<Parameters<typeof define
     if (cache && cacheKey) {
       try {
         const cached = await cache.match(cacheKey);
-        if (cached) return cached;
+        if (cached) {
+          return new Response(cached.body, {
+            status: cached.status,
+            statusText: cached.statusText,
+            headers: new Headers(cached.headers),
+          });
+        }
       } catch {
         // A cache failure must not make an otherwise available public page fail.
       }
