@@ -1109,12 +1109,24 @@ html.ui-r1-public .detail-quick-specs strong { font-size: 0.84rem; line-height: 
   html.ui-r2-public .contact-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; }
   html.ui-r2-public .contact-card { padding: 0.85rem; gap: 0.35rem; overflow-wrap: anywhere; }
   html.ui-r2-public .contact-card strong { font-size: 0.9rem; }
+  html.ui-r2-public .contact-card[href^="tel:"] strong { font-size: 0.84rem; line-height: 1.4; letter-spacing: -0.035em; white-space: nowrap; }
   html.ui-r2-public .sell-form { padding: 0.9rem; }
-  html.ui-r2-public .sell-form__grid { gap: 0.8rem 0.65rem; }
-  html.ui-r2-public .form-group { gap: 0.3rem; }
-  html.ui-r2-public .form-group textarea { min-height: 6rem; }
-html.ui-r2-public .sell-form__submit { margin-top: 0.85rem; }
+  html.ui-r2-public .sell-form__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.3rem 0.55rem; }
+  html.ui-r2-public .sell-form__grid .form-group--full { grid-column: 1 / -1; }
+  html.ui-r2-public .form-group { gap: 0.18rem; }
+  html.ui-r2-public .form-group textarea { min-height: 4.5rem; }
+  html.ui-r2-public .checkbox-label input { width: 44px; height: 44px; flex: 0 0 44px; }
+  html.ui-r2-public .sell-form__submit { margin-top: 0.85rem; }
   html.ui-r2-public .compare-bar__item .compare-bar__copy { min-width: 132px; }
+  body:has(.compare-bar.is-visible) { padding-bottom: 16rem; }
+  html.ui-r1-public .inventory-toolbar { gap: 0.3rem 0.45rem; }
+  html.ui-r1-public .inventory-toolbar > div:first-child { display: flex; align-items: baseline; gap: 0.4rem; }
+  html.ui-r1-public .inventory-toolbar .eyebrow { margin: 0; font-size: 0.68rem; }
+  html.ui-r1-public .inventory-toolbar h2 { font-size: clamp(1.45rem, 7vw, 2rem); }
+  html.ui-r1-public .inventory-toolbar__controls { gap: 0.3rem; }
+  html.ui-r1-public .inventory-toolbar__controls .sort-control select { height: 40px; min-height: 40px; padding: 0.25rem 0.5rem; }
+  html.ui-r1-public .mobile-filter-strip { gap: 0.35rem; margin-top: 0; }
+  html.ui-r1-public .mobile-filter-strip .filter-toggle { height: 40px; min-height: 40px; padding-block: 0.3rem; padding-inline: 0.6rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
