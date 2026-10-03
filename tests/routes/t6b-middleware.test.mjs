@@ -83,7 +83,14 @@ test('unauthenticated public Worker request proceeds without page tracking', asy
   const response = await handleRequest(contextFor('/'), async () => new Response('public page'));
   assert.equal(await response.text(), 'public page');
   assert.equal(response.headers.has('set-cookie'), false);
+  assertSecurityHeaders(response);
 });
+
+function assertSecurityHeaders(response) {
+  for (const name of ['content-security-policy', 'strict-transport-security', 'x-frame-options', 'x-content-type-options', 'referrer-policy']) {
+    assert.ok(response.headers.has(name), `missing ${name}`);
+  }
+}
 
 test('public HTML cache serves the second request without D1 reads', async () => {
   const cacheHarness = installCache();
@@ -103,6 +110,7 @@ test('public HTML cache serves the second request without D1 reads', async () =>
       return new Response('unexpected');
     });
     assert.equal(await second.text(), '<html>cars</html>');
+    assertSecurityHeaders(second);
     assert.equal(renders, 1);
     assert.equal(d1PrepareCalls, readsAfterRender);
   } finally {

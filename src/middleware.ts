@@ -49,6 +49,32 @@ const sameHostPost = (request: Request) => {
 
 const FORCE_CHANGE_ALLOWLIST = ['/admin/account', '/admin/login', '/api/admin/change-password', '/api/admin/logout'];
 const PUBLIC_HTML_CACHE_TTL_SECONDS = 120;
+const SECURITY_HEADERS: Record<string, string> = {
+  'Content-Security-Policy': [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "form-action 'self'",
+    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    "img-src 'self' data: blob: https:",
+    "media-src 'self' blob: https:",
+    "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.instagram.com https://www.google.com",
+    "connect-src 'self' https:",
+  ].join('; '),
+  'Strict-Transport-Security': 'max-age=31536000',
+  'X-Frame-Options': 'DENY',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+};
+
+function withSecurityHeaders(response: Response): Response {
+  const headers = new Headers(response.headers);
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) headers.set(name, value);
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
 
 function publicHtmlCacheKey(request: Request): Request | null {
   if (request.method !== 'GET' || request.headers.get('cookie')?.split(';').some((cookie) => cookie.trim().startsWith('car_site_admin='))) return null;
@@ -83,17 +109,17 @@ export async function handleRequest(context: Parameters<Parameters<typeof define
   if (runtime) {
     const env = runtime.env;
     if (!env?.DB_PREVIEW || !env.SESSION_SECRET) {
-      return new Response('Authentication storage unavailable', { status: 503 });
+      return withSecurityHeaders(new Response('Authentication storage unavailable', { status: 503 }));
     }
     if (cache && cacheKey) {
       try {
         const cached = await cache.match(cacheKey);
         if (cached) {
-          return new Response(cached.body, {
+          return withSecurityHeaders(new Response(cached.body, {
             status: cached.status,
             statusText: cached.statusText,
             headers: new Headers(cached.headers),
-          });
+          }));
         }
       } catch {
         // A cache failure must not make an otherwise available public page fail.
@@ -109,7 +135,7 @@ export async function handleRequest(context: Parameters<Parameters<typeof define
   }
 
   if (context.url.pathname.startsWith('/api/admin/') && !sameHostPost(context.request)) {
-    return new Response('Cross-site POST form submissions are forbidden', { status: 403 });
+    return withSecurityHeaders(new Response('Cross-site POST form submissions are forbidden', { status: 403 }));
   }
   context.locals.admin = (await getSession(context.cookies, { db: requestDb, sessionSecret })) || undefined;
 
@@ -119,7 +145,7 @@ export async function handleRequest(context: Parameters<Parameters<typeof define
       const db = requestDb ?? (await import('@/db/connection')).db;
       const user = (await db.select().from(adminUsers).where(eq(adminUsers.id, context.locals.admin.id)).limit(1))[0];
       if (user && verifyPassword('change-me-now', user.passwordHash)) {
-        return context.redirect('/admin/account?force=1');
+        return withSecurityHeaders(context.redirect('/admin/account?force=1'));
       }
     }
   }
@@ -142,9 +168,9 @@ export async function handleRequest(context: Parameters<Parameters<typeof define
       } catch {
         // A cache write failure must not prevent returning the rendered page.
       }
-      return cachedResponse;
+      return withSecurityHeaders(cachedResponse);
     }
-    return response;
+    return withSecurityHeaders(response);
   }
 
   const { detectBot, detectDeviceType, hashIp, logPageView, normalizeReferrer } = await import('@/lib/analytics');
@@ -187,7 +213,7 @@ export async function handleRequest(context: Parameters<Parameters<typeof define
     isBot,
   }).catch((err) => console.error('[analytics] logPageView failed:', err));
 
-  return response;
+  return withSecurityHeaders(response);
 }
 
 export const onRequest = defineMiddleware(handleRequest);
