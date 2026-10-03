@@ -62,7 +62,7 @@ const SECURITY_HEADERS: Record<string, string> = {
     "img-src 'self' data: blob: https:",
     "media-src 'self' blob: https:",
     "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.instagram.com https://www.google.com",
-    "connect-src 'self' https:",
+    "connect-src 'self'",
   ].join('; '),
   'Strict-Transport-Security': 'max-age=31536000',
   'X-Frame-Options': 'DENY',

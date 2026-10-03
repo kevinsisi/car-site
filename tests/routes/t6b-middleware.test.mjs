@@ -75,6 +75,7 @@ test('Worker middleware returns 503 before continuing when either required bindi
     let continued = false;
     const response = await handleRequest(contextFor('/', null, env), async () => { continued = true; return new Response('ok'); });
     assert.equal(response.status, 503);
+    assertSecurityHeaders(response);
     assert.equal(continued, false);
   }
 });
@@ -158,6 +159,7 @@ test('same-host POST guard remains active for Worker admin API requests', async 
   let continued = false;
   const response = await handleRequest(context, async () => { continued = true; return new Response('unexpected'); });
   assert.equal(response.status, 403);
+  assertSecurityHeaders(response);
   assert.equal(continued, false);
 });
 
