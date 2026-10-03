@@ -98,6 +98,21 @@ test('Workers login uses the request D1, secret, and shared limiter', async () =
   assert.equal(ctx.setCookies.length, 1);
 });
 
+test('Workers login returns 400 for empty body and empty JSON without exposing parser errors', async () => {
+  const { binding } = syntheticD1();
+  for (const request of [
+    new Request('https://synthetic.test/api/admin/login', { method: 'POST' }),
+    new Request('https://synthetic.test/api/admin/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }),
+  ]) {
+    const ctx = context({ db: binding });
+    ctx.request = request;
+    const response = await POST(ctx);
+    assert.equal(response.status, 400);
+    assert.equal(await response.text(), 'Invalid form data');
+    assert.equal(response.headers.get('location'), null);
+  }
+});
+
 test('Workers login fails closed when the shared limiter binding is absent', async () => {
   const ctx = context({ db: {} });
   const response = await POST(ctx);

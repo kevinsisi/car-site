@@ -59,7 +59,12 @@ function clearAttempts(key: string): void {
 }
 
 export const POST: APIRoute = async ({ request, cookies, redirect, locals }) => {
-  const form = await request.formData();
+  let form: FormData;
+  try {
+    form = await request.formData();
+  } catch {
+    return new Response('Invalid form data', { status: 400 });
+  }
   const username = String(form.get('username') || '');
   const password = String(form.get('password') || '');
   const key = getKey(request, username);
