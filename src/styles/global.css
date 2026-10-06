@@ -238,10 +238,10 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
 .salon-note { max-width: 58rem; margin: 0 auto; padding: 4rem clamp(1.25rem, 5vw, 6rem); font-size: clamp(1.5rem, 3vw, 2.7rem); line-height: 1.45; color: var(--text); text-align: center; }
 
 .home-brand-quick { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; max-width: var(--page-max-width); margin: clamp(1rem, 2.4vw, 1.6rem) auto 0; padding: 0 var(--page-gutter) 0.15rem; }
-.home-brand-quick a { flex: 0 0 auto; min-height: 2.45rem; display: inline-flex; align-items: center; gap: 0.42rem; border: 1px solid color-mix(in srgb, var(--line) 72%, transparent); border-radius: 999px; padding: 0 0.75rem; background: color-mix(in srgb, var(--surface) 74%, transparent); color: var(--muted); font-size: 0.84rem; font-weight: 780; }
+.home-brand-quick a { flex: 0 0 auto; max-width: 100%; min-height: 44px; display: inline-flex; align-items: center; gap: 0.42rem; border: 1px solid color-mix(in srgb, var(--line) 72%, transparent); border-radius: 999px; padding: 0 0.75rem; background: color-mix(in srgb, var(--surface) 74%, transparent); color: var(--muted); font-size: 0.84rem; font-weight: 780; }
 .home-brand-quick a:hover { color: var(--accent-strong); border-color: color-mix(in srgb, var(--accent) 48%, var(--line)); background: var(--surface); }
 .home-brand-quick__all { color: var(--accent-strong) !important; background: color-mix(in srgb, var(--accent) 11%, var(--surface)) !important; }
-.home-brand-quick__item img { width: 1.5rem; height: 1.5rem; object-fit: contain; flex-shrink: 0; }
+.home-brand-quick__name { min-width: 0; word-break: normal; overflow-wrap: normal; }
 .home-brand-quick__count { color: color-mix(in srgb, var(--muted) 65%, transparent); font-size: 0.76rem; font-weight: 600; }
 
 .section-heading,
@@ -273,8 +273,8 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
 .inventory-shell { position: relative; display: block; padding: 0 clamp(1.25rem, 5vw, 6rem) 6rem; }
 .inventory-content { min-width: 0; }
 .inventory-content .vehicle-grid { padding: 0; }
-.mobile-filter-strip { flex: 0 0 100%; order: 3; display: flex; align-items: center; justify-content: flex-start; gap: 0.55rem; margin: 0.15rem 0 0; }
-.listing-search { flex: 1; min-width: 0; }
+.mobile-filter-strip { flex: 0 0 100%; order: 3; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 0.55rem; margin: 0.15rem 0 0; }
+.listing-search { flex: 1 1 14rem; min-width: 0; }
 .autocomplete-field { position: relative; width: 100%; }
 .listing-search input { width: 100%; min-height: 2.65rem; border: 1px solid color-mix(in srgb, var(--line) 72%, transparent); border-radius: 999px; padding: 0 1rem; background: color-mix(in srgb, var(--surface) 84%, transparent); color: var(--text); font: inherit; font-size: 1rem; font-weight: 720; box-shadow: 0 0.5rem 1.2rem rgba(0, 0, 0, 0.1); }
 .listing-search input::placeholder { color: color-mix(in srgb, var(--muted) 72%, transparent); }
@@ -287,7 +287,7 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
 .search-suggestions button.is-brand span { font-weight: 850; color: var(--accent-strong); }
 .search-suggestions button:hover,
 .search-suggestions button:focus-visible { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent-strong); outline: 0; }
-.filter-toggle { min-height: 2.65rem; display: inline-flex; align-items: center; justify-content: center; border: 1px solid color-mix(in srgb, var(--line) 72%, transparent); border-radius: 999px; padding: 0 1rem; background: color-mix(in srgb, var(--surface) 84%, transparent); color: var(--accent-strong); font: inherit; font-size: 0.94rem; font-weight: 780; box-shadow: 0 0.5rem 1.2rem rgba(0, 0, 0, 0.1); }
+.filter-toggle { max-width: 100%; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid color-mix(in srgb, var(--line) 72%, transparent); border-radius: 999px; padding: 0 1rem; background: color-mix(in srgb, var(--surface) 84%, transparent); color: var(--accent-strong); font: inherit; font-size: 0.94rem; font-weight: 780; box-shadow: 0 0.5rem 1.2rem rgba(0, 0, 0, 0.1); }
 .filter-toggle:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); background: var(--surface); transform: translateY(-1px); }
 .filter-toggle:active { transform: scale(0.97); }
 .filter-toggle::after { content: '▾'; margin-left: 0.45rem; color: var(--muted); font-size: 0.76rem; }
@@ -306,13 +306,16 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
 .brand-list .brand-list__sold { position: sticky; bottom: calc(0.85rem + env(safe-area-inset-bottom)); margin-top: 1rem; background: color-mix(in srgb, var(--accent) 18%, var(--surface)); border-color: color-mix(in srgb, var(--accent) 46%, var(--line)); color: var(--accent-strong); box-shadow: 0 0.85rem 1.8rem rgba(0, 0, 0, 0.22); }
 .brand-list a:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--accent-strong); }
 .brand-list a:active { transform: scale(0.985); }
-.brand-list strong { min-width: 1.75rem; height: 1.75rem; display: inline-grid; place-items: center; border-radius: 999px; background: color-mix(in srgb, var(--surface-soft) 80%, transparent); color: color-mix(in srgb, var(--muted) 70%, transparent); font-size: 0.82rem; }
+.brand-list a > span:not(.brand-icon) { flex: 1; min-width: 0; overflow-wrap: break-word; }
+.brand-list strong { flex-shrink: 0; min-width: 1.75rem; height: 1.75rem; display: inline-grid; place-items: center; border-radius: 999px; background: color-mix(in srgb, var(--surface-soft) 80%, transparent); color: color-mix(in srgb, var(--muted) 70%, transparent); font-size: 0.82rem; }
 .inventory-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 0.75rem 1rem; margin-bottom: 0.8rem; }
 .inventory-toolbar .eyebrow { margin: 0 0 0.35rem; color: var(--muted); letter-spacing: 0.08em; }
-.inventory-toolbar h2 { margin: 0; font-size: clamp(1.65rem, 3vw, 3rem); letter-spacing: -0.05em; line-height: 1; }
-.inventory-toolbar__controls { display: flex; align-items: center; gap: 1rem; }
+.inventory-toolbar__heading { min-width: 0; max-width: 100%; }
+.inventory-toolbar__heading .eyebrow { white-space: nowrap; }
+.inventory-toolbar h2 { overflow-wrap: break-word; margin: 0; font-size: clamp(1.65rem, 3vw, 3rem); letter-spacing: -0.05em; line-height: 1; }
+.inventory-toolbar__controls { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
 .vehicle-count { color: var(--muted); font-weight: 700; white-space: nowrap; }
-.sort-control { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--muted); font-size: 0.92rem; }
+.sort-control { display: inline-flex; flex-wrap: wrap; min-width: 0; max-width: 100%; align-items: center; gap: 0.5rem; color: var(--muted); font-size: 0.92rem; }
 .sort-control select { min-height: 2.35rem; border: 1px solid var(--line); border-radius: 999px; padding: 0 2.1rem 0 0.95rem; background-color: color-mix(in srgb, var(--surface) 86%, transparent); color: var(--text); font: inherit; font-size: 0.92rem; cursor: pointer; appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--accent-strong) 50%), linear-gradient(135deg, var(--accent-strong) 50%, transparent 50%); background-position: calc(100% - 1.1rem) 50%, calc(100% - 0.7rem) 50%; background-size: 0.42rem 0.42rem, 0.42rem 0.42rem; background-repeat: no-repeat; }
 .sort-control select:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
 
@@ -611,7 +614,7 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
   /* Search strip: static inline below heading, no longer fixed */
   .mobile-filter-strip { grid-column: 1 / -1; position: static; display: flex; margin: 0.15rem 0 0.2rem; padding: 0; z-index: auto; }
   .listing-search input { min-height: 2.6rem; font-size: 1rem; }
-  .filter-toggle { min-height: 2.6rem; max-width: 9rem; padding: 0 0.9rem; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .filter-toggle { min-height: 44px; max-width: 100%; padding: 0.45rem 0.9rem; font-size: 0.9rem; white-space: normal; overflow-wrap: break-word; }
   .filter-toggle.is-active { background: var(--surface); color: var(--accent-strong); box-shadow: 0 0.35rem 1rem rgba(0, 0, 0, 0.16); }
   .brand-filter-panel { position: fixed; inset: 0 auto 0 0; z-index: 60; width: min(21rem, calc(100vw - 3.2rem)); height: 100dvh; border: 0; border-radius: 0 1.45rem 1.45rem 0; transform: translateX(-104%); transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1); overflow-y: auto; box-shadow: 1.2rem 0 3.6rem rgba(0, 0, 0, 0.3); }
   .inventory-shell.is-filter-open .brand-filter-panel { transform: translateX(0); }
@@ -625,14 +628,14 @@ button.detail-cover { width: 100%; padding: 0; color: inherit; font: inherit; cu
   .brand-list a { min-height: 2.75rem; width: 100%; border: 1px solid color-mix(in srgb, var(--line) 58%, transparent); border-radius: 0.95rem; padding: 0 0.85rem; background: color-mix(in srgb, var(--surface) 52%, transparent); font-size: 0.96rem; }
   .brand-list a:hover { transform: none; }
   .brand-list a:active { transform: scale(0.985); }
-  .brand-list strong { min-width: 1.75rem; height: 1.75rem; display: inline-grid; place-items: center; border-radius: 999px; background: color-mix(in srgb, var(--surface-soft) 80%, transparent); font-size: 0.82rem; }
-  .inventory-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 0.75rem; margin-bottom: 1rem; }
+  .brand-list strong { flex-shrink: 0; min-width: 1.75rem; height: 1.75rem; display: inline-grid; place-items: center; border-radius: 999px; background: color-mix(in srgb, var(--surface-soft) 80%, transparent); font-size: 0.82rem; }
+  .inventory-toolbar { display: grid; grid-template-columns: minmax(0, 1fr); align-items: end; gap: 0.75rem; margin-bottom: 1rem; }
   .inventory-toolbar > div:first-child { min-width: 0; }
-  .inventory-toolbar h2 { max-width: 100%; font-size: clamp(1.6rem, 8vw, 2.2rem); line-height: 1; letter-spacing: -0.03em; white-space: nowrap; overflow: hidden; text-overflow: clip; }
-  .inventory-toolbar__controls { min-width: 0; gap: 0.45rem; justify-content: flex-end; }
+  .inventory-toolbar h2 { max-width: 100%; font-size: clamp(1.6rem, 8vw, 2.2rem); line-height: 1.25; letter-spacing: -0.03em; white-space: normal; overflow: visible; }
+  .inventory-toolbar__controls { min-width: 0; gap: 0.65rem; justify-content: space-between; }
   .sort-control { gap: 0.35rem; }
   .sort-control > span { white-space: nowrap; }
-  .sort-control select { width: auto; max-width: 8.7rem; min-height: 2.35rem; padding-left: 0.85rem; font-size: 16px; }
+  .sort-control select { width: auto; max-width: 100%; min-height: 44px; padding-left: 0.85rem; font-size: 16px; }
   .vehicle-count { font-size: 0.95rem; line-height: 1.15; }
   .vehicle-grid,
   .listing-grid { grid-template-columns: 1fr; }
@@ -1076,14 +1079,9 @@ html.ui-r1-public .detail-quick-specs strong { font-size: 0.84rem; line-height: 
 }
 
 @media (max-width: 640px) {
-  html.ui-r1-public .home-brand-quick {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    align-items: stretch;
-    padding-bottom: 0.5rem;
-  }
-  html.ui-r1-public .home-brand-quick a { min-width: 0; min-height: 2rem; flex-direction: column; justify-content: center; gap: 0.05rem; padding: 0.25rem 0.15rem; font-size: 0.62rem; line-height: 1.15; text-align: center; white-space: normal; overflow-wrap: anywhere; }
-  html.ui-r1-public .home-brand-quick__item img { width: 1rem; height: 1rem; }
+  html.ui-r1-public .home-brand-quick { align-items: stretch; padding-bottom: 0.5rem; }
+  html.ui-r1-public .home-brand-quick a { flex-wrap: wrap; min-width: 0; min-height: 44px; gap: 0.4rem; padding: 0.4rem 0.65rem; font-size: 0.75rem; line-height: 1.4; white-space: normal; }
+  html.ui-r1-public .home-brand-quick__count { margin-left: auto; }
   html.ui-r2-public .contact-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; }
   html.ui-r2-public .contact-card { padding: 0.85rem; gap: 0.35rem; overflow-wrap: anywhere; }
   html.ui-r2-public .contact-card strong { font-size: 0.9rem; }
@@ -1098,14 +1096,14 @@ html.ui-r1-public .detail-quick-specs strong { font-size: 0.84rem; line-height: 
   html.ui-r1-public .detail-gallery-top .gallery-strip__main { aspect-ratio: 4 / 3; max-height: 45vh; }
   html.ui-r1-public .detail-gallery-top .gallery-strip__main img { max-height: 45vh; object-fit: contain; }
   html.ui-r1-public .detail-copy .detail-actions { gap: 0.45rem; margin-top: 0.75rem; }
-  html.ui-r1-public .inventory-toolbar { gap: 0.3rem 0.45rem; }
-  html.ui-r1-public .inventory-toolbar > div:first-child { display: flex; align-items: baseline; gap: 0.4rem; }
+  html.ui-r1-public .inventory-toolbar { gap: 0.8rem; }
+  html.ui-r1-public .inventory-toolbar > div:first-child { display: block; }
   html.ui-r1-public .inventory-toolbar .eyebrow { margin: 0; font-size: 0.68rem; }
   html.ui-r1-public .inventory-toolbar h2 { font-size: clamp(1.45rem, 7vw, 2rem); }
   html.ui-r1-public .inventory-toolbar__controls { gap: 0.3rem; }
-  html.ui-r1-public .inventory-toolbar__controls .sort-control select { height: 40px; min-height: 40px; padding: 0.25rem 0.5rem; }
+  html.ui-r1-public .inventory-toolbar__controls .sort-control select { min-height: 44px; padding: 0.35rem 2.1rem 0.35rem 0.85rem; }
   html.ui-r1-public .mobile-filter-strip { gap: 0.35rem; margin-top: 0; }
-  html.ui-r1-public .mobile-filter-strip .filter-toggle { height: 40px; min-height: 40px; padding-block: 0.3rem; padding-inline: 0.6rem; }
+  html.ui-r1-public .mobile-filter-strip .filter-toggle { min-height: 44px; padding-block: 0.3rem; padding-inline: 0.6rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

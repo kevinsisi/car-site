@@ -223,9 +223,22 @@ const navItems = getPublicNavItems(features);
       updateBackToTop();
       window.addEventListener('scroll', updateBackToTop, { passive: true });
 
+      const showBrandFallback = (image: HTMLImageElement) => {
+        const icon = image.closest('[data-brand-icon]');
+        const fallback = icon?.querySelector<HTMLElement>('.brand-icon__fallback');
+        if (!fallback) return false;
+        image.hidden = true;
+        fallback.hidden = false;
+        return true;
+      };
+      // Cached failures can precede this module's error listener.
+      document.querySelectorAll<HTMLImageElement>('[data-brand-icon] img').forEach((image) => {
+        if (image.complete && image.naturalWidth === 0) showBrandFallback(image);
+      });
       document.addEventListener('error', (event) => {
         const target = event.target;
         if (!(target instanceof HTMLImageElement)) return;
+        if (showBrandFallback(target)) return;
         if (target.dataset.imgErrorHandled) return;
         target.dataset.imgErrorHandled = '1';
         target.removeAttribute('srcset');

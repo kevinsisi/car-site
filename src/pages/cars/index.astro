@@ -112,7 +112,7 @@ const vehicles = sortedVehicles;
         <a class={activeTab === 'all' ? 'is-active' : ''} href="/cars"><span>全部</span><strong>{allVehicles.length}</strong></a>
         <a class={activeTab === 'recommended' ? 'is-active' : ''} href="/cars?tab=recommended"><span>本月精選</span><strong>{recommendedVehicles.length}</strong></a>
         {brands.map((brand) => (
-          <a class={activeBrand === brand.urlSlug ? 'is-active' : ''} href={`/cars?brand=${brand.urlSlug}`}><BrandIcon iconUrl={brand.iconUrl} alt="" size={20} class="brand-filter-icon" /><span>{brand.displayName}</span><strong>{brand.count}</strong></a>
+          <a class={activeBrand === brand.urlSlug ? 'is-active' : ''} href={`/cars?brand=${brand.urlSlug}`}><BrandIcon iconUrl={brand.iconUrl} name={brand.displayName} size={20} class="brand-filter-icon" /><span>{brand.displayName}</span><strong>{brand.count}</strong></a>
         ))}
         <a class={`brand-list__sold ${activeTab === 'sold' ? 'is-active' : ''}`} href="/cars?tab=sold"><span>成交實錄</span><strong>{soldVehicles.length}</strong></a>
       </nav>
@@ -120,7 +120,7 @@ const vehicles = sortedVehicles;
     <div class="filter-scrim" aria-hidden="true"></div>
     <div class="inventory-content">
       <div class="inventory-toolbar">
-        <div>
+        <div class="inventory-toolbar__heading">
           <p class="eyebrow">選車</p>
           <h2>{searchQuery || activeBrandLabel || (activeTab === 'recommended' ? '本月精選' : activeTab === 'sold' ? '成交實錄' : '全部車輛')}</h2>
         </div>
@@ -256,6 +256,12 @@ const vehicles = sortedVehicles;
             img.src = item.icon;
             img.alt = '';
             img.loading = 'lazy';
+            img.addEventListener('error', () => {
+              const fallback = document.createElement('span');
+              fallback.className = 'brand-suggestion-fallback';
+              fallback.textContent = item.value.slice(0, 1).toUpperCase();
+              img.replaceWith(fallback);
+            });
             button.append(img);
           } else if (item.kind === 'brand') {
             const fallback = document.createElement('span');

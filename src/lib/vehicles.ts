@@ -2,6 +2,7 @@ import { and, asc, desc, eq, inArray, ne, sql } from 'drizzle-orm';
 import type { createD1Db } from '@/db/d1';
 import { importMappings, vehicleImages, vehicles, type PublishMode, type VehicleStatus } from '@/db/schema';
 import { brandUrlSlug, getBrandAliasMap } from './brand-aliases';
+import { resolveBrandIcon } from './brand-icons';
 import { getSettings } from './settings';
 import type { SiteSettings } from './settings';
 import { alwaysPublicVehicleStatuses, isPublicVehicleStatus, mapSourceInventoryStatus } from './vehicle-status';
@@ -193,7 +194,7 @@ async function attachImages(rows: (typeof vehicles.$inferSelect)[], adapter?: Ve
       brand: row.brand,
       brandDisplayName,
       brandUrlSlug: routeBrandSlug,
-      brandIconUrl: brandAlias?.iconUrl ?? null,
+      brandIconUrl: resolveBrandIcon(brandAlias?.iconUrl, routeBrandSlug),
       model: row.model,
       subModel: row.subModel,
       year: row.year,
@@ -236,7 +237,7 @@ export async function listPublicBrands(adapter?: VehicleReadDb, context?: Vehicl
       displayName,
       urlSlug,
       count: 0,
-      iconUrl: brandAlias?.iconUrl ?? null,
+      iconUrl: resolveBrandIcon(brandAlias?.iconUrl, urlSlug),
     };
     current.count += 1;
     countMap.set(key, current);

@@ -38,7 +38,7 @@ const specs = [
     </div>
       <div class="vehicle-card__body">
         <div class="vehicle-card__eyebrow-row">
-          {vehicle.brandIconUrl && <BrandIcon iconUrl={vehicle.brandIconUrl} alt="" size={18} />}
+          <BrandIcon iconUrl={vehicle.brandIconUrl} name={vehicle.brandDisplayName} alt="" size={18} />
           <p class="eyebrow">{vehicle.brandDisplayName}</p>
         </div>
         <h2>{vehicle.cardTitle}</h2>

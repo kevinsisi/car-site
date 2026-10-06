@@ -179,3 +179,28 @@ test('public list reads images once and returns exactly the preferred cover per 
   assert.equal(imageQueries.length, 1);
   assert.deepEqual(listed.map((vehicle) => vehicle.images.map((image) => image.id)), [['one-cover'], ['two-first'], []]);
 });
+
+
+test('Worker public reads resolve bundled brand icons without mutating aliases or vehicle identity', async () => {
+  const entries = [
+    ['alfa', 'Alfa Romeo(106)', 'alfa-romeo-106', null, '/brand-icons/alfa-romeo.png'],
+    ['lambo', 'Lamborghini', 'lamborghini', null, '/brand-icons/lamborghini.png'],
+    ['toyota', 'Toyota', 'toyota', null, '/brand-icons/toyota.png'],
+    ['custom', 'Porsche', 'porsche', '/media/custom-porsche.png', '/media/custom-porsche.png'],
+    ['unknown', 'Mercedes-Maybach', 'mercedes-maybach', null, null],
+  ];
+  const { db, binding } = await adapterFor({
+    vehicles: entries.map(([id, brand]) => makeVehicle(id, { brand })),
+    brand_aliases: entries.map(([, name, slug, icon]) => ({ source_brand: name, display_name: name, url_slug: slug, icon_url: icon, updated_at: 'now' })),
+  });
+  const cars = await repo.listPublicInventoryVehicles(db);
+  const brands = await repo.listPublicBrands(db);
+  for (const [id, name, slug, , expected] of entries) {
+    const car = cars.find((v) => v.id === id);
+    assert.equal(car.brandIconUrl, expected);
+    assert.equal(car.brandDisplayName, name);
+    assert.equal(car.brandUrlSlug, slug);
+    assert.deepEqual(brands.find((b) => b.urlSlug === slug), { displayName: name, urlSlug: slug, count: 1, iconUrl: expected });
+  }
+  assert.ok(binding.calls.every(({ query }) => /^\s*select/i.test(query)));
+});

@@ -125,7 +125,7 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
               </div>
               <div class="compare-add-card__body">
                 <span class="compare-add-card__brand">
-                  <BrandIcon iconUrl={v.brandIconUrl} alt="" size={14} />
+                  <BrandIcon iconUrl={v.brandIconUrl} name={v.brandDisplayName} alt="" size={14} />
                   {v.brandDisplayName}
                 </span>
                 <span class="compare-add-card__title">{v.cardTitle}</span>
