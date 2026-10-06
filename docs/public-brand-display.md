@@ -25,3 +25,7 @@ Evidence PNGs and dimension JSON are retained in the task workspace `/Users/kevi
 Deploy only through `npm run build:workers` then `npx wrangler deploy --env production`. No schema, DB, media bucket, account, permission, or vehicle mutation is required. The pre-release production Worker version is `75676a53-8fe6-4287-a2a2-b52942841cfd` (source `59c17f675dd90a3f15b717ef2425cd9fac72de8e`). If necessary, recover with `npx wrangler rollback 75676a53-8fe6-4287-a2a2-b52942841cfd --env production` and recheck the public routes.
 
 The existing 32 untracked files, including the original 21 protected entries and both prior OpenSpec changes, were hashed before editing and remain unchanged. Stage only this fix's explicit files.
+
+## Expanded responsive QA
+
+The 852×393 production check found the open main menu's Contact link covered by the fixed comparison tray (`header z-index:20`, tray `z-index:80`; center hit-test reached the comparison link). Raise only the open-menu header to 90, below the existing image dialog layer. Keep the header visible while its menu is open. Normal header and tray positions remain unchanged.

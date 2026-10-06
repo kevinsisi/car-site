@@ -129,6 +129,8 @@ img.image-error::after { content: attr(alt); }
   transition: transform 220ms ease, opacity 180ms ease, background-color 180ms ease;
 }
 .site-header > * { min-width: 0; }
+/* Keep the open navigation above the fixed comparison tray. */
+.site-header:has(.site-nav.is-open) { z-index: 90; opacity: 1; pointer-events: auto; transform: none; }
 .site-header.is-hidden { opacity: 0; pointer-events: none; transform: translateY(calc(-100% - env(safe-area-inset-top))); }
 
 .brand-mark { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: 'DM Sans Variable', 'PingFang TC', 'Noto Sans TC', sans-serif; font-size: 1rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-strong); }
