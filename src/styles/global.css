@@ -1149,3 +1149,30 @@ body:has(.compare-bar.is-expanded) .mobile-contact-bar { visibility: hidden; }
   html .vehicle-card .card-footer { padding: 0 0.65rem 0.8rem; gap: 0.45rem; }
   html .vehicle-card .card-footer .vehicle-card__details { font-size: 0.8rem; }
 }
+
+/* Enlarged text keeps its size; shared mobile regions reflow around it. */
+@media (max-width: 900px) {
+  .site-header { display: flex; flex-wrap: wrap; gap: min(0.6rem, 2.5vw); }
+  .brand-mark { flex: 1 1 6em; max-width: 100%; order: 0; white-space: normal; overflow: visible; overflow-wrap: break-word; }
+  .site-cta { flex: 0 0 auto; order: 1; gap: min(0.35rem, 1vw); }
+  .site-cta__link { min-width: 44px; min-height: 44px; }
+  .site-menu-toggle { flex: 0 0 auto; order: 2; min-width: 44px; min-height: 44px; }
+  .site-nav { right: var(--page-gutter); max-width: calc(100% - 2 * var(--page-gutter)); max-height: calc(100dvh - 100% - 1rem); overflow-y: auto; }
+  .site-nav a { white-space: normal; overflow-wrap: break-word; }
+}
+@media (max-width: 768px) {
+  html:is(.ui-r1-public, .ui-r2-public) { --page-gutter: min(1.25rem, 5vw); }
+  .site-footer { grid-template-columns: minmax(0, 1fr); }
+  .site-footer > * { min-width: 0; }
+  .site-footer .social-icons { flex-wrap: wrap; }
+  html.ui-r1-public .inventory-content .vehicle-grid { padding-inline: 0; }
+  html.ui-r1-public .vehicle-card .vehicle-card__body { padding-inline: min(1rem, 4vw); }
+  html.ui-r1-public .vehicle-card .spec-list { grid-template-columns: repeat(auto-fit, minmax(min(100%, 6rem), 1fr)); }
+  html .vehicle-card .card-footer { flex-wrap: wrap; }
+  html .vehicle-card .card-footer .vehicle-card__details { flex-basis: max-content; white-space: normal; }
+  html .vehicle-card .card-footer .compare-btn { max-width: 100%; white-space: normal; }
+  html.ui-r2-public .compare-mobile-card__header { display: flex; flex-wrap: wrap; }
+  html.ui-r2-public .compare-mobile-card__header > a { flex: 0 0 min(5rem, 100%); }
+  html.ui-r2-public .compare-mobile-card__title { flex: 1 1 8rem; }
+  html.ui-r2-public .compare-mobile-card__specs > div { grid-template-columns: repeat(auto-fit, minmax(min(100%, 6rem), 1fr)); }
+}

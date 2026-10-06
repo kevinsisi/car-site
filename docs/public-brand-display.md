@@ -29,3 +29,13 @@ The existing 32 untracked files, including the original 21 protected entries and
 ## Expanded responsive QA
 
 The 852×393 production check found the open main menu's Contact link covered by the fixed comparison tray (`header z-index:20`, tray `z-index:80`; center hit-test reached the comparison link). Raise only the open-menu header to 90, below the existing image dialog layer. Keep the header visible while its menu is open. Normal header and tray positions remain unchanged.
+
+## 200% text follow-up
+
+At 320px with the root font enlarged from 18px to 36px, the header reduced the brand box to zero width, the mobile comparison actions expanded the document to 529px, and a more-specific vehicle-grid rule restored a second gutter inside the inventory shell. The narrowed card and fixed minimum spec columns made text difficult to read.
+
+Mobile public headers now wrap naturally and retain the full site name. Public page gutters stay bounded by viewport width, nested inventory grids have one gutter, and card specs/actions can stack. The comparison tray wraps its action row, bounds its scrollable height, and moves full vehicle names below thumbnails/removal controls when the item container is narrow relative to the text. The existing ResizeObserver still reserves actual tray height. Comparison cards and the add-section heading also wrap. Footer social links wrap so they cannot widen the same page. No font size or zoom behavior was reduced or disabled; close/remove controls remain at least 44px. Desktop rules are unchanged.
+
+EGO verified the 320px/36px root-font home, inventory, expanded tray and comparison page with actual add/open/close/remove actions. The document width matches the layout viewport, and names have no hidden overflow. Separate 375px, 393px and 1440px normal-font add/tray/compare/remove regressions passed. Seven existing comparison-state tests passed. Focused evidence is in `enlarged-edge-final.json`, `enlarged-compare-final.json`, `enlarged-regressions-local.json` and the accompanying PNGs in the task workspace. The earlier failed 200% screenshots are retained as before evidence.
+
+The user accepts the existing LINE/phone placeholder settings for this phase; they are a known configuration limitation, not a blocker for this UI fix. Maybach continues to use meaningful MM initials and its complete name rather than an unverified logo.

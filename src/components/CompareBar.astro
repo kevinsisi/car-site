@@ -281,21 +281,28 @@
   }
   @media (max-width: 767px) {
     .compare-bar { padding: 0; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -0.25rem 1.5rem color-mix(in srgb, var(--text) 8%, transparent); }
-    .compare-bar__inner { grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem; padding: 0.6rem max(0.75rem, env(safe-area-inset-right)) calc(0.6rem + env(safe-area-inset-bottom, 0px)) max(0.75rem, env(safe-area-inset-left)); border: 0; border-radius: 0; box-shadow: none; }
+    .compare-bar__inner { display: flex; flex-wrap: wrap; max-height: calc(100dvh - env(safe-area-inset-top)); overflow-y: auto; gap: 0.5rem; padding: 0.6rem max(0.75rem, env(safe-area-inset-right)) calc(0.6rem + env(safe-area-inset-bottom, 0px)) max(0.75rem, env(safe-area-inset-left)); border: 0; border-radius: 0; box-shadow: none; }
     .compare-bar__summary, .compare-bar__clear--desktop { display: none; }
     .compare-bar__toggle { display: inline-flex; align-items: center; justify-content: flex-start; gap: 0.55rem; justify-self: start; min-height: 44px; padding: 0.4rem 0.6rem; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--accent-strong); font: inherit; font-size: 0.82rem; white-space: nowrap; }
+    .compare-bar__toggle { max-width: 100%; min-width: 0; white-space: normal; }
     .compare-bar__toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
-    .compare-bar__actions { justify-content: end; }
-    .compare-bar .compare-bar__go { min-width: 8rem; font-size: 0.85rem; }
-    .compare-bar__selection { grid-column: 1 / -1; grid-row: 1; max-height: min(60dvh, 30rem); overflow-y: auto; overscroll-behavior: contain; padding: 6px; }
+    .compare-bar__actions { justify-content: end; min-width: 0; max-width: 100%; margin-left: auto; }
+    .compare-bar .compare-bar__go { min-width: 0; max-width: 100%; padding-inline: min(1.1rem, 4vw); white-space: normal; font-size: 0.85rem; }
+    .compare-bar__go > span { white-space: nowrap; }
+    .compare-bar__selection { flex: 0 0 100%; order: -1; max-height: min(60dvh, 30rem); overflow-y: auto; overscroll-behavior: contain; padding: 6px; }
     .compare-bar__panel-heading { display: flex; align-items: center; justify-content: space-between; padding-left: 0.45rem; color: var(--text); font-size: 0.9rem; font-weight: 650; }
     .compare-bar__items { display: grid; grid-template-columns: 1fr; gap: 0.4rem; overflow: visible; padding: 6px; }
-    .compare-bar__item { grid-template-columns: 3.5rem minmax(0, 1fr) 44px; width: 100%; padding: 0.45rem 0.15rem 0.45rem 0.45rem; gap: 0.55rem; }
-    .compare-bar__thumb { width: 3.5rem; }
-    .compare-bar__name { font-size: 0.8rem; }
+    .compare-bar__item { container: compare-item / inline-size; grid-template-columns: min(3.5rem, 64px) minmax(0, 1fr) 44px; width: 100%; padding: 0.45rem 0.15rem 0.45rem 0.45rem; gap: min(0.55rem, 2vw); }
+    .compare-bar__thumb { width: min(3.5rem, 64px); }
+    .compare-bar__name { display: block; overflow: visible; -webkit-line-clamp: unset; line-clamp: unset; font-size: 0.8rem; }
     .compare-bar__year { font-size: 0.7rem; }
     .compare-bar__clear--mobile { display: block; margin: 0.35rem auto 0; padding-inline: 1rem; }
-    .compare-bar__feedback { margin: 0; padding: 0 0.4rem; font-size: 0.72rem; }
+    .compare-bar__feedback { flex: 0 0 100%; margin: 0; padding: 0 0.4rem; font-size: 0.72rem; }
+  }
+  /* Move the full name below the thumbnail and remove control when text grows. */
+  @container compare-item (max-width: 12rem) {
+    .compare-bar__copy { grid-column: 1 / -1; grid-row: 2; }
+    .compare-bar__remove { grid-column: 3; grid-row: 1; }
   }
   @media (prefers-reduced-motion: reduce) { .compare-bar *, .compare-btn { transition: none; } }
 </style>
