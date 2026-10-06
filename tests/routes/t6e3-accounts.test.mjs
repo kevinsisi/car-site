@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { registerHooks } from 'node:module';
+import { PERMISSIONS } from '../../src/lib/permissions.ts';
 
-const state = { users: [], events: [], authOptions: [] };
+const state = { users: [], events: [], authOptions: [], requiredPermission: PERMISSIONS.USERS_MANAGE };
 globalThis.__t6e3Accounts = state;
 const modules = {
   '@/db/d1': `export function createD1Db(binding) {
@@ -29,7 +30,8 @@ const modules = {
   '@/db/connection': `export const db = { select() { throw new Error('Node DB should not be used'); } };`,
   '@/db/schema': `export const adminUsers = { id: 'id', username: 'username', role: 'role', permissions: 'permissions', createdAt: 'createdAt' };`,
   'drizzle-orm': `export const asc = value => value; export const eq = (column, value) => ({ [column]: value }); export const count = () => 'COUNT(*)';`,
-  '@/lib/auth': `export async function getAdminOrResponse(_cookies, options) {
+  '@/lib/auth': `export async function getPermittedOrResponse(_cookies, required, options) {
+    if (required !== globalThis.__t6e3Accounts.requiredPermission) throw new Error('accounts must require USERS_MANAGE');
     globalThis.__t6e3Accounts.authOptions.push(options);
     return { id: 'admin-1', username: 'fixture-admin', role: 'superadmin', permissions: 0 };
   }`,

@@ -198,7 +198,8 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .toast--progress { border-color: color-mix(in srgb, var(--accent) 40%, transparent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
 @keyframes toast-slide-in { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes toast-spin { to { transform: rotate(360deg); } }
-.confirm-overlay { position: fixed; inset: 0; z-index: 250; display: grid; place-items: center; padding: 1.5rem; background: rgba(5, 4, 3, 0.7); backdrop-filter: blur(6px); animation: confirm-fade 160ms ease-out; }
+.confirm-overlay { position: fixed; inset: 0; z-index: 250; display: grid; place-items: center; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; border: 0; padding: 1.5rem; background: rgba(5, 4, 3, 0.7); backdrop-filter: blur(6px); animation: confirm-fade 160ms ease-out; }
+.confirm-overlay:not([open]) { display: none; }
 .confirm-card { width: min(28rem, 100%); padding: 1.5rem 1.6rem; border-radius: 1.1rem; background: var(--surface); border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--line)); box-shadow: 0 1.5rem 3rem color-mix(in srgb, var(--text) 30%, transparent); color: var(--text); }
 .confirm-card h3 { margin: 0 0 0.55rem; color: var(--accent-strong); font-size: 1.15rem; }
 .confirm-card p { margin: 0 0 1.3rem; color: var(--muted); line-height: 1.65; }
@@ -287,6 +288,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .batch-bar__actions button:hover { border-color: var(--accent); color: var(--accent-strong); }
 .batch-toggle-all { padding: 0.35rem 0.5rem 0; }
 .admin-car-row { grid-template-columns: auto 7rem 1fr auto; }
+.admin-car-row.is-readonly { grid-template-columns: 7rem 1fr auto; }
 .admin-car-row.is-selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 5%, transparent); }
 .batch-checkbox { width: 1.15rem; height: 1.15rem; accent-color: var(--accent); cursor: pointer; }
 .admin-car-row__info { min-width: 0; overflow-wrap: anywhere; }
@@ -337,7 +339,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 @media (max-width: 900px) {
   .overview-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hero-panel, .image-manager__header { align-items: flex-start; flex-direction: column; }
-  .admin-grid, .admin-grid--overview, .admin-grid--single, .admin-car-row, .form-grid, .field-checklist__grid, .theme-preview__hero, .theme-preview__content, .alias-row, .site-icon-editor, .carsmeet-import { grid-template-columns: 1fr; }
+  .admin-grid, .admin-grid--overview, .admin-grid--single, .admin-car-row, .admin-car-row.is-readonly, .form-grid, .field-checklist__grid, .theme-preview__hero, .theme-preview__content, .alias-row, .site-icon-editor, .carsmeet-import { grid-template-columns: 1fr; }
   .carsmeet-import__actions { grid-template-columns: 1fr; }
   .image-sort-list { grid-template-columns: repeat(2, 1fr); }
   .template-options, .style-options { grid-template-columns: 1fr; }

@@ -56,6 +56,8 @@ Mirror locations (`.claude/skills/`, `.gemini/skills/`, `.opencode/skills/`, `.g
 
 ## Persistent Standards
 
+- All UI/UX implementation and review must follow [Mita UI quality standard](docs/ui-quality-standard.md), including real rendered evidence and iterative critique toward the user's Awwwards / Webby Awards / FWA quality ambition. This is a quality goal, not an award claim.
+
 - Every code change must update memory (if applicable), update OpenSpec (if applicable), commit, and push; larger work batches may commit in checkpoints and push once the batch is ready. Rule home: `skills/completion-checklist/SKILL.md`.
 - Complex tasks must carry workflow checkpoints in the task list, and major task boundaries must trigger a fresh rule check. Rule home: `skills/execution-style/SKILL.md` and `skills/completion-checklist/SKILL.md`.
 - Any requirement that should govern future implementation must be written into the formal rule sources (this file or a skill), not left only in chat context. Rule home: `skills/execution-style/SKILL.md`.

@@ -40,11 +40,13 @@ function makeD1(seed = emptyState(), failAt = -1) {
       batchCalls.push(statements.map((s) => s.query));
       const snapshot = structuredClone(state);
       try {
+        const results = [];
         for (const [index, statement] of statements.entries()) {
           if (index === failAt) throw new Error('DEMO injected later-statement failure');
-          apply(state, statement.query, statement.values());
+          const changes = apply(state, statement.query, statement.values());
+          results.push({ success: true, results: [], meta: { changes } });
         }
-        return statements.map(() => ({ success: true, results: [], meta: {} }));
+        return results;
       } catch (error) {
         Object.assign(state, snapshot);
         throw error;
@@ -77,7 +79,7 @@ function select(state, query, values) {
 
 function apply(state, query, values) {
   const table = /(?:into|update|from|delete from) "([^"]+)"/i.exec(query)?.[1];
-  if (!table) return;
+  if (!table) return 0;
   if (/^insert/i.test(query)) {
     const insertColumns = /^insert into "[^"]+" \(([^)]+)\) values/i.exec(query)?.[1] ?? '';
     const columns = [...insertColumns.matchAll(/"([a-z_]+)"/g)].map((m) => m[1]);
@@ -85,15 +87,20 @@ function apply(state, query, values) {
     const conflictIndex = state[table].findIndex((entry) => entry.id === row.id || (table === 'import_mappings' && entry.source.toLowerCase() === row.source.toLowerCase() && entry.external_id.toLowerCase() === row.external_id.toLowerCase()));
     if (conflictIndex >= 0) state[table][conflictIndex] = { ...state[table][conflictIndex], ...row };
     else state[table].push(row);
+    return 1;
   } else if (/^delete/i.test(query)) {
+    const previousLength = state[table].length;
     state[table] = state[table].filter((row) => row.vehicle_id !== values[0]);
+    return previousLength - state[table].length;
   } else if (/^update/i.test(query)) {
     const row = state[table].find((entry) => entry.id === values.at(-1));
     if (row) {
       const columns = [...query.matchAll(/"([a-z_]+)" = \?/g)].map((m) => m[1]);
       columns.slice(0, -1).forEach((column, i) => { row[column] = values[i]; });
+      return 1;
     }
   }
+  return 0;
 }
 
 const repo = await import('../../src/lib/vehicles.ts');
@@ -108,7 +115,7 @@ test('D1 upsert and status operations batch their writes; omitted images stay un
   assert.equal(batchCalls.length, 1);
   await repo.upsertVehicle({ id: 'DEMO-vehicle', title: 'DEMO-title', brand: 'DEMO-brand', model: 'DEMO-model', images: [] }, await db);
   assert.equal(state.vehicle_images.length, 0);
-  await repo.updateVehicleStatus('DEMO-vehicle', 'sold', await db);
+  assert.equal(await repo.updateVehicleStatus('DEMO-vehicle', 'sold', await db), true);
   assert.equal(state.vehicles[0].status, 'sold');
   assert.ok(state.vehicles[0].sold_at, 'setting sold writes a fresh soldAt');
   assert.notEqual(state.vehicles[0].sold_at, '2025-01-01T00:00:00.000Z');
@@ -117,7 +124,7 @@ test('D1 upsert and status operations batch their writes; omitted images stay un
   assert.equal(batchCalls.length, 3);
   assert.deepEqual(batchCalls.map((call) => call.length), [1, 2, 1]);
 
-  await repo.updateVehicleStatus('DEMO-vehicle', 'draft', await db);
+  assert.equal(await repo.updateVehicleStatus('DEMO-vehicle', 'draft', await db), true);
   assert.equal(state.vehicles[0].status, 'draft');
   assert.equal(state.vehicles[0].sold_at, null, 'changing to a non-sold status clears soldAt');
   assert.notEqual(state.vehicles[0].updated_at, '2025-01-01T00:00:00.000Z', 'changing to a non-sold status refreshes updatedAt');

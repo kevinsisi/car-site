@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { registerHooks } from 'node:module';
 import { test } from 'node:test';
 import { createD1Db } from '../../src/db/d1.ts';
+import { MAX_COMPARE_VEHICLES, normalizeCompareSlugs } from '../../src/lib/vehicle-comparison.ts';
 
 registerHooks({
   resolve(specifier, context, nextResolve) {
@@ -73,13 +74,13 @@ test('all car pages require the Worker D1 binding and pass one request adapter t
 
 test('compare ids cap per-vehicle D1 reads at the explicit four-column comparison limit', async () => {
   const frontmatter = readFileSync(new URL('../../src/pages/cars/compare.astro', import.meta.url), 'utf8').split('---')[1];
-  assert.match(frontmatter, /MAX_COMPARE_VEHICLES\s*=\s*4/);
-  assert.match(frontmatter, /slice\(0,\s*MAX_COMPARE_VEHICLES\)/);
+  assert.equal(MAX_COMPARE_VEHICLES, 4);
+  assert.match(frontmatter, /normalizeCompareSlugs\(idsParam\.split\(','\)\)/);
   assert.match(frontmatter, /slugs\.map\(\(slug\) => getVehicleBySlug\(slug, adapter\)\)/);
 
   const { getVehicleBySlug } = await import('../../src/lib/vehicles.ts');
   const requestedSlugs = Array.from({ length: 100 }, (_, index) => `synthetic-${index}`);
-  const boundedSlugs = requestedSlugs.slice(0, 4);
+  const boundedSlugs = normalizeCompareSlugs(requestedSlugs);
   const readsBefore = reads.length;
   await Promise.all(boundedSlugs.map((slug) => getVehicleBySlug(slug, adapter)));
   const compareReads = reads.length - readsBefore;

@@ -2,8 +2,9 @@ import { asc, eq } from 'drizzle-orm';
 import type { APIRoute } from 'astro';
 import { createD1Db } from '@/db/d1';
 import { adminUsers } from '@/db/schema';
-import { getAdminOrResponse } from '@/lib/auth';
+import { getPermittedOrResponse } from '@/lib/auth';
 import { hashPassword } from '@/lib/crypto';
+import { PERMISSIONS } from '@/lib/permissions';
 
 type RequestDb = Awaited<ReturnType<typeof createD1Db>>;
 
@@ -23,7 +24,7 @@ async function getRequestDb(locals: App.Locals): Promise<{ db: RequestDb; sessio
 export const GET: APIRoute = async ({ cookies, locals }) => {
   const requestDb = await getRequestDb(locals);
   if (requestDb instanceof Response) return requestDb;
-  const _auth = await getAdminOrResponse(cookies, requestDb);
+  const _auth = await getPermittedOrResponse(cookies, PERMISSIONS.USERS_MANAGE, requestDb);
   if (_auth instanceof Response) return _auth;
   const selection = requestDb.db
     .select({ id: adminUsers.id, username: adminUsers.username, createdAt: adminUsers.createdAt })
@@ -37,8 +38,11 @@ export const GET: APIRoute = async ({ cookies, locals }) => {
 export const POST: APIRoute = async ({ request, cookies, locals }) => {
   const requestDb = await getRequestDb(locals);
   if (requestDb instanceof Response) return requestDb;
-  const _auth = await getAdminOrResponse(cookies, requestDb);
+  const _auth = await getPermittedOrResponse(cookies, PERMISSIONS.USERS_MANAGE, requestDb);
   if (_auth instanceof Response) return _auth;
+  if (_auth.role !== 'superadmin') {
+    return Response.json({ error: '只有 superadmin 可以建立用戶' }, { status: 403 });
+  }
   const body = await request.json().catch(() => ({}));
   const username = String(body.username || '').trim();
   const password = String(body.password || '');

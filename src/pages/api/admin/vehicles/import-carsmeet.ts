@@ -19,8 +19,12 @@ export const POST: APIRoute = async ({ request, cookies, locals }) => {
   });
   if (_auth instanceof Response) return _auth;
 
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return Response.json({ error: 'invalid JSON body' }, { status: 400 });
+  }
+
   try {
-    const body = await request.json();
     const url = String(body.url || '');
     if (locals.runtime) {
       parseCarsmeetUrl(url);

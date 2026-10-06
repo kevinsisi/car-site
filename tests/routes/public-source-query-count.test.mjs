@@ -1,12 +1,15 @@
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
 import { DatabaseSync } from 'node:sqlite';
 import { applyPublicSnapshot, PublicSyncConflict } from '../../src/lib/public-source-sync.ts';
 import { MAX_IMAGES, MAX_JSON_BIND_BYTES, MAX_VEHICLES, PUBLIC_SETTING_KEYS, parsePublicSnapshot } from '../../src/lib/public-source-snapshot.ts';
 
-const OUT = '/tmp/mita-public-query-counts.json';
-const REPORT = '/tmp/mita-public-query-evidence-report.md';
+const evidenceDir = mkdtempSync(path.join(tmpdir(), 'mita-public-query-evidence-'));
+const OUT = path.join(evidenceDir, 'query-counts.json');
+const REPORT = path.join(evidenceDir, 'report.md');
 const LIMIT = MAX_JSON_BIND_BYTES;
 const stamp = (n) => `2026-09-${String(n).padStart(2, '0')}T12:00:00.000Z`;
 const empty = () => ({
@@ -142,4 +145,5 @@ test('cardinality upper bound follows admitted byte and required-field constrain
   const report = `# Public snapshot sync query-count evidence\n\nScope: synthetic, in-memory SQLite using repository migrations and the real applyPublicSnapshot function. No production data or production performance claim.\n\nCommands:\n- \`node --import tsx --test tests/routes/public-source-query-count.test.mjs\`\n- \`git diff --check\`\n\nThe test writes this report and \`${OUT}\`.\n\n## Observed counts and returned rows\n\n${evidence.scenarios.map(s=>`### ${s.scenario}\n\nIncoming rows: \`${JSON.stringify(s.incoming)}\`.\n\nQuery counts: \`${JSON.stringify(s.queryCounts)}\`.\n\nPer-call returned rows: \`${JSON.stringify(s.returnedRowsByOperation)}\`.`).join('\n\n')}\n\n### Largest admitted fixture and byte guards\n\n\`${JSON.stringify(evidence.guards)}\`\n\n### Baseline replacement behavior\n\n\`${JSON.stringify(evidence.baselineSemantics)}\`\n\nIncoming arrays replace aliases/settings/videos/images in mappedBaseline. Only vehicles concatenate prior missing vehicles as archived tombstones.\n\n### EXPLAIN QUERY PLAN\n\n\`${JSON.stringify(evidence.explain)}\`\n\n### Coarse cardinality bound\n\n${evidence.cardinality.method}\n\n\`${JSON.stringify(evidence.cardinality.bounds)}\`\n\nFixed call topology: revision first + baseline all + at most five table identity lookups + one vehicle slug collision lookup when nonempty + a single batch + post-revision first. Each target lookup is over a deduplicated prior/incoming identity union. Query returned rows are therefore bounded by those unions and incoming slugs; no rows-per-call growth in the observed samples. Batch statement count is asserted <=50.\n`;
   writeFileSync(OUT, `${JSON.stringify(evidence,null,2)}\n`);
   writeFileSync(REPORT, report);
+  console.info(`Public query-count evidence: ${REPORT}`);
 });

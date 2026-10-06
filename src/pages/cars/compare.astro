@@ -6,6 +6,7 @@ import { getVehicleReadContext, getVehicleBySlug, listPublicInventoryVehicles } 
 import { getSettings } from '@/lib/settings';
 import { createD1Db } from '@/db/d1';
 import { formatMileage } from '@/lib/format-mileage';
+import { MAX_COMPARE_VEHICLES, normalizeCompareSlugs, comparisonHref } from '@/lib/vehicle-comparison';
 
 const runtime = Astro.locals.runtime;
 const binding = runtime?.env?.DB_PREVIEW;
@@ -17,16 +18,16 @@ const features = resolveFrontFeatures(settings);
 const fallbackHref = getFirstPublicHref(features);
 if (!features.compare) return Astro.redirect(fallbackHref);
 const idsParam = Astro.url.searchParams.get('ids') || '';
-const MAX_COMPARE_VEHICLES = 4;
-const slugs = idsParam.split(',').map((s) => s.trim()).filter(Boolean).slice(0, MAX_COMPARE_VEHICLES);
+const slugs = normalizeCompareSlugs(idsParam.split(','));
 
 const [vehicles, allVehicles] = await Promise.all([
   Promise.all(slugs.map((slug) => getVehicleBySlug(slug, adapter))).then((r) => r.filter(Boolean)),
   listPublicInventoryVehicles(adapter),
 ]);
 
-// Vehicles available to add (not already in compare)
-const availableVehicles = allVehicles.filter((v) => !slugs.includes(v.slug));
+// Derive navigation from resolved cars so stale shared IDs never occupy a slot.
+const resolvedSlugs = vehicles.map((vehicle) => vehicle!.slug);
+const availableVehicles = allVehicles.filter((v) => !resolvedSlugs.includes(v.slug));
 const compareBrandMap = new Map<string, { value: string; iconUrl: string | null }>();
 for (const vehicle of allVehicles) {
   if (!vehicle.brandDisplayName) continue;
@@ -63,12 +64,12 @@ const specRows = [
 ];
 
 function removeUrl(slug: string): string {
-  const remaining = slugs.filter((s) => s !== slug);
-  return remaining.length ? `/cars/compare?ids=${remaining.join(',')}` : '/cars/compare';
+  const remaining = resolvedSlugs.filter((s) => s !== slug);
+  return comparisonHref(remaining);
 }
 
 function addUrl(slug: string): string {
-  return `/cars/compare?ids=${[...slugs, slug].join(',')}`;
+  return comparisonHref([...resolvedSlugs, slug]);
 }
 
 function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
@@ -86,7 +87,7 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
     </div>
 
     {/* ── 加入車輛（搜尋區）放在最上方 ── */}
-    {availableVehicles.length > 0 && (
+    {availableVehicles.length > 0 && vehicles.length < MAX_COMPARE_VEHICLES && (
       <div class="compare-add-section">
         <div class="compare-add-header">
           <h2>選擇車輛加入比較</h2>
@@ -143,7 +144,7 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
       </div>
     ) : (
       <div class="compare-table-wrapper">
-        <table class="compare-table">
+        <table class="compare-table" style={`--compare-columns: ${vehicles.length}`}>
           <thead>
             <tr>
               <th class="compare-label-col"></th>
@@ -151,7 +152,7 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
                 <th
                   class="compare-vehicle-col"
                   data-meta-slug={v!.slug}
-                  data-meta-title={v!.cardTitle}
+                  data-meta-title={v!.cardTitle} data-meta-year={v!.year}
                   data-meta-thumb={v!.coverImage?.thumbUrl || v!.coverImage?.url || ''}
                 >
                   <div class="compare-vehicle-header">
@@ -165,7 +166,7 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
                       <BrandIcon iconUrl={v!.brandIconUrl} alt={v!.brandDisplayName} size={18} />
                       <a href={`/cars/${v!.slug}`}>{v!.cardTitle}</a>
                     </div>
-                    <a href={removeUrl(v!.slug)} class="compare-remove">✕ 移除</a>
+                    <a href={removeUrl(v!.slug)} class="compare-remove" data-compare-remove={v!.slug} aria-label={`移除比較：${v!.cardTitle}`}>移除</a>
                   </div>
                 </th>
               ))}
@@ -185,7 +186,7 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
       </div>
       <div class="compare-mobile-cards" aria-label="車輛規格比較">
         {vehicles.map((v) => (
-          <article class="compare-mobile-card" data-meta-slug={v!.slug} data-meta-title={v!.cardTitle} data-meta-thumb={v!.coverImage?.thumbUrl || v!.coverImage?.url || ''}>
+          <article class="compare-mobile-card" data-meta-slug={v!.slug} data-meta-title={v!.cardTitle} data-meta-year={v!.year} data-meta-thumb={v!.coverImage?.thumbUrl || v!.coverImage?.url || ''}>
             <header class="compare-mobile-card__header">
               <a href={`/cars/${v!.slug}`} aria-label={`查看 ${v!.cardTitle}`}>
                 {v!.coverImage
@@ -196,7 +197,7 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
               <div class="compare-mobile-card__title">
                 <BrandIcon iconUrl={v!.brandIconUrl} alt={v!.brandDisplayName} size={18} />
                 <a href={`/cars/${v!.slug}`}>{v!.cardTitle}</a>
-                <a href={removeUrl(v!.slug)} class="compare-remove">✕ 移除</a>
+                <a href={removeUrl(v!.slug)} class="compare-remove" data-compare-remove={v!.slug} aria-label={`移除比較：${v!.cardTitle}`}>移除</a>
               </div>
             </header>
             <dl class="compare-mobile-card__specs">
@@ -208,44 +209,15 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
     )}
 
     <div class="compare-page__footer">
-      <a href="/cars" class="btn-secondary">← 返回車輛列表</a>
+      <a href="/cars" class="button button--ghost">返回車輛列表</a>
       {vehicles.length > 0 && (
-        <a href="/cars/compare" class="btn-secondary">清除全部</a>
+        <a href="/cars/compare?ids=" class="button button--ghost" data-compare-clear>清除全部</a>
       )}
     </div>
   </div>
 </PublicLayout>
 
 <script>
-  // If page loaded without ?ids but localStorage has slugs, redirect with them
-  const urlIds = new URLSearchParams(location.search).get('ids');
-  if (!urlIds) {
-    const stored: string[] = JSON.parse(localStorage.getItem('compare_slugs') || '[]');
-    if (stored.length > 0) {
-      location.replace(`/cars/compare?ids=${stored.join(',')}`);
-    }
-  } else {
-    // Sync URL slugs back to localStorage so CompareBar stays in sync.
-    // Backfill title/thumb metadata from the server-rendered table — vehicles
-    // added via the compare page's add-links (or a shared URL) would otherwise
-    // show up in the floating bar as bare slugs without thumbnails. Slugs the
-    // server could not resolve (deleted/renamed cars) are pruned.
-    const requested = urlIds.split(',').filter(Boolean);
-    const resolvedEls = [...document.querySelectorAll<HTMLElement>('[data-meta-slug]')];
-    const resolved = new Set(resolvedEls.map((el) => el.dataset.metaSlug!));
-    const kept = requested.filter((slug) => resolved.has(slug));
-    localStorage.setItem('compare_slugs', JSON.stringify(kept));
-    try {
-      const meta: Record<string, { title: string; thumb: string }> = JSON.parse(localStorage.getItem('compare_meta') || '{}');
-      resolvedEls.forEach((el) => {
-        const slug = el.dataset.metaSlug!;
-        meta[slug] = { title: el.dataset.metaTitle || slug, thumb: el.dataset.metaThumb || '' };
-      });
-      localStorage.setItem('compare_meta', JSON.stringify(meta));
-    } catch { /* corrupt meta — leave as-is */ }
-    window.dispatchEvent(new CustomEvent('compare-changed'));
-  }
-
   const searchInput = document.getElementById('compare-search') as HTMLInputElement | null;
   const list = document.getElementById('compare-add-list');
   const hint = document.getElementById('compare-add-hint');
@@ -433,20 +405,20 @@ function getVal(v: NonNullable<typeof vehicles[number]>, key: string): string {
 .compare-empty { text-align: center; padding: 3rem 1rem; color: var(--muted, #777); }
 .compare-empty p { margin-bottom: 0.5rem; }
 .compare-table-wrapper { overflow-x: auto; margin-bottom: 2rem; }
-.compare-table { width: 100%; border-collapse: collapse; min-width: 400px; }
+.compare-table { width: 100%; table-layout: fixed; border-collapse: collapse; min-width: 400px; }
 .compare-table th, .compare-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border, #e5e5e5); vertical-align: top; text-align: left; }
 .compare-label-col { width: 90px; min-width: 80px; }
 .compare-vehicle-col { min-width: 200px; }
 .compare-label { font-weight: 600; font-size: 0.82rem; color: var(--muted, #777); white-space: nowrap; }
 .compare-value { font-size: 0.9rem; }
 .compare-vehicle-header { display: flex; flex-direction: column; gap: 0.5rem; }
-.compare-vehicle-img-link { display: block; }
-.compare-vehicle-img { width: 100%; aspect-ratio: 16/9; object-fit: contain; border-radius: 6px; display: block; background: var(--image-bg, #111); }
+.compare-vehicle-img-link { display: block; width: min(100%, 20rem); }
+.compare-vehicle-img { width: 100%; height: auto; aspect-ratio: 16/9; object-fit: contain; border-radius: 6px; display: block; background: var(--image-bg, #111); }
 .compare-vehicle-img--empty { background: var(--image-bg, #eee); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: #aaa; }
 .compare-vehicle-title { display: flex; align-items: center; gap: 0.4rem; font-size: 0.875rem; font-weight: 600; }
 .compare-vehicle-title a { text-decoration: none; color: inherit; }
-.compare-remove { font-size: 0.78rem; color: var(--muted, #aaa); text-decoration: none; align-self: flex-start; }
-.compare-remove:hover { color: #c00; }
+.compare-remove { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; padding: 0.35rem 0.75rem; border: 1px solid var(--line); border-radius: 999px; font-size: 0.78rem; color: var(--accent-strong); text-decoration: none; align-self: flex-start; }
+.compare-remove:hover { background: var(--surface-soft); border-color: var(--accent); }
 
 .compare-page__footer { margin-top: 2rem; display: flex; gap: 0.75rem; flex-wrap: wrap; }
 </style>

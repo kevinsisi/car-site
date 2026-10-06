@@ -31,6 +31,13 @@ jobs:
           node --import tsx --test tests/routes/public-source-*.test.mjs
           node --import tsx --test tests/routes/production-*.test.mjs
 
+      - name: Run admin authorization and input regression tests
+        run: |
+          node --import tsx --test tests/auth/*.test.mjs tests/routes/legacy-accounts-permissions.test.mjs tests/routes/admin-vehicle-errors.test.mjs tests/routes/carsmeet-input-errors.test.mjs tests/routes/t6d1-status-import.test.mjs tests/routes/t6e2-users.test.mjs tests/routes/t6e3-accounts.test.mjs tests/routes/t6e4-accounts-import.test.mjs tests/routes/t6k3-identity-pages.test.mjs
+
+      - name: Run vehicle comparison regression tests
+        run: node --import tsx --test tests/routes/vehicle-comparison-state.test.mjs tests/routes/t6c2-cars.test.mjs
+
   validate:
     runs-on: ubuntu-latest
 
@@ -41,7 +48,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install dependencies

@@ -426,10 +426,14 @@ export async function upsertVehicle(input: {
   return id;
 }
 
-export async function updateVehicleStatus(id: string, status: VehicleStatus, adapter?: VehicleWriteDb) {
+export async function updateVehicleStatus(id: string, status: VehicleStatus, adapter?: VehicleWriteDb): Promise<boolean> {
   const statement = (await vehicleDb(adapter)).update(vehicles).set({ status, soldAt: status === 'sold' ? new Date().toISOString() : null, updatedAt: new Date().toISOString() }).where(eq(vehicles.id, id));
-  if (adapter) await adapter.batch([statement] as any);
-  else await statement;
+  if (adapter) {
+    const [result] = await adapter.batch([statement]);
+    return result.meta.changes > 0;
+  }
+  const result = await statement;
+  return (result as unknown as { changes: number }).changes > 0;
 }
 
 export function publicVehicleStatus(value: VehicleStatus, showSoldVehicles = false): boolean {

@@ -16,18 +16,18 @@ const user = await getSession(Astro.cookies, authOptions);
 if (!user) return Astro.redirect('/admin/login');
 const isForced = Astro.url.searchParams.get('force') === '1';
 const isSuper = user.role === 'superadmin';
-let accounts: { id: string; username: string; createdAt: string }[] = [];
+let accounts: { id: string; username: string; role: string; createdAt: string }[] = [];
 if (isSuper) {
   if (adapter) {
     accounts = await adapter
-      .select({ id: adminUsers.id, username: adminUsers.username, createdAt: adminUsers.createdAt })
+      .select({ id: adminUsers.id, username: adminUsers.username, role: adminUsers.role, createdAt: adminUsers.createdAt })
       .from(adminUsers)
       .orderBy(asc(adminUsers.createdAt), asc(adminUsers.id))
       .limit(100);
   } else {
     const { db } = await import('@/db/connection');
     accounts = await db
-      .select({ id: adminUsers.id, username: adminUsers.username, createdAt: adminUsers.createdAt })
+      .select({ id: adminUsers.id, username: adminUsers.username, role: adminUsers.role, createdAt: adminUsers.createdAt })
       .from(adminUsers)
       .orderBy(asc(adminUsers.createdAt));
   }
@@ -67,7 +67,7 @@ if (isSuper) {
       <div class="hero-panel">
         <div>
           <h2>管理員帳號</h2>
-          <p>所有可登入後台的帳號。至少保留一個帳號；無法刪除目前登入中的帳號。</p>
+          <p>所有可登入後台的帳號。無法刪除目前登入中的帳號與 superadmin。</p>
         </div>
         <span class="account-current">總共 <strong id="account-count">{accounts.length}</strong> 個</span>
       </div>
@@ -80,7 +80,7 @@ if (isSuper) {
               {acc.id === user.id && <span class="account-badge">目前登入</span>}
               <small>建立於 {new Date(acc.createdAt).toLocaleDateString('zh-TW')}</small>
             </div>
-            {acc.id !== user.id && (
+            {acc.id !== user.id && acc.role !== 'superadmin' && (
               <button type="button" class="row-button--danger account-delete" data-id={acc.id} data-username={acc.username}>刪除帳號</button>
             )}
           </li>

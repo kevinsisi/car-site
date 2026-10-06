@@ -1,302 +1,301 @@
 ---
-// Floating compare bar — driven by localStorage, no server-side props needed
+// One selection controller owns cards, the tray and comparison-page navigation.
 ---
 
-<div class="compare-bar" id="compare-bar" aria-hidden="true">
+<aside class="compare-bar" id="compare-bar" aria-label="車輛比較清單" hidden>
   <div class="compare-bar__inner">
-    <span class="compare-bar__label" id="compare-bar-label">比較清單</span>
-    <div class="compare-bar__items" id="compare-bar-items"></div>
-    <div class="compare-bar__actions">
-      <a href="/cars/compare" class="compare-bar__go btn-primary" id="compare-go">
-        查看比較
-      </a>
-      <button type="button" class="compare-bar__clear" id="compare-clear" aria-label="清除比較清單">
-        清除
-      </button>
+    <div class="compare-bar__summary">
+      <span class="compare-bar__eyebrow">車輛比較</span>
+      <span class="compare-bar__count"><strong data-compare-count>0</strong><span> / 4 台</span></span>
     </div>
+    <button class="compare-bar__toggle" id="compare-toggle" type="button" aria-expanded="false" aria-controls="compare-selection">
+      <span>已選 <strong data-compare-count>0</strong> 台</span>
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 12 5-5 5 5" /></svg>
+    </button>
+    <section class="compare-bar__selection" id="compare-selection" aria-label="已選車輛">
+      <div class="compare-bar__panel-heading">
+        <span>已選車輛</span>
+        <button id="compare-close" type="button" aria-label="收合比較清單"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" /></svg></button>
+      </div>
+      <ul class="compare-bar__items" id="compare-bar-items" aria-label="已選車輛清單"></ul>
+      <button type="button" class="compare-bar__clear compare-bar__clear--mobile" data-compare-clear>清除全部</button>
+    </section>
+    <div class="compare-bar__actions">
+      <button type="button" class="compare-bar__clear compare-bar__clear--desktop" data-compare-clear>清除</button>
+      <a href="/cars/compare" class="compare-bar__go button button--primary" id="compare-go">
+        <span>查看比較</span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12m-5-5 5 5-5 5" /></svg>
+      </a>
+    </div>
+    <p class="compare-bar__feedback" id="compare-feedback" hidden></p>
   </div>
-</div>
+</aside>
+<p class="compare-announcement" id="compare-announcement" role="status" aria-live="polite" aria-atomic="true"></p>
 
 <script>
-  const bar = document.getElementById('compare-bar')!;
-  initCompareBar();
+  import { MAX_COMPARE_VEHICLES, COMPARE_META_KEY, COMPARE_SLUGS_KEY, comparisonHref, createCompareStore, type CompareItem } from '@/lib/vehicle-comparison';
 
-  function initCompareBar() {
-  const itemsEl = document.getElementById('compare-bar-items')!;
-  const labelEl = document.getElementById('compare-bar-label')!;
-  const goBtn = document.getElementById('compare-go') as HTMLAnchorElement;
-  const clearBtn = document.getElementById('compare-clear')!;
+  const bar = document.querySelector<HTMLElement>('#compare-bar')!;
+  const list = document.querySelector<HTMLUListElement>('#compare-bar-items')!;
+  const selection = document.querySelector<HTMLElement>('#compare-selection')!;
+  const toggle = document.querySelector<HTMLButtonElement>('#compare-toggle')!;
+  const go = document.querySelector<HTMLAnchorElement>('#compare-go')!;
+  const feedback = document.querySelector<HTMLElement>('#compare-feedback')!;
+  const announcement = document.querySelector<HTMLElement>('#compare-announcement')!;
+  const mobile = matchMedia('(max-width: 767px)');
+  const onComparePage = location.pathname.replace(/\/$/, '') === '/cars/compare';
+  let storage: Storage | undefined;
+  try { storage = window.localStorage; } catch { /* The store reports session-only mode. */ }
+  const store = createCompareStore(storage);
+  let expanded = false;
+  let lastSelected: HTMLButtonElement | null = null;
+  let announceFrame = 0;
 
-  interface CompareItem { slug: string; title: string; model: string; thumb: string; }
+  function announce(message: string) {
+    cancelAnimationFrame(announceFrame);
+    announcement.textContent = '';
+    announceFrame = requestAnimationFrame(() => { announcement.textContent = message; });
+  }
 
-  function getItems(): CompareItem[] {
-    try {
-      const slugs: string[] = JSON.parse(localStorage.getItem('compare_slugs') || '[]');
-      const meta: Record<string, { title: string; model?: string; thumb: string }> = JSON.parse(localStorage.getItem('compare_meta') || '{}');
-      return slugs.map((slug) => ({ slug, title: meta[slug]?.title || slug, model: meta[slug]?.model || '', thumb: meta[slug]?.thumb || '' }));
-    } catch { return []; }
+  function measure() {
+    document.documentElement.style.setProperty('--compare-clearance', bar.hidden ? '0px' : `${Math.ceil(bar.getBoundingClientRect().height + 16)}px`);
+  }
+
+  function setExpanded(value: boolean, returnFocus = false) {
+    expanded = mobile.matches && value;
+    toggle.setAttribute('aria-expanded', String(expanded));
+    toggle.setAttribute('aria-label', `${expanded ? '收合' : '展開'}比較清單，已選 ${store.read().length} 台`);
+    selection.hidden = mobile.matches && !expanded;
+    bar.classList.toggle('is-expanded', expanded);
+    if (returnFocus) toggle.focus({ preventScroll: true });
+    measure();
+  }
+
+  function cardFor(slug?: string): HTMLButtonElement | null {
+    return [...document.querySelectorAll<HTMLButtonElement>('[data-compare-slug]')].find((b) => b.dataset.compareSlug === slug) || null;
+  }
+
+  function restoreCardFocus(slug?: string) {
+    const target = cardFor(slug) || lastSelected || document.querySelector<HTMLButtonElement>('[data-compare-slug]');
+    if (target?.isConnected) {
+      target.focus({ preventScroll: true });
+      target.scrollIntoView({ block: 'nearest' });
+    } else {
+      const main = document.querySelector<HTMLElement>('#main');
+      if (main) { main.tabIndex = -1; main.focus({ preventScroll: true }); }
+    }
   }
 
   function render() {
-    const items = getItems();
-    bar.setAttribute('aria-hidden', items.length === 0 ? 'true' : 'false');
+    const items = store.read();
+    bar.hidden = items.length === 0;
     bar.classList.toggle('is-visible', items.length > 0);
-    goBtn.href = `/cars/compare?ids=${items.map((i) => i.slug).join(',')}`;
-    labelEl.textContent = `比較清單 (${items.length})`;
-
-    itemsEl.innerHTML = '';
-    items.forEach(({ slug, title, model, thumb }) => {
-      const el = document.createElement('div');
-      el.className = 'compare-bar__item';
-      if (thumb) {
-        const image = document.createElement('img');
-        image.src = thumb;
-        image.alt = '';
-        image.width = 36;
-        image.height = 24;
-        image.onerror = () => image.remove();
-        el.appendChild(image);
+    if (!items.length) expanded = false;
+    document.querySelectorAll('[data-compare-count]').forEach((n) => { n.textContent = String(items.length); });
+    go.href = comparisonHref(items.map((item) => item.slug));
+    document.querySelectorAll<HTMLButtonElement>('[data-compare-slug]').forEach((button) => {
+      const active = items.some((item) => item.slug === button.dataset.compareSlug);
+      button.setAttribute('aria-pressed', String(active));
+      button.setAttribute('aria-label', `${active ? '移除比較' : '加入比較'}：${button.dataset.compareTitle}`);
+      const label = button.querySelector('.compare-btn__label');
+      if (label) label.textContent = active ? '已加入' : '比較';
+    });
+    list.replaceChildren(...items.map((item) => {
+      const li = document.createElement('li');
+      li.className = 'compare-bar__item';
+      const imageFrame = document.createElement('span');
+      imageFrame.className = 'compare-bar__thumb';
+      imageFrame.setAttribute('aria-hidden', 'true');
+      const placeholder = document.createElement('span');
+      placeholder.textContent = '無照片';
+      imageFrame.append(placeholder);
+      if (item.thumb) {
+        const img = document.createElement('img');
+        img.src = item.thumb; img.alt = ''; img.width = 72; img.height = 54;
+        img.addEventListener('error', () => img.remove(), { once: true });
+        imageFrame.append(img);
       }
       const copy = document.createElement('div');
       copy.className = 'compare-bar__copy';
       const name = document.createElement('span');
       name.className = 'compare-bar__name';
-      name.textContent = title;
-      const modelText = document.createElement('small');
-      modelText.className = 'compare-bar__model';
-      modelText.textContent = model || '';
-      const helper = document.createElement('small');
-      helper.className = 'compare-bar__helper';
-      helper.textContent = '比較清單';
+      name.textContent = item.title; name.title = item.title;
       copy.append(name);
-      if (model) copy.append(modelText);
-      copy.append(helper);
-      el.appendChild(copy);
+      if (item.year && !item.title.includes(item.year)) {
+        const year = document.createElement('span');
+        year.className = 'compare-bar__year'; year.textContent = `${item.year} 年`;
+        copy.append(year);
+      }
       const remove = document.createElement('button');
-      remove.type = 'button';
-      remove.dataset.remove = slug;
-      remove.setAttribute('aria-label', `移除 ${title}`);
-      remove.textContent = '✕';
-      el.appendChild(remove);
-      el.querySelector<HTMLButtonElement>('[data-remove]')!.addEventListener('click', () => {
-        const slugs: string[] = JSON.parse(localStorage.getItem('compare_slugs') || '[]');
-        localStorage.setItem('compare_slugs', JSON.stringify(slugs.filter((s) => s !== slug)));
-        window.dispatchEvent(new CustomEvent('compare-changed'));
-        render();
-      });
-      itemsEl.appendChild(el);
-    });
+      remove.type = 'button'; remove.className = 'compare-bar__remove';
+      remove.dataset.compareRemove = item.slug;
+      remove.setAttribute('aria-label', `移除比較：${item.title}`);
+      const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      icon.setAttribute('viewBox', '0 0 20 20'); icon.setAttribute('aria-hidden', 'true');
+      const stroke = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      stroke.setAttribute('d', 'm5 5 10 10M15 5 5 15'); icon.append(stroke); remove.append(icon);
+      li.append(imageFrame, copy, remove);
+      return li;
+    }));
+    const note = items.length === MAX_COMPARE_VEHICLES ? '已選滿 4 台，可先移除一台再加入。' : '';
+    feedback.textContent = store.persistent ? note : '瀏覽器無法儲存清單；目前選擇僅保留於此頁。';
+    feedback.hidden = !feedback.textContent;
+    setExpanded(expanded);
   }
 
-  // Store metadata when compare buttons are clicked
-  document.addEventListener('click', (e) => {
-    const btn = (e.target as Element).closest<HTMLButtonElement>('[data-compare-slug]');
-    if (!btn) return;
-    const slug = btn.dataset.compareSlug!;
-    const title = btn.dataset.compareTitle || slug;
-    const model = btn.dataset.compareModel || '';
-    const thumb = btn.dataset.compareThumb || '';
-    const meta: Record<string, { title: string; model: string; thumb: string }> = JSON.parse(localStorage.getItem('compare_meta') || '{}');
-    meta[slug] = { title, model, thumb };
-    localStorage.setItem('compare_meta', JSON.stringify(meta));
+  function commit(items: CompareItem[], message: string) {
+    store.write(items);
     render();
-  });
-
-  clearBtn.addEventListener('click', () => {
-    localStorage.removeItem('compare_slugs');
-    localStorage.removeItem('compare_meta');
-    window.dispatchEvent(new CustomEvent('compare-changed'));
-    render();
-  });
-
-  window.addEventListener('compare-changed', render);
-  window.addEventListener('storage', (e) => { if (e.key === 'compare_slugs') render(); });
-  render();
+    announce(store.persistent ? message : `${message} 瀏覽器無法儲存清單，目前選擇僅保留於此頁。`);
+    if (onComparePage) location.assign(comparisonHref(items.map((item) => item.slug)));
   }
+
+  function syncPage() {
+    const query = new URLSearchParams(location.search);
+    if (onComparePage && query.has('ids')) {
+      const items = [...document.querySelectorAll<HTMLElement>('[data-meta-slug]')].map((el) => ({
+        slug: el.dataset.metaSlug!, title: el.dataset.metaTitle || el.dataset.metaSlug!,
+        thumb: el.dataset.metaThumb || '', year: el.dataset.metaYear || '',
+      }));
+      store.write(items);
+      const canonical = comparisonHref(store.read().map((item) => item.slug));
+      if (`${location.pathname}${location.search}` !== canonical) history.replaceState(history.state, '', canonical);
+    } else if (onComparePage && store.read().length) {
+      location.replace(comparisonHref(store.read().map((item) => item.slug)));
+      return;
+    }
+    render();
+  }
+
+  document.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element)) return;
+    const target = event.target.closest<HTMLElement>('[data-compare-slug], [data-compare-remove], [data-compare-clear]');
+    if (!target) return;
+    event.preventDefault();
+    const items = store.read();
+    if (target.hasAttribute('data-compare-clear')) {
+      const returnSlug = items[0]?.slug;
+      commit([], '已清除比較清單。');
+      if (!onComparePage) restoreCardFocus(returnSlug);
+      return;
+    }
+    const slug = target.dataset.compareRemove || target.dataset.compareSlug!;
+    const index = items.findIndex((item) => item.slug === slug);
+    if (target.hasAttribute('data-compare-remove') || index >= 0) {
+      const wasTray = bar.contains(target);
+      commit(items.filter((item) => item.slug !== slug), `已移除 ${items[index]?.title || slug}，剩餘 ${Math.max(0, items.length - 1)} 台。`);
+      if (!onComparePage && wasTray) {
+        const nextRemove = list.querySelectorAll<HTMLButtonElement>('[data-compare-remove]')[Math.min(index, items.length - 2)];
+        if (items.length > 1 && nextRemove) nextRemove.focus({ preventScroll: true });
+        else restoreCardFocus(slug);
+      }
+      return;
+    }
+    if (items.length >= MAX_COMPARE_VEHICLES) {
+      announce('最多比較 4 台車，請先移除一台再加入。');
+      feedback.hidden = false;
+      feedback.textContent = '最多比較 4 台，請先移除一台再加入。';
+      measure();
+      return;
+    }
+    lastSelected = target as HTMLButtonElement;
+    const item = { slug, title: target.dataset.compareTitle || slug, thumb: target.dataset.compareThumb || '', year: target.dataset.compareYear || '' };
+    commit([...items, item], `已加入 ${item.title}，共 ${items.length + 1} 台。`);
+  });
+
+  toggle.addEventListener('click', () => setExpanded(!expanded));
+  document.querySelector('#compare-close')!.addEventListener('click', () => setExpanded(false, true));
+  bar.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && expanded) { event.preventDefault(); setExpanded(false, true); }
+  });
+  mobile.addEventListener('change', () => {
+    const focused = document.activeElement;
+    const willHideFocus = mobile.matches && selection.contains(focused);
+    const willHideToggle = !mobile.matches && focused === toggle;
+    setExpanded(false, willHideFocus);
+    if (willHideToggle) go.focus({ preventScroll: true });
+  });
+  new ResizeObserver(measure).observe(bar);
+  window.addEventListener('pageshow', syncPage);
+  window.addEventListener('storage', (event) => {
+    if (event.key !== null && event.key !== COMPARE_SLUGS_KEY && event.key !== COMPARE_META_KEY) return;
+    const items = store.read();
+    if (onComparePage) {
+      const href = comparisonHref(items.map((item) => item.slug));
+      if (`${location.pathname}${location.search}` !== href) location.replace(href);
+    } else render();
+  });
+  syncPage();
 </script>
 
-{/* is:global because bar items are injected at runtime (innerHTML) and would
-    never match Astro's scoped data-astro-cid selectors. Class names are
-    namespaced with compare-bar__ so nothing leaks. */}
 <style is:global>
-.compare-bar {
-  display: none;
-  position: fixed;
-  inset: auto 0 0;
-  z-index: 80;
-  width: 100%;
-  pointer-events: none;
-}
-.compare-bar.is-visible {
-  display: block;
-  pointer-events: auto;
-}
-.compare-bar__clear,
-.compare-bar__item button { min-width: 44px; min-height: 44px; display: inline-grid; place-items: center; }
-.compare-bar__go { min-height: 44px; display: inline-flex; align-items: center; }
-.compare-bar__inner {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  min-width: 0;
-  max-width: min(1200px, 100vw);
-  box-sizing: border-box;
-  /* Single slim row — never wraps taller no matter how many cars are added. */
-  flex-wrap: nowrap;
-  padding: 0.5rem 1rem;
-  background: var(--surface, #fff);
-  border-top: 2px solid var(--accent, #2f66ad);
-  box-shadow: 0 -4px 24px rgba(0,0,0,0.12);
-  margin: 0 auto;
-  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
-}
-.compare-bar__label {
-  font-weight: 700;
-  font-size: 0.875rem;
-  white-space: nowrap;
-  color: var(--accent, #2f66ad);
-}
-.compare-bar__items {
-  display: flex;
-  gap: 0.5rem;
-  flex: 1;
-  min-width: 0;
-  max-width: 100%;
-  flex-wrap: nowrap;
-  align-items: center;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-}
-.compare-bar__items::-webkit-scrollbar { display: none; }
-.compare-bar__item {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 3px 7px 3px 3px;
-  background: var(--surface-soft, #f5f5f5);
-  border-radius: 6px;
-  font-size: 0.78rem;
-  max-width: 150px;
-  flex-shrink: 0;
-}
-.compare-bar__item img {
-  width: 36px;
-  height: 24px;
-  object-fit: cover;
-  border-radius: 3px;
-  flex-shrink: 0;
-}
-.compare-bar__copy {
-  flex: 1;
-  min-width: 0;
-  display: grid;
-  gap: 0.1rem;
-  white-space: normal;
-}
-.compare-bar__name { padding-bottom: 4px; font-size: 0.82rem; font-weight: 750; line-height: 1; }
-.compare-bar__model { font-size: 0.74rem; font-weight: 600; line-height: 1.25; }
-.compare-bar__helper { font-size: 0.7rem; font-weight: 450; line-height: 1.2; color: var(--muted, #777); }
-.compare-bar__item small,
-.compare-bar__item strong { display: block; }
-.compare-bar__copy { overflow: visible; }
-.compare-bar__name,
-.compare-bar__model,
-.compare-bar__helper { overflow-wrap: anywhere; text-overflow: clip; }
-.compare-bar__copy { flex: 1 1 auto; }
-.compare-bar__name { max-width: none; }
-.compare-bar__model { max-width: none; }
-.compare-bar__helper { max-width: none; }
-.compare-bar__item .compare-bar__copy {
-  overflow: visible;
-}
-.compare-bar__item .compare-bar__name {
-  white-space: normal;
-}
-.compare-bar__item button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--muted, #999);
-  font-size: 0.75rem;
-  padding: 0 2px;
-  line-height: 1;
-  flex-shrink: 0;
-}
-.compare-bar__item button:hover { color: #c00; }
-.compare-bar__actions {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  flex-shrink: 0;
-}
-.compare-bar__go {
-  font-size: 0.875rem;
-  padding: 0.45rem 1.25rem;
-  text-decoration: none;
-  border-radius: 6px;
-}
-.compare-bar__clear {
-  font-size: 0.8rem;
-  background: none;
-  border: 1px solid var(--border, #ddd);
-  border-radius: 6px;
-  padding: 0.4rem 0.75rem;
-  cursor: pointer;
-  color: var(--muted, #666);
-}
-.compare-bar__clear:hover { border-color: #999; }
-
-/* ── Mobile — 橫向滑動，縮圖縮小 ── */
-@media (max-width: 640px) {
+  .compare-bar {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 80;
+    padding: 0 max(1rem, env(safe-area-inset-right, 0px)) calc(0.75rem + env(safe-area-inset-bottom, 0px)) max(1rem, env(safe-area-inset-left, 0px));
+    pointer-events: none;
+    font-family: 'DM Sans Variable', 'PingFang TC', 'Noto Sans TC', sans-serif;
+  }
+  .compare-bar[hidden], .compare-bar [hidden] { display: none !important; }
   .compare-bar__inner {
-    padding: 0.45rem 0.7rem;
-    gap: 0.5rem;
-    max-width: 100vw;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    max-width: var(--page-max-width);
+    margin-inline: auto;
+    padding: 0.65rem 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: 1.15rem;
+    background: var(--surface);
+    box-shadow: 0 0.4rem 1.8rem color-mix(in srgb, var(--text) 12%, transparent);
+    pointer-events: auto;
   }
-  .compare-bar__label {
-    display: none;
-    font-size: 0.75rem;
-    white-space: nowrap;
-    flex-shrink: 0;
+  .compare-bar__summary { display: grid; gap: 0.1rem; min-width: 4.2rem; }
+  .compare-bar__eyebrow { color: var(--muted); font-size: 0.72rem; font-weight: 600; }
+  .compare-bar__count { color: var(--muted); font-size: 0.78rem; white-space: nowrap; }
+  .compare-bar__count strong { color: var(--accent-strong); font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .compare-bar__selection { min-width: 0; }
+  .compare-bar__items { display: flex; align-items: stretch; gap: 0.65rem; min-width: 0; margin: 0; padding: 6px; list-style: none; overflow: auto; overscroll-behavior-inline: contain; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+  .compare-bar__item { display: grid; grid-template-columns: 3rem minmax(0, 1fr) 44px; align-items: center; flex: 0 0 clamp(13rem, 20vw, 18rem); gap: 0.5rem; min-width: 0; padding: 0.35rem 0.1rem 0.35rem 0.35rem; border: 1px solid var(--line); border-radius: 0.8rem; background: color-mix(in srgb, var(--surface-soft) 32%, var(--surface)); }
+  .compare-bar__thumb { position: relative; display: grid; place-items: center; overflow: hidden; width: 3rem; aspect-ratio: 4 / 3; border-radius: 0.45rem; background: var(--surface-soft); font-size: 0.55rem; color: var(--muted); }
+  .compare-bar__thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .compare-bar__copy { min-width: 0; display: grid; gap: 0.2rem; }
+  .compare-bar__name { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--text); font-size: 0.78rem; font-weight: 600; line-height: 1.35; word-break: normal; overflow-wrap: break-word; }
+  .compare-bar__year { color: var(--muted); font-size: 0.68rem; line-height: 1.25; }
+  .compare-bar__remove, .compare-bar__panel-heading button { display: inline-grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 999px; background: transparent; color: var(--muted); }
+  .compare-bar__remove:hover, .compare-bar__panel-heading button:hover { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); color: var(--accent-strong); }
+  .compare-bar svg { width: 1rem; height: 1rem; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .compare-bar__actions { display: flex; align-items: center; gap: 0.6rem; }
+  .compare-bar__clear { min-width: 44px; min-height: 44px; padding: 0.35rem 0.45rem; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font: inherit; font-size: 0.78rem; white-space: nowrap; }
+  .compare-bar__clear:hover { color: var(--accent-strong); background: var(--surface-soft); }
+  .compare-bar .compare-bar__go { min-height: 44px; gap: 0.5rem; padding: 0.7rem 1.1rem; font-size: 0.85rem; line-height: 1.2; white-space: nowrap; }
+  .compare-bar .compare-bar__go:hover { transform: none; background: var(--accent-strong); box-shadow: none; }
+  .compare-bar__feedback { grid-column: 1 / -1; margin: -0.4rem 0 0; color: var(--accent-strong); font-size: 0.75rem; line-height: 1.4; }
+  .compare-bar__toggle, .compare-bar__panel-heading, .compare-bar__clear--mobile { display: none; }
+  .compare-announcement { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  @media (max-width: 1024px) and (min-width: 768px) {
+    .compare-bar__inner { gap: 0.65rem; }
+    .compare-bar__item { flex-basis: 15rem; }
   }
-  .compare-bar__item {
-    max-width: 210px;
-    padding: 3px 6px 3px 3px;
-    gap: 0.3rem;
+  @media (max-width: 767px) {
+    .compare-bar { padding: 0; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -0.25rem 1.5rem color-mix(in srgb, var(--text) 8%, transparent); }
+    .compare-bar__inner { grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem; padding: 0.6rem max(0.75rem, env(safe-area-inset-right)) calc(0.6rem + env(safe-area-inset-bottom, 0px)) max(0.75rem, env(safe-area-inset-left)); border: 0; border-radius: 0; box-shadow: none; }
+    .compare-bar__summary, .compare-bar__clear--desktop { display: none; }
+    .compare-bar__toggle { display: inline-flex; align-items: center; justify-content: flex-start; gap: 0.55rem; justify-self: start; min-height: 44px; padding: 0.4rem 0.6rem; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--accent-strong); font: inherit; font-size: 0.82rem; white-space: nowrap; }
+    .compare-bar__toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+    .compare-bar__actions { justify-content: end; }
+    .compare-bar .compare-bar__go { min-width: 8rem; font-size: 0.85rem; }
+    .compare-bar__selection { grid-column: 1 / -1; grid-row: 1; max-height: min(60dvh, 30rem); overflow-y: auto; overscroll-behavior: contain; padding: 6px; }
+    .compare-bar__panel-heading { display: flex; align-items: center; justify-content: space-between; padding-left: 0.45rem; color: var(--text); font-size: 0.9rem; font-weight: 650; }
+    .compare-bar__items { display: grid; grid-template-columns: 1fr; gap: 0.4rem; overflow: visible; padding: 6px; }
+    .compare-bar__item { grid-template-columns: 3.5rem minmax(0, 1fr) 44px; width: 100%; padding: 0.45rem 0.15rem 0.45rem 0.45rem; gap: 0.55rem; }
+    .compare-bar__thumb { width: 3.5rem; }
+    .compare-bar__name { font-size: 0.8rem; }
+    .compare-bar__year { font-size: 0.7rem; }
+    .compare-bar__clear--mobile { display: block; margin: 0.35rem auto 0; padding-inline: 1rem; }
+    .compare-bar__feedback { margin: 0; padding: 0 0.4rem; font-size: 0.72rem; }
   }
-  .compare-bar__item img {
-    display: none;
-  }
-  .compare-bar__item .compare-bar__copy { min-width: 120px; }
-  .compare-bar__item .compare-bar__name { font-size: 0.82rem; }
-  .compare-bar__actions { gap: 0.35rem; }
-  .compare-bar__go { font-size: 0.78rem; padding: 0.35rem 0.75rem; white-space: nowrap; }
-  .compare-bar__clear { font-size: 0.75rem; padding: 0.3rem 0.5rem; white-space: nowrap; }
-}
-@media (max-width: 768px) {
-  .compare-bar__inner { flex-wrap: wrap; align-items: stretch; gap: 0.35rem; }
-  .compare-bar__label { display: none; }
-  .compare-bar__items { order: 1; flex: 1 0 100%; width: 100%; align-items: stretch; }
-  .compare-bar__item { box-sizing: border-box; width: 280px; max-width: min(280px, calc(100vw - 1.5rem)); align-items: flex-start; }
-  .compare-bar__item .compare-bar__copy { width: auto; min-width: 0; }
-  .compare-bar__item .compare-bar__name { font-size: 0.78rem; line-height: 1.05; }
-  .compare-bar__item .compare-bar__model { font-size: 0.72rem; line-height: 1.3; white-space: nowrap; overflow-x: auto; text-overflow: clip; }
-  .compare-bar__item .compare-bar__helper { display: none; }
-  .compare-bar__items { scrollbar-width: none; }
-  .compare-bar__actions { order: 2; margin-left: auto; }
-}
-@media (min-width: 769px) and (max-width: 1100px) {
-  .compare-bar__inner { flex-wrap: wrap; align-items: stretch; gap: 0.4rem; }
-  .compare-bar__label { display: none; }
-  .compare-bar__items { order: 1; flex: 1 0 100%; width: 100%; max-width: 100%; align-items: stretch; overflow-x: auto; }
-  .compare-bar__item { box-sizing: border-box; width: 280px; max-width: 280px; align-items: flex-start; }
-  .compare-bar__item .compare-bar__copy { width: auto; min-width: 0; }
-  .compare-bar__item .compare-bar__name { font-size: 0.82rem; line-height: 1.05; }
-  .compare-bar__item .compare-bar__model { font-size: 0.74rem; line-height: 1.25; white-space: nowrap; overflow-x: auto; text-overflow: clip; }
-  .compare-bar__item .compare-bar__helper { display: none; }
-  .compare-bar__actions { order: 2; margin-left: auto; }
-}
+  @media (prefers-reduced-motion: reduce) { .compare-bar *, .compare-btn { transition: none; } }
 </style>

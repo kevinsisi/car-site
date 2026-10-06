@@ -16,8 +16,10 @@ export const POST: APIRoute = async ({ request, cookies, locals }) => {
     ...(runtimeEnv?.SESSION_SECRET ? { sessionSecret: runtimeEnv.SESSION_SECRET } : {}),
   });
   if (_auth instanceof Response) return _auth;
-  const user = _auth;
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return Response.json({ error: 'invalid JSON body' }, { status: 400 });
+  }
   if (!body.title || !body.brand || !body.model) {
     return Response.json({ error: 'title, brand, and model are required' }, { status: 400 });
   }

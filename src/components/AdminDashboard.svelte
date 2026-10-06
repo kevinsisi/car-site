@@ -9,12 +9,13 @@
     settings: SiteSettings;
     brandAliases: { sourceBrand: string; displayName: string; urlSlug: string; iconUrl?: string | null }[];
     mode?: 'overview' | 'settings' | 'contact' | 'vehicles';
+    canEditVehicles?: boolean;
   }
 
   type TemplateField = 'cardTitleTemplate' | 'shareMessageTemplate';
   type BrandAliasRow = { sourceBrand: string; displayName: string; urlSlug: string; iconUrl?: string | null };
 
-  let { vehicles, settings, brandAliases, mode = 'overview' }: Props = $props();
+  let { vehicles, settings, brandAliases, mode = 'overview', canEditVehicles = false }: Props = $props();
 
   type ToastLevel = 'info' | 'success' | 'error' | 'progress';
   interface Toast { id: number; text: string; level: ToastLevel; sticky: boolean; }
@@ -352,6 +353,10 @@
     };
     const handler = (event: KeyboardEvent) => {
       const cmdKey = event.metaKey || event.ctrlKey;
+      if (confirmRequest) {
+        if (cmdKey && event.key.toLowerCase() === 's') event.preventDefault();
+        return;
+      }
       if (cmdKey && event.key.toLowerCase() === 's') {
         const targetForm = mode === 'settings' || mode === 'contact'
           ? document.querySelector<HTMLFormElement>('.settings-form')
@@ -373,7 +378,7 @@
         }
         return;
       }
-      if (!isInputTarget(document.activeElement) && event.key.toLowerCase() === 'n' && mode === 'vehicles') {
+      if (!isInputTarget(document.activeElement) && event.key.toLowerCase() === 'n' && mode === 'vehicles' && canEditVehicles) {
         if (!vehicleFormDirty) {
           event.preventDefault();
           resetVehicleForm();
@@ -389,12 +394,33 @@
 
   type ConfirmRequest = { title: string; body: string; danger: boolean; resolve: (ok: boolean) => void };
   let confirmRequest = $state<ConfirmRequest | null>(null);
+  let confirmDialogElement = $state<HTMLDialogElement>();
+  $effect(() => {
+    if (confirmRequest && confirmDialogElement && !confirmDialogElement.open) {
+      confirmDialogElement.showModal();
+    }
+  });
   function confirmDialog(title: string, body: string, danger = false): Promise<boolean> {
     return new Promise((resolve) => { confirmRequest = { title, body, danger, resolve }; });
   }
   function answerConfirm(ok: boolean) {
+    confirmDialogElement?.close();
     confirmRequest?.resolve(ok);
     confirmRequest = null;
+  }
+  function handleConfirmKeydown(event: KeyboardEvent) {
+    if (event.key !== 'Tab') return;
+    const buttons = confirmDialogElement?.querySelectorAll<HTMLButtonElement>('button');
+    if (!buttons?.length) return;
+    const first = buttons[0];
+    const last = buttons[buttons.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   }
 
   function exportSettings() {
@@ -773,7 +799,7 @@
   });
 
   $effect(() => {
-    if (mode !== 'vehicles' || focusApplied) return;
+    if (mode !== 'vehicles' || !canEditVehicles || focusApplied) return;
     const focusId = new URLSearchParams(window.location.search).get('focus');
     focusApplied = true;
     if (!focusId) return;
@@ -1249,16 +1275,24 @@
 {/if}
 
 {#if confirmRequest}
-  <div class="confirm-overlay" role="dialog" aria-modal="true" onclick={() => answerConfirm(false)}>
+  <dialog
+    bind:this={confirmDialogElement}
+    class="confirm-overlay"
+    aria-labelledby="status-confirm-title"
+    aria-describedby="status-confirm-body"
+    onclick={() => answerConfirm(false)}
+    onkeydown={handleConfirmKeydown}
+    oncancel={(event) => { event.preventDefault(); answerConfirm(false); }}
+  >
     <div class="confirm-card" onclick={(e) => e.stopPropagation()}>
-      <h3>{confirmRequest.title}</h3>
-      <p>{confirmRequest.body}</p>
+      <h3 id="status-confirm-title">{confirmRequest.title}</h3>
+      <p id="status-confirm-body">{confirmRequest.body}</p>
       <div class="confirm-actions">
         <button type="button" class="secondary-button" onclick={() => answerConfirm(false)}>取消</button>
         <button type="button" class={confirmRequest.danger ? 'admin-button confirm-danger' : 'admin-button'} onclick={() => answerConfirm(true)}>確認</button>
       </div>
     </div>
-  </div>
+  </dialog>
 {/if}
 
 {#if mode === 'contact'}
@@ -1379,6 +1413,7 @@
 {#if mode === 'vehicles'}
   <section class="admin-panel vehicle-admin-list">
     <h2>車輛管理</h2>
+    {#if canEditVehicles}
     <form class="carsmeet-import" onsubmit={(event) => { event.preventDefault(); importCarsmeetVehicle(); }}>
       <div>
         <strong>從 Carsmeet 官網匯入</strong>
@@ -1491,6 +1526,9 @@
         {/if}
       </div>
     </form>
+    {:else}
+      <p class="form-hint">目前帳號僅可檢視車輛。</p>
+    {/if}
     <div class="admin-list-toolbar">
       <label class="admin-search">
         <span>搜尋車輛</span>
@@ -1524,7 +1562,7 @@
       <span class="status-filter-summary">顯示 {filteredVehicles.length} / 總共 {vehicles.length}</span>
     </div>
 
-    {#if selectedIds.size > 0}
+    {#if canEditVehicles && selectedIds.size > 0}
       <div class="batch-bar" role="region" aria-label="批次操作">
         <span>已選 <strong>{selectedIds.size}</strong> 台</span>
         <div class="batch-bar__actions">
@@ -1539,7 +1577,7 @@
       </div>
     {/if}
 
-    {#if visibleVehicles.length > 0}
+    {#if canEditVehicles && visibleVehicles.length > 0}
       <div class="batch-toggle-all">
         <label class="checkbox-row">
           <input type="checkbox" checked={visibleVehicles.every((v) => selectedIds.has(v.id))} onchange={toggleSelectAllVisible} />
@@ -1549,8 +1587,10 @@
     {/if}
 
     {#each visibleVehicles as vehicle}
-      <article class="admin-car-row" class:is-selected={selectedIds.has(vehicle.id)}>
+      <article class="admin-car-row" class:is-selected={selectedIds.has(vehicle.id)} class:is-readonly={!canEditVehicles}>
+        {#if canEditVehicles}
         <input type="checkbox" class="batch-checkbox" checked={selectedIds.has(vehicle.id)} onchange={() => toggleSelect(vehicle.id)} aria-label={`選擇 ${vehicle.title}`} />
+        {/if}
         {#if vehicle.coverImage}
           <img src={vehicle.coverImage.url} alt={vehicle.title} />
         {:else}
@@ -1562,19 +1602,23 @@
           <small class="admin-car-row__updated">更新於 {formatUpdatedAt(vehicle.updatedAt)}</small>
         </div>
         <div class="row-actions">
+          {#if canEditVehicles}
           <button onclick={() => editVehicle(vehicle)}>編輯</button>
           <button type="button" onclick={() => duplicateVehicle(vehicle)}>複製</button>
+          {/if}
           {#if vehicle.status !== 'sold' || settings.showSoldVehicles}
             <a class="row-button-link" href={`/cars/${vehicle.slug}`} target="_blank" rel="noopener">預覽</a>
           {:else}
             <span class="row-button-link row-button-link--disabled">預覽關閉</span>
           {/if}
+          {#if canEditVehicles}
           <button onclick={() => setStatus(vehicle.id, 'published')}>在庫</button>
           <button onclick={() => setStatus(vehicle.id, 'incoming')}>未到港</button>
           <button onclick={() => setStatus(vehicle.id, 'reserved')}>收訂</button>
           <button onclick={() => setStatus(vehicle.id, 'unpublished')}>下架</button>
           <button class="row-button--warn" onclick={() => setStatus(vehicle.id, 'sold')}>已售</button>
           <button class="row-button--danger" onclick={() => setStatus(vehicle.id, 'archived')}>封存</button>
+          {/if}
         </div>
       </article>
     {/each}
@@ -1582,7 +1626,7 @@
     {#if filteredVehicles.length === 0}
       <p class="admin-empty">
         {vehicles.length === 0
-          ? '目前還沒有任何車輛，先用上方表單新增第一台車吧。'
+          ? (canEditVehicles ? '目前還沒有任何車輛，先用上方表單新增第一台車吧。' : '目前還沒有任何車輛。')
           : '沒有符合目前篩選條件的車輛。'}
       </p>
     {/if}

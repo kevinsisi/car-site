@@ -15,6 +15,7 @@ const modules = {
   '@/lib/permissions': 'export const PERMISSIONS = { VEHICLES_EDIT: "vehicles:edit" };',
   '@/lib/vehicles': `export async function updateVehicleStatus(...args) {
     globalThis.__t6d1StatusCalls.update = args;
+    return true;
   }`,
   '@/lib/vehicle-status': 'export function isVehicleStatus(status) { return status === "sold"; }',
   '@/lib/analytics': `

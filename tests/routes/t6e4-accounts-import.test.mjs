@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { registerHooks } from 'node:module';
+import { PERMISSIONS } from '../../src/lib/permissions.ts';
 
-const state = { nodeDbImports: 0, order: null, limit: null };
+const state = { nodeDbImports: 0, order: null, limit: null, requiredPermission: PERMISSIONS.USERS_MANAGE };
 globalThis.__t6e4Accounts = state;
 const modules = {
   '@/db/d1': `export function createD1Db(binding) {
@@ -16,7 +17,10 @@ const modules = {
     };
   }`,
   '@/db/schema': `export const adminUsers = { id: 'id', username: 'username', createdAt: 'createdAt' };`,
-  '@/lib/auth': `export async function getAdminOrResponse(_cookies, options) { return options.db.binding ? { id: 'admin' } : Response.json({ error: 'missing request db' }, { status: 500 }); }`,
+  '@/lib/auth': `export async function getPermittedOrResponse(_cookies, required, options) {
+    if (required !== globalThis.__t6e4Accounts.requiredPermission) throw new Error('accounts must require USERS_MANAGE');
+    return options.db.binding ? { id: 'admin', role: 'superadmin', permissions: 0 } : Response.json({ error: 'missing request db' }, { status: 500 });
+  }`,
   '@/lib/crypto': `export function hashPassword(value) { return value; }`,
   'drizzle-orm': `export const asc = value => ({ direction: 'asc', value }); export const eq = (column, value) => ({ [column]: value }); export const count = () => 'COUNT(*)';`,
 };

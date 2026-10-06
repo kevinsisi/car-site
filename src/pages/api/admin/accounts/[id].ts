@@ -2,7 +2,8 @@ import { count, eq } from 'drizzle-orm';
 import type { APIRoute } from 'astro';
 import { createD1Db } from '@/db/d1';
 import { adminUsers } from '@/db/schema';
-import { getAdminOrResponse } from '@/lib/auth';
+import { getPermittedOrResponse } from '@/lib/auth';
+import { PERMISSIONS } from '@/lib/permissions';
 
 type RequestDb = Awaited<ReturnType<typeof createD1Db>>;
 
@@ -22,9 +23,12 @@ async function getRequestDb(locals: App.Locals): Promise<{ db: RequestDb; sessio
 export const DELETE: APIRoute = async ({ params, cookies, locals }) => {
   const requestDb = await getRequestDb(locals);
   if (requestDb instanceof Response) return requestDb;
-  const _admin = await getAdminOrResponse(cookies, requestDb);
+  const _admin = await getPermittedOrResponse(cookies, PERMISSIONS.USERS_MANAGE, requestDb);
   if (_admin instanceof Response) return _admin;
   const admin = _admin;
+  if (admin.role !== 'superadmin') {
+    return Response.json({ error: '只有 superadmin 可以刪除用戶' }, { status: 403 });
+  }
   const id = String(params.id || '');
   if (!id) return Response.json({ error: '缺少帳號 ID' }, { status: 400 });
   if (id === admin.id) {
@@ -37,6 +41,9 @@ export const DELETE: APIRoute = async ({ params, cookies, locals }) => {
   const target = await requestDb.db.select().from(adminUsers).where(eq(adminUsers.id, id)).limit(1);
   if (!target.length) {
     return Response.json({ error: '找不到該帳號' }, { status: 404 });
+  }
+  if (target[0].role === 'superadmin') {
+    return Response.json({ error: '不能刪除 superadmin' }, { status: 400 });
   }
   await requestDb.db.delete(adminUsers).where(eq(adminUsers.id, id));
   return Response.json({ ok: true });

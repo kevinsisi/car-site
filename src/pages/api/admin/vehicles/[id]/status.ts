@@ -26,11 +26,17 @@ export const POST: APIRoute = async ({ params, request, cookies, locals }) => {
   });
   if (_auth instanceof Response) return _auth;
   const user = _auth;
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return Response.json({ error: 'invalid JSON body' }, { status: 400 });
+  }
   if (!params.id || !isVehicleStatus(body.status)) {
     return Response.json({ error: 'invalid status' }, { status: 400 });
   }
-  await updateVehicleStatus(params.id, body.status, adapter);
+  const updated = await updateVehicleStatus(params.id, body.status, adapter);
+  if (!updated) {
+    return Response.json({ error: 'vehicle not found' }, { status: 404 });
+  }
 
   if (!locals.runtime) {
     const { hashIp, logAdminActivity } = await import('@/lib/analytics');

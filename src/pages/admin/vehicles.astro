@@ -25,8 +25,9 @@ if (user.role !== 'superadmin' && !hasPermission(user.permissions, PERMISSIONS.V
 const vehicles = await listAdminVehicles(adapter, adapter ? 100 : undefined);
 const settings = await getSettings(adapter);
 const brandAliases = await listBrandAliases(adapter, adapter ? 100 : undefined);
+const canEditVehicles = user.role === 'superadmin' || hasPermission(user.permissions, PERMISSIONS.VEHICLES_EDIT);
 ---
 
 <AdminLayout user={user}>
-  <AdminDashboard client:load mode="vehicles" vehicles={vehicles} settings={settings} brandAliases={brandAliases} />
+  <AdminDashboard client:load mode="vehicles" vehicles={vehicles} settings={settings} brandAliases={brandAliases} canEditVehicles={canEditVehicles} />
 </AdminLayout>
